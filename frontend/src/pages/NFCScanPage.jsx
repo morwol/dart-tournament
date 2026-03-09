@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { api } from '../api/client';
 import NFCScanner from '../components/nfc/NFCScanner';
+import BackButton from '../components/BackButton';
 
 export default function NFCScanPage() {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ export default function NFCScanPage() {
   return (
     <div className="min-h-screen p-4 max-w-lg mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <Link to="/" className="text-2xl no-underline" style={{ color: 'var(--pe-text-sub)' }}>&larr;</Link>
+        <BackButton to="/" />
         <img src="/logo.jpeg" alt="DartEvent" className="h-10" />
       </div>
 

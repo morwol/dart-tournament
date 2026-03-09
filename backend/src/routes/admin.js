@@ -12,9 +12,10 @@ router.post('/wipe', requireAdmin, (req, res) => {
     db.prepare('DELETE FROM group_players').run();
     db.prepare('DELETE FROM games').run();
     db.prepare('DELETE FROM groups').run();
-    db.prepare('DELETE FROM players').run();
+    db.prepare('DELETE FROM tournament_registrations').run();
     try { db.prepare('DELETE FROM schedule').run(); } catch (_) {}
     db.prepare('DELETE FROM tournaments').run();
+    // Spielerprofile bleiben erhalten (persistent über Turniere)
     // Boards zurücksetzen aber behalten
     try { db.prepare("UPDATE boards SET is_final = 0").run(); } catch (_) {}
     // Bestellungen/Gäste für sauberen Start ebenfalls leeren
@@ -24,8 +25,8 @@ router.post('/wipe', requireAdmin, (req, res) => {
   });
 
   wipeTx();
-  auditLog(req, 'system', 'WIPE', 'Alle Turnierdaten gelöscht (Boards, User, Produkte bleiben)');
-  res.json({ success: true, message: 'Alle Turnierdaten wurden gelöscht. Admins, User, Boards und Produkte bleiben erhalten.' });
+  auditLog(req, 'system', 'WIPE', 'Alle Turnierdaten gelöscht (Spielerprofile, Boards, User, Produkte bleiben)');
+  res.json({ success: true, message: 'Alle Turnierdaten wurden gelöscht. Spielerprofile, Admins, User, Boards und Produkte bleiben erhalten.' });
 });
 
 // GET /api/admin/logs — Audit-Log abrufen (Admin + Director)

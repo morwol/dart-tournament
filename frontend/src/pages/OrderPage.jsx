@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/client';
 import ProductList from '../components/order/ProductList';
 import Cart from '../components/order/Cart';
+import BackButton from '../components/BackButton';
 
 export default function OrderPage() {
   const { uid } = useParams();
@@ -63,7 +64,7 @@ export default function OrderPage() {
   return (
     <div className="min-h-screen p-4 max-w-lg mx-auto pb-48">
       <div className="flex items-center gap-3 mb-6">
-        <Link to="/" className="text-2xl no-underline" style={{ color: 'var(--pe-text-sub)' }}>&larr;</Link>
+        <BackButton to="/" />
         <img src="/logo.jpeg" alt="DartEvent" className="h-10" />
       </div>
 

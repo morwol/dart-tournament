@@ -54,6 +54,7 @@ app.use('/api', apiLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/tournaments', tournamentRoutes);
 app.use('/api/tournaments', playerRoutes);
+app.use('/api/players', playerRoutes);
 app.use('/api/games', gameRoutes);
 app.use('/api/nfc', nfcRoutes);
 app.use('/api/orders', orderRoutes);

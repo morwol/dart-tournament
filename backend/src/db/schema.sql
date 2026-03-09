@@ -17,13 +17,22 @@ CREATE TABLE IF NOT EXISTS tournaments (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Spieler
+-- Spieler (persistente Profile, turnierübergreifend)
 CREATE TABLE IF NOT EXISTS players (
   id INTEGER PRIMARY KEY,
   name TEXT NOT NULL,
-  tournament_id INTEGER REFERENCES tournaments(id),
-  seed INTEGER,
   registered_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Turnier-Anmeldungen (Spieler ↔ Turnier, Many-to-Many)
+CREATE TABLE IF NOT EXISTS tournament_registrations (
+  id INTEGER PRIMARY KEY,
+  player_id INTEGER NOT NULL REFERENCES players(id),
+  tournament_id INTEGER NOT NULL REFERENCES tournaments(id),
+  seed INTEGER,
+  cancel_token TEXT UNIQUE,
+  registered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(player_id, tournament_id)
 );
 
 -- Spiele

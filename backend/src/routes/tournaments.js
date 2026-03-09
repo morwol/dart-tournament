@@ -44,7 +44,11 @@ router.get('/active', (req, res) => {
     LEFT JOIN players w ON g.winner_id = w.id
     WHERE g.tournament_id = ? ORDER BY g.round, g.id
   `).all(tournament.id);
-  const players = db.prepare('SELECT * FROM players WHERE tournament_id = ? ORDER BY seed, registered_at').all(tournament.id);
+  const players = db.prepare(`
+    SELECT p.*, tr.seed, tr.registered_at as registered_at, tr.cancel_token
+    FROM players p JOIN tournament_registrations tr ON tr.player_id = p.id
+    WHERE tr.tournament_id = ? ORDER BY tr.seed, tr.registered_at
+  `).all(tournament.id);
   res.json({ ...tournament, games, players });
 });
 
@@ -68,9 +72,11 @@ router.get('/:id', (req, res) => {
     ORDER BY g.round, g.id
   `).all(req.params.id);
 
-  const players = db.prepare(
-    'SELECT * FROM players WHERE tournament_id = ? ORDER BY seed, registered_at'
-  ).all(req.params.id);
+  const players = db.prepare(`
+    SELECT p.*, tr.seed, tr.registered_at as registered_at, tr.cancel_token
+    FROM players p JOIN tournament_registrations tr ON tr.player_id = p.id
+    WHERE tr.tournament_id = ? ORDER BY tr.seed, tr.registered_at
+  `).all(req.params.id);
 
   res.json({ ...tournament, games, players });
 });
@@ -106,9 +112,11 @@ router.put('/:id/start', verifyToken, (req, res) => {
     return res.status(400).json({ error: 'Tournament is not in open status' });
   }
 
-  const players = db.prepare(
-    'SELECT * FROM players WHERE tournament_id = ? ORDER BY seed, registered_at'
-  ).all(req.params.id);
+  const players = db.prepare(`
+    SELECT p.*, tr.seed FROM players p
+    JOIN tournament_registrations tr ON tr.player_id = p.id
+    WHERE tr.tournament_id = ? ORDER BY tr.seed, tr.registered_at
+  `).all(req.params.id);
 
   if (players.length < 2) {
     return res.status(400).json({ error: 'Need at least 2 players to start' });
@@ -203,7 +211,7 @@ router.delete('/:id', requireAdmin, (req, res) => {
       db.prepare('DELETE FROM group_players WHERE group_id = ?').run(g.id);
     }
     db.prepare('DELETE FROM groups WHERE tournament_id = ?').run(req.params.id);
-    db.prepare('DELETE FROM players WHERE tournament_id = ?').run(req.params.id);
+    db.prepare('DELETE FROM tournament_registrations WHERE tournament_id = ?').run(req.params.id);
     db.prepare('DELETE FROM tournaments WHERE id = ?').run(req.params.id);
   });
 
@@ -219,9 +227,11 @@ router.post('/:id/draw-groups', requireAdminOrDirector, (req, res) => {
     if (!tournament) return res.status(404).json({ error: 'Tournament not found' });
     if (tournament.group_draw_done) return res.status(400).json({ error: 'Group draw already done' });
 
-    const players = db.prepare(
-      'SELECT * FROM players WHERE tournament_id = ? ORDER BY seed ASC, registered_at ASC'
-    ).all(req.params.id);
+    const players = db.prepare(`
+      SELECT p.*, tr.seed FROM players p
+      JOIN tournament_registrations tr ON tr.player_id = p.id
+      WHERE tr.tournament_id = ? ORDER BY tr.seed ASC, tr.registered_at ASC
+    `).all(req.params.id);
 
     if (players.length < 4) return res.status(400).json({ error: 'Need at least 4 players for group draw' });
 
@@ -278,11 +288,12 @@ router.post('/:id/draw-groups', requireAdminOrDirector, (req, res) => {
     const groups = db.prepare('SELECT * FROM groups WHERE tournament_id = ?').all(req.params.id);
     const result = groups.map(g => {
       const groupPlayers = db.prepare(`
-        SELECT p.* FROM players p
+        SELECT p.*, tr.seed FROM players p
         JOIN group_players gp ON gp.player_id = p.id
+        JOIN tournament_registrations tr ON tr.player_id = p.id AND tr.tournament_id = ?
         WHERE gp.group_id = ?
-        ORDER BY p.seed ASC
-      `).all(g.id);
+        ORDER BY tr.seed ASC
+      `).all(req.params.id, g.id);
       return { ...g, players: groupPlayers };
     });
 
@@ -301,15 +312,16 @@ router.get('/:id/groups', (req, res) => {
     const groups = db.prepare('SELECT * FROM groups WHERE tournament_id = ? ORDER BY name').all(req.params.id);
     const result = groups.map(g => {
       const standings = db.prepare(`
-        SELECT p.id, p.name, p.seed,
+        SELECT p.id, p.name, tr.seed,
           COALESCE((SELECT COUNT(*) FROM games WHERE tournament_id = ? AND round = 0 AND winner_id = p.id), 0) as wins,
           COALESCE((SELECT COUNT(*) FROM games WHERE tournament_id = ? AND round = 0 AND status = 'finished'
             AND (player1_id = p.id OR player2_id = p.id) AND winner_id != p.id), 0) as losses
         FROM players p
         JOIN group_players gp ON gp.player_id = p.id
+        JOIN tournament_registrations tr ON tr.player_id = p.id AND tr.tournament_id = ?
         WHERE gp.group_id = ?
-        ORDER BY wins DESC, p.seed ASC, p.name ASC
-      `).all(tournament.id, tournament.id, g.id).map(p => ({ ...p, points: p.wins * 2 }));
+        ORDER BY wins DESC, tr.seed ASC, p.name ASC
+      `).all(tournament.id, tournament.id, tournament.id, g.id).map(p => ({ ...p, points: p.wins * 2 }));
       return { ...g, standings };
     });
 
@@ -340,10 +352,11 @@ router.post('/:id/generate-group-schedule', requireAdminOrDirector, (req, res) =
     const groupsWithPlayers = groups.map(g => ({
       ...g,
       players: db.prepare(`
-        SELECT p.* FROM players p
+        SELECT p.*, tr.seed FROM players p
         JOIN group_players gp ON gp.player_id = p.id
+        JOIN tournament_registrations tr ON tr.player_id = p.id AND tr.tournament_id = ?
         WHERE gp.group_id = ? ORDER BY p.id ASC
-      `).all(g.id)
+      `).all(req.params.id, g.id)
     }));
 
     const boards = db.prepare('SELECT * FROM boards ORDER BY number').all();
@@ -470,14 +483,15 @@ router.post('/:id/generate-bracket', requireAdminOrDirector, (req, res) => {
       // Automatisch: Top N jeder Gruppe nach Siegen
       for (const group of groups) {
         const players = db.prepare(`
-          SELECT p.id, p.name, p.seed,
+          SELECT p.id, p.name, tr.seed,
             (SELECT COUNT(*) FROM games g WHERE g.winner_id = p.id AND g.tournament_id = ?) as wins
           FROM players p
           JOIN group_players gp ON gp.player_id = p.id
+          JOIN tournament_registrations tr ON tr.player_id = p.id AND tr.tournament_id = ?
           WHERE gp.group_id = ?
-          ORDER BY wins DESC, p.seed ASC
+          ORDER BY wins DESC, tr.seed ASC
           LIMIT ?
-        `).all(req.params.id, group.id, qPerGroup);
+        `).all(req.params.id, req.params.id, group.id, qPerGroup);
         bracketPlayers.push(...players.map(p => p.id));
       }
     }
@@ -582,29 +596,62 @@ router.post('/:id/reset', requireAdmin, (req, res) => {
 // NEU: Mock-Turnier mit Fake-Spielern befüllen und starten
 router.post('/:id/mock', requireAdmin, (req, res) => {
   const count = parseInt(req.body.player_count) || 8;
-  const allowed = [4, 8, 16, 30, 32];
-  if (!allowed.includes(count)) return res.status(400).json({ error: `player_count muss einer von ${allowed.join(', ')} sein` });
+  if (isNaN(count) || count < 2 || count > 64) {
+    return res.status(400).json({ error: 'player_count muss zwischen 2 und 64 liegen' });
+  }
 
   const tournament = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(req.params.id);
   if (!tournament) return res.status(404).json({ error: 'Tournament not found' });
 
-  const firstNames = ['Max','Anna','Tom','Lisa','Peter','Sara','Klaus','Maria','Jan','Eva','Felix','Julia','Hans','Laura','Markus','Sandra','Paul','Nina','Stefan','Karin','Tim','Monika','Frank','Petra','Alex','Susanne','David','Claudia','Martin','Andrea','Michael','Christine'];
-  const lastNames = ['Müller','Schmidt','Schneider','Fischer','Weber','Meyer','Wagner','Becker','Schulz','Hoffmann','Koch','Richter','Klein','Wolf','Schröder','Neumann','Schwarz','Zimmermann','Braun','Krüger','Hofmann','Hartmann','Lange','Schmitt','Werner','Schmitz','Krause','Meier','Lehmann','Schmid'];
+  const firstNames = ['Max','Anna','Tom','Lisa','Peter','Sara','Klaus','Maria','Jan','Eva','Felix','Julia','Hans','Laura','Markus','Sandra','Paul','Nina','Stefan','Karin','Tim','Monika','Frank','Petra','Alex','Susanne','David','Claudia','Martin','Andrea','Michael','Christine','Lena','Tobias','Sabine','Rolf','Ines','Bruno','Helga','Dieter'];
+  const lastNames  = ['Müller','Schmidt','Schneider','Fischer','Weber','Meyer','Wagner','Becker','Schulz','Hoffmann','Koch','Richter','Klein','Wolf','Schröder','Neumann','Schwarz','Zimmermann','Braun','Krüger','Hofmann','Hartmann','Lange','Schmitt','Werner','Schmitz','Krause','Meier','Lehmann','Schmid','Huber','Maier','Keller','Berger','Roth','Frank','Fuchs','Wirth','Stein','Kaiser'];
+  const nicknames  = ['Bullseye','Dart-King','Thunderbolt','Iron-Fist','Flash','Laser','Sniper','Bomber','Eagle','Falcon','Maverick','Viper','Ghost','Shadow','Rocket','Crusher','Titan','Blitz','Cobra','Hunter','Wizard','Legend','Phoenix','Ace','Spike','Arrow','Predator','Storm','Striker','Venom'];
+
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const usedNicks = new Set();
+  const uniqueNick = () => {
+    for (let attempt = 0; attempt < 100; attempt++) {
+      const n = pick(nicknames) + (attempt > nicknames.length ? String(Math.floor(Math.random() * 99) + 1) : '');
+      if (!usedNicks.has(n)) { usedNicks.add(n); return n; }
+    }
+    return `Mock${Date.now()}`;
+  };
 
   const mockTx = db.transaction(() => {
-    // Bestehende Mock-Spieler löschen
-    db.prepare("DELETE FROM players WHERE tournament_id = ? AND name LIKE '% (Mock)'").run(req.params.id);
-    // Neue anlegen
-    for (let i = 0; i < count; i++) {
-      const fn = firstNames[i % firstNames.length];
-      const ln = lastNames[Math.floor(i / firstNames.length) % lastNames.length];
-      db.prepare('INSERT INTO players (name, tournament_id, seed) VALUES (?, ?, ?)').run(`${fn} ${ln} (Mock)`, req.params.id, i + 1);
+    // Bestehende Mock-Anmeldungen für dieses Turnier löschen
+    const existingRegs = db.prepare(`
+      SELECT tr.player_id FROM tournament_registrations tr
+      JOIN players p ON p.id = tr.player_id
+      WHERE tr.tournament_id = ? AND p.nickname LIKE '%(Mock)%'
+    `).all(req.params.id);
+    for (const r of existingRegs) {
+      db.prepare('DELETE FROM tournament_registrations WHERE player_id = ? AND tournament_id = ?').run(r.player_id, req.params.id);
     }
-    // Status bleibt 'open' — Start erfolgt explizit über /start oder /generate-bracket
+    // Neue Spieler anlegen
+    for (let i = 0; i < count; i++) {
+      const vn = pick(firstNames);
+      const na = pick(lastNames);
+      const nn = uniqueNick() + '(Mock)';
+      const displayName = `${vn} "${nn}" ${na}`;
+      // Globales Profil suchen oder neu anlegen
+      let player = db.prepare('SELECT id FROM players WHERE nickname = ?').get(nn);
+      if (!player) {
+        const r = db.prepare(
+          'INSERT INTO players (name, vorname, nickname, nachname) VALUES (?, ?, ?, ?)'
+        ).run(displayName, vn, nn, na);
+        player = { id: r.lastInsertRowid };
+      }
+      db.prepare('INSERT OR IGNORE INTO tournament_registrations (player_id, tournament_id, seed) VALUES (?, ?, ?)')
+        .run(player.id, req.params.id, i + 1);
+    }
   });
   mockTx();
 
-  const players = db.prepare('SELECT * FROM players WHERE tournament_id = ? ORDER BY seed').all(req.params.id);
+  const players = db.prepare(`
+    SELECT p.*, tr.seed FROM players p
+    JOIN tournament_registrations tr ON tr.player_id = p.id
+    WHERE tr.tournament_id = ? ORDER BY tr.seed
+  `).all(req.params.id);
   res.json({ success: true, players_created: count, players });
 });
 

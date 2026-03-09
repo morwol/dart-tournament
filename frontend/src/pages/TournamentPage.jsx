@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/client';
 import Bracket from '../components/tournament/Bracket';
+import BackButton from '../components/BackButton';
 
 export default function TournamentPage() {
   const { id } = useParams();
@@ -33,7 +34,7 @@ export default function TournamentPage() {
   return (
     <div className="min-h-screen p-4 max-w-2xl mx-auto">
       <div className="flex items-center gap-3 mb-4">
-        <Link to="/" className="text-2xl no-underline" style={{ color: 'var(--pe-text-sub)' }}>&larr;</Link>
+        <BackButton to="/" />
         <img src="/logo.jpeg" alt="DartEvent" className="h-10" />
       </div>
 

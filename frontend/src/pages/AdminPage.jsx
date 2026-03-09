@@ -379,58 +379,46 @@ const ROLE_LABELS = { admin: 'Admin', director: 'Turnierleitung', referee: 'Schi
 function UsersTab() {
   const [users, setUsers] = useState([]);
   const [showCreate, setShowCreate] = useState(false);
-  const [createForm, setCreateForm] = useState({ username: '', password: '', role: 'director', email: '', display_name: '' });
-  // editId: which user is being edited; editForm: current edit state
+  const [createForm, setCreateForm] = useState({ username: '', password: '', role: 'director', email: '', vorname: '', nickname: '', nachname: '' });
   const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({});
 
-  const loadUsers = () => {
-    api.get('/users').then(setUsers).catch(() => {});
-  };
-
+  const loadUsers = () => { api.get('/users').then(setUsers).catch(() => {}); };
   useEffect(() => { loadUsers(); }, []);
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!createForm.username.trim() || !createForm.password) return;
+    if (!createForm.username.trim() || !createForm.password || !createForm.vorname.trim() || !createForm.nickname.trim() || !createForm.nachname.trim()) return;
     try {
       await api.post('/users', createForm);
-      setCreateForm({ username: '', password: '', role: 'director', email: '', display_name: '' });
+      setCreateForm({ username: '', password: '', role: 'director', email: '', vorname: '', nickname: '', nachname: '' });
       setShowCreate(false);
       loadUsers();
-    } catch (err) {
-      alert(err.message || 'Aktion fehlgeschlagen');
-    }
+    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen'); }
   };
 
   const startEdit = (u) => {
     setEditId(u.id);
-    setEditForm({ role: u.role, password: '', display_name: u.display_name || '', email: u.email || '' });
+    setEditForm({ role: u.role, password: '', email: u.email || '', vorname: u.vorname || '', nickname: u.nickname || '', nachname: u.nachname || '' });
   };
 
   const handleSaveEdit = async (userId) => {
-    const payload = { role: editForm.role };
-    if (editForm.display_name !== undefined) payload.display_name = editForm.display_name;
-    if (editForm.email !== undefined) payload.email = editForm.email;
+    const payload = { role: editForm.role, email: editForm.email, vorname: editForm.vorname, nickname: editForm.nickname, nachname: editForm.nachname };
     if (editForm.password) payload.password = editForm.password;
     try {
       await api.put(`/users/${userId}`, payload);
       setEditId(null);
       loadUsers();
-    } catch (err) {
-      alert(err.message || 'Speichern fehlgeschlagen');
-    }
+    } catch (err) { alert(err.message || 'Speichern fehlgeschlagen'); }
   };
 
   const handleDelete = async (userId) => {
     if (!confirm('User wirklich deaktivieren?')) return;
-    try {
-      await api.del(`/users/${userId}`);
-      loadUsers();
-    } catch (err) {
-      alert(err.message || 'Aktion fehlgeschlagen');
-    }
+    try { await api.del(`/users/${userId}`); loadUsers(); }
+    catch (err) { alert(err.message || 'Aktion fehlgeschlagen'); }
   };
+
+  const canSubmit = createForm.username.trim() && createForm.password && createForm.vorname.trim() && createForm.nickname.trim() && createForm.nachname.trim();
 
   return (
     <div>
@@ -444,17 +432,22 @@ function UsersTab() {
       {showCreate && (
         <form onSubmit={handleCreate} className="p-4 rounded-xl mb-6 space-y-3" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
           <p className="text-xs font-bold" style={{ color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: 1, margin: 0 }}>Neuer User</p>
-          <input type="text" value={createForm.username} onChange={(e) => setCreateForm({ ...createForm, username: e.target.value })} placeholder="Benutzername *" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
-          <input type="text" value={createForm.display_name} onChange={(e) => setCreateForm({ ...createForm, display_name: e.target.value })} placeholder="Anzeigename (optional)" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
-          <input type="email" value={createForm.email} onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })} placeholder="E-Mail (optional)" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
-          <input type="password" value={createForm.password} onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })} placeholder="Passwort *" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
-          <select value={createForm.role} onChange={(e) => setCreateForm({ ...createForm, role: e.target.value })} className="w-full p-3 rounded-lg outline-none" style={inputStyle}>
+          {/* Name — wie bei Spielern */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+            <input type="text" value={createForm.vorname} onChange={e => setCreateForm({ ...createForm, vorname: e.target.value })} placeholder="Vorname *" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+            <input type="text" value={createForm.nickname} onChange={e => setCreateForm({ ...createForm, nickname: e.target.value })} placeholder='Nickname *' className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+            <input type="text" value={createForm.nachname} onChange={e => setCreateForm({ ...createForm, nachname: e.target.value })} placeholder="Nachname *" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          </div>
+          <input type="text" value={createForm.username} onChange={e => setCreateForm({ ...createForm, username: e.target.value })} placeholder="Benutzername (Login) *" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          <input type="email" value={createForm.email} onChange={e => setCreateForm({ ...createForm, email: e.target.value })} placeholder="E-Mail (optional)" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          <input type="password" value={createForm.password} onChange={e => setCreateForm({ ...createForm, password: e.target.value })} placeholder="Passwort *" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          <select value={createForm.role} onChange={e => setCreateForm({ ...createForm, role: e.target.value })} className="w-full p-3 rounded-lg outline-none" style={inputStyle}>
             <option value="director">Turnierleitung</option>
             <option value="referee">Schiedsrichter</option>
             <option value="gastronomy">Gastronomie</option>
             <option value="admin">Admin</option>
           </select>
-          <button type="submit" disabled={!createForm.username.trim() || !createForm.password} className="w-full py-3 rounded-lg font-bold disabled:opacity-50" style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '48px', fontFamily: 'Verdana, Geneva, sans-serif', border: 'none', cursor: 'pointer' }}>
+          <button type="submit" disabled={!canSubmit} className="w-full py-3 rounded-lg font-bold disabled:opacity-50" style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '48px', fontFamily: 'Verdana, Geneva, sans-serif', border: 'none', cursor: canSubmit ? 'pointer' : 'not-allowed' }}>
             User anlegen
           </button>
         </form>
@@ -493,14 +486,16 @@ function UsersTab() {
             {/* Inline-Edit-Bereich */}
             {editId === u.id && (
               <div className="p-4 space-y-3" style={{ borderTop: '1px solid var(--pe-border)', background: 'var(--pe-bg-elevated)' }}>
+                {/* Name — wie Spieler */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                  <input type="text" value={editForm.vorname} onChange={e => setEditForm({ ...editForm, vorname: e.target.value })} placeholder="Vorname" style={{ ...inputStyle, padding: '10px 12px', width: '100%', boxSizing: 'border-box' }} />
+                  <input type="text" value={editForm.nickname} onChange={e => setEditForm({ ...editForm, nickname: e.target.value })} placeholder="Nickname" style={{ ...inputStyle, padding: '10px 12px', width: '100%', boxSizing: 'border-box' }} />
+                  <input type="text" value={editForm.nachname} onChange={e => setEditForm({ ...editForm, nachname: e.target.value })} placeholder="Nachname" style={{ ...inputStyle, padding: '10px 12px', width: '100%', boxSizing: 'border-box' }} />
+                </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                   <div>
                     <label className="text-xs font-bold block mb-1" style={{ color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rolle</label>
-                    <select
-                      value={editForm.role}
-                      onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
-                      style={{ ...inputStyle, width: '100%', padding: '10px 12px' }}
-                    >
+                    <select value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value })} style={{ ...inputStyle, width: '100%', padding: '10px 12px' }}>
                       <option value="director">Turnierleitung</option>
                       <option value="referee">Schiedsrichter</option>
                       <option value="gastronomy">Gastronomie</option>
@@ -508,30 +503,11 @@ function UsersTab() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-bold block mb-1" style={{ color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Anzeigename</label>
-                    <input
-                      type="text"
-                      value={editForm.display_name}
-                      onChange={(e) => setEditForm({ ...editForm, display_name: e.target.value })}
-                      placeholder="Anzeigename"
-                      style={{ ...inputStyle, width: '100%', padding: '10px 12px', boxSizing: 'border-box' }}
-                    />
-                  </div>
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <label className="text-xs font-bold block mb-1" style={{ color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Neues Passwort <span style={{ color: 'var(--pe-text-muted)', fontWeight: 'normal' }}>(leer lassen = unverändert)</span></label>
-                    <input
-                      type="password"
-                      value={editForm.password}
-                      onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-                      placeholder="Neues Passwort eingeben..."
-                      style={{ ...inputStyle, width: '100%', padding: '10px 12px', boxSizing: 'border-box' }}
-                    />
+                    <label className="text-xs font-bold block mb-1" style={{ color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Neues Passwort</label>
+                    <input type="password" value={editForm.password} onChange={e => setEditForm({ ...editForm, password: e.target.value })} placeholder="Leer = unverändert" style={{ ...inputStyle, width: '100%', padding: '10px 12px', boxSizing: 'border-box' }} />
                   </div>
                 </div>
-                <button
-                  onClick={() => handleSaveEdit(u.id)}
-                  style={{ background: 'var(--pe-gradient)', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px 20px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', width: '100%', minHeight: '44px' }}
-                >
+                <button onClick={() => handleSaveEdit(u.id)} style={{ background: 'var(--pe-gradient)', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px 20px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', width: '100%', minHeight: '44px' }}>
                   Änderungen speichern
                 </button>
               </div>
@@ -825,7 +801,8 @@ function TournamentDirectorTab() {
   const [boards, setBoards] = useState([]);
   const [games, setGames] = useState([]);
   const [activeTournament, setActiveTournament] = useState(null);
-  const [assignModal, setAssignModal] = useState(null); // { boardId }
+  const [dragGameId, setDragGameId] = useState(null); // ID des gerade gezogenen Spiels
+  const [dragOverBoard, setDragOverBoard] = useState(null); // boardId über dem der Cursor ist
 
   const load = async () => {
     const [b, t] = await Promise.all([
@@ -846,12 +823,37 @@ function TournamentDirectorTab() {
 
   const assignGame = async (gameId, boardId) => {
     await api.put(`/games/${gameId}/assign-board`, { board_id: boardId });
-    setAssignModal(null);
     load();
   };
   const removeFromBoard = async (gameId) => {
     await api.del(`/games/${gameId}/assign-board`);
     load();
+  };
+
+  // Drag handlers
+  const onDragStart = (e, gameId) => {
+    setDragGameId(gameId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(gameId));
+  };
+  const onDragEnd = () => { setDragGameId(null); setDragOverBoard(null); };
+  const onDragOver = (e, boardId) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverBoard(boardId); };
+  // Only reset dragOverBoard when leaving the drop zone itself, not a child element
+  const onDragLeave = (e) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) setDragOverBoard(null);
+  };
+  const onDrop = async (e, boardId) => {
+    e.preventDefault();
+    setDragOverBoard(null);
+    const id = parseInt(e.dataTransfer.getData('text/plain')) || dragGameId;
+    if (id) { await assignGame(id, boardId); setDragGameId(null); }
+  };
+  // Drop auf "Nicht zugewiesen" Zone
+  const onDropUnassigned = async (e) => {
+    e.preventDefault();
+    setDragOverBoard(null);
+    const id = parseInt(e.dataTransfer.getData('text/plain')) || dragGameId;
+    if (id) { await removeFromBoard(id); setDragGameId(null); }
   };
 
   // Group games by board
@@ -861,9 +863,6 @@ function TournamentDirectorTab() {
     if (g.board_id && gamesByBoard[g.board_id]) gamesByBoard[g.board_id].push(g);
   }
   const unassigned = games.filter(g => !g.board_id);
-
-  // unassigned games available for modal (exclude already-on-board)
-  const assignableGames = games.filter(g => !g.board_id || assignModal?.boardId === g.board_id || true);
 
   const btnBase = { border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', borderRadius: '8px', fontSize: '12px', minHeight: '36px' };
 
@@ -876,6 +875,10 @@ function TournamentDirectorTab() {
         <span style={{ color: 'var(--pe-text-muted)', fontSize: '13px' }}>Auto-Refresh 10s</span>
       </div>
 
+      <div style={{ visibility: dragGameId ? 'visible' : 'hidden', marginBottom: '8px', padding: '8px 14px', borderRadius: '8px', background: 'rgba(0,184,255,0.1)', border: '1px solid var(--pe-cyan-bright)', color: 'var(--pe-cyan-bright)', fontSize: '12px', fontWeight: 'bold' }}>
+        ↗ Auf ein Board ziehen zum Zuweisen · auf «Nicht zugewiesen» ziehen zum Entfernen
+      </div>
+
       {/* Board columns — horizontal scroll on narrow screens */}
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${boards.length || 1}, minmax(240px, 1fr))`, gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
         {boards.map(board => {
@@ -883,18 +886,31 @@ function TournamentDirectorTab() {
           const activeGame = boardGames.find(g => g.status === 'active' || g.status === 'bulloff');
           const queue = boardGames.filter(g => g.status === 'pending').sort((a, b) => a.id - b.id);
           const hasGames = boardGames.length > 0;
+          const isDropTarget = dragOverBoard === board.id;
 
           return (
-            <div key={board.id} style={{ background: 'var(--pe-bg-card)', border: `2px solid ${activeGame ? 'var(--pe-blue-mid)' : hasGames ? 'var(--pe-border)' : 'var(--pe-bg-elevated)'}`, borderRadius: '14px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div key={board.id}
+              onDragOver={e => onDragOver(e, board.id)}
+              onDragLeave={onDragLeave}
+              onDrop={e => onDrop(e, board.id)}
+              style={{ background: 'var(--pe-bg-card)', border: `2px solid ${isDropTarget ? 'var(--pe-cyan-bright)' : activeGame ? 'var(--pe-blue-mid)' : hasGames ? 'var(--pe-border)' : 'var(--pe-bg-elevated)'}`, borderRadius: '14px', overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'border-color 0.15s', background: isDropTarget ? 'rgba(0,184,255,0.06)' : 'var(--pe-bg-card)' }}
+            >
               {/* Board header */}
               <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--pe-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: activeGame ? 'rgba(30,127,235,0.12)' : 'transparent' }}>
                 <span style={{ fontWeight: 'bold', color: 'var(--pe-text)', fontSize: '15px' }}>
                   Board {board.number}{board.name ? ` — ${board.name}` : ''}{board.is_final ? ' ★' : ''}
                 </span>
                 <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold', background: activeGame ? 'var(--pe-success)' : hasGames ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: activeGame ? '#000' : 'var(--pe-text)' }}>
-                  {activeGame ? 'Aktiv' : hasGames ? `${boardGames.length} Spiele` : 'Frei'}
+                  {activeGame ? 'Aktiv' : hasGames ? `${boardGames.length} Spiele` : isDropTarget ? 'Hier ablegen' : 'Frei'}
                 </span>
               </div>
+
+              {/* Drop hint when empty */}
+              {!hasGames && (
+                <div style={{ padding: '20px', textAlign: 'center', color: isDropTarget ? 'var(--pe-cyan-bright)' : 'var(--pe-text-muted)', fontSize: '12px', border: isDropTarget ? '2px dashed var(--pe-cyan-bright)' : '2px dashed transparent', margin: '8px', borderRadius: '8px', transition: 'all 0.15s' }}>
+                  {isDropTarget ? '⬇ Hier ablegen' : 'Spiel herziehen'}
+                </div>
+              )}
 
               {/* Active / current game */}
               {activeGame && (
@@ -912,77 +928,61 @@ function TournamentDirectorTab() {
                 </div>
               )}
 
-              {/* Pending queue */}
+              {/* Pending queue — draggable */}
               <div style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '360px', overflowY: 'auto' }}>
                 {queue.map((g, idx) => (
-                  <div key={g.id} style={{ padding: '8px 10px', borderRadius: '8px', background: idx === 0 && !activeGame ? 'var(--pe-bg-elevated)' : 'var(--pe-bg-card)', border: `1px solid ${idx === 0 && !activeGame ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}` }}>
+                  <div key={g.id}
+                    draggable
+                    onDragStart={e => onDragStart(e, g.id)}
+                    onDragEnd={onDragEnd}
+                    style={{ padding: '8px 10px', borderRadius: '8px', background: idx === 0 && !activeGame ? 'var(--pe-bg-elevated)' : 'var(--pe-bg-card)', border: `1px solid ${dragGameId === g.id ? 'var(--pe-cyan-bright)' : idx === 0 && !activeGame ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, cursor: 'grab', opacity: dragGameId === g.id ? 0.5 : 1 }}>
                     {idx === 0 && !activeGame && (
                       <div style={{ fontSize: '10px', color: 'var(--pe-cyan-bright)', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '3px' }}>Nächstes</div>
                     )}
                     <div style={{ fontSize: '13px', color: 'var(--pe-text)', fontWeight: 'bold' }}>{g.player1_name}</div>
                     <div style={{ fontSize: '11px', color: 'var(--pe-text-muted)', marginBottom: '1px' }}>vs {g.player2_name}</div>
-                    <div style={{ fontSize: '10px', color: 'var(--pe-text-muted)' }}>Runde {g.round === 0 ? 'Gruppe' : g.round}</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ fontSize: '10px', color: 'var(--pe-text-muted)' }}>Runde {g.round === 0 ? 'Gruppe' : g.round}</div>
+                      <button onClick={() => removeFromBoard(g.id)} style={{ fontSize: '10px', background: 'none', border: 'none', color: 'var(--pe-danger)', cursor: 'pointer', padding: '2px 4px' }}>✕</button>
+                    </div>
                   </div>
                 ))}
-                {queue.length === 0 && !activeGame && (
-                  <div style={{ textAlign: 'center', padding: '16px 8px', color: 'var(--pe-text-muted)', fontSize: '12px' }}>Keine Spiele</div>
-                )}
-              </div>
-
-              {/* Assign button */}
-              <div style={{ padding: '10px 14px', borderTop: '1px solid var(--pe-border)' }}>
-                <button onClick={() => setAssignModal({ boardId: board.id })} style={{ ...btnBase, width: '100%', background: 'var(--pe-blue-deep)', color: '#fff', minHeight: '40px' }}>
-                  + Spiel zuweisen
-                </button>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Unassigned games */}
-      {unassigned.length > 0 && (
-        <div style={{ marginTop: '24px' }}>
-          <h3 style={{ color: 'var(--pe-text-sub)', fontWeight: 'bold', fontSize: '12px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            Nicht zugewiesen ({unassigned.length})
-          </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '6px' }}>
-            {unassigned.map(g => (
-              <div key={g.id} style={{ padding: '10px 12px', borderRadius: '8px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)' }}>
+      {/* Unassigned games — drag source + drop zone */}
+      <div style={{ marginTop: '20px' }}
+        onDragOver={e => { e.preventDefault(); setDragOverBoard('unassigned'); }}
+        onDragLeave={onDragLeave}
+        onDrop={onDropUnassigned}
+      >
+        <h3 style={{ color: dragOverBoard === 'unassigned' ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)', fontWeight: 'bold', fontSize: '12px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px', transition: 'color 0.15s' }}>
+          Nicht zugewiesen ({unassigned.length}) {dragOverBoard === 'unassigned' ? '← Hier ablegen zum Entfernen' : '— Spiele ziehen zum Zuweisen'}
+        </h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '6px', minHeight: unassigned.length === 0 ? '60px' : 'auto', border: dragOverBoard === 'unassigned' ? '2px dashed var(--pe-cyan-bright)' : '2px dashed transparent', borderRadius: '10px', padding: dragOverBoard === 'unassigned' ? '8px' : '0', transition: 'all 0.15s' }}>
+          {unassigned.map(g => {
+            const isActive = g.status === 'active' || g.status === 'bulloff';
+            return (
+              <div key={g.id}
+                draggable={!isActive}
+                onDragStart={!isActive ? e => onDragStart(e, g.id) : undefined}
+                onDragEnd={!isActive ? onDragEnd : undefined}
+                style={{ padding: '10px 12px', borderRadius: '8px', background: dragGameId === g.id ? 'rgba(0,184,255,0.1)' : 'var(--pe-bg-elevated)', border: `1px solid ${isActive ? 'var(--pe-warning)' : dragGameId === g.id ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, cursor: isActive ? 'not-allowed' : 'grab', opacity: dragGameId === g.id ? 0.6 : 1, transition: 'all 0.1s' }}>
+                {isActive && <div style={{ fontSize: '10px', color: 'var(--pe-warning)', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '3px' }}>▶ Läuft — nicht verschiebbar</div>}
                 <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--pe-text)' }}>{g.player1_name} vs {g.player2_name}</div>
                 <div style={{ fontSize: '11px', color: 'var(--pe-text-muted)', marginTop: '2px' }}>Runde {g.round === 0 ? 'Gruppe' : g.round}</div>
               </div>
-            ))}
-          </div>
+            );
+          })}
+          {unassigned.length === 0 && !dragGameId && (
+            <div style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--pe-text-muted)', fontSize: '12px', padding: '16px' }}>Alle Spiele zugewiesen</div>
+          )}
         </div>
-      )}
+      </div>
 
-      {/* Assign modal */}
-      {assignModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
-          <div style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', borderRadius: '16px', padding: '24px', maxWidth: '480px', width: '100%', maxHeight: '80vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', margin: 0 }}>
-                Spiel zuweisen — Board {boards.find(b => b.id === assignModal.boardId)?.number}
-              </h3>
-              <button onClick={() => setAssignModal(null)} style={{ background: 'none', border: 'none', color: 'var(--pe-text-muted)', fontSize: '22px', cursor: 'pointer', lineHeight: 1 }}>×</button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {games.map(g => (
-                <button key={g.id} onClick={() => assignGame(g.id, assignModal.boardId)}
-                  style={{ padding: '12px 14px', borderRadius: '10px', background: g.board_id === assignModal.boardId ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', border: `1px solid ${g.board_id === assignModal.boardId ? 'var(--pe-blue-mid)' : 'var(--pe-border)'}`, color: 'var(--pe-text)', textAlign: 'left', fontFamily: 'Verdana, Geneva, sans-serif', cursor: 'pointer', minHeight: '56px' }}>
-                  <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{g.player1_name || 'TBD'} vs {g.player2_name || 'TBD'}</div>
-                  <div style={{ color: 'var(--pe-text-muted)', fontSize: '12px', marginTop: '2px' }}>
-                    Runde {g.round === 0 ? 'Gruppe' : g.round} · {STATUS_DE[g.status]}
-                    {g.board_id ? ` · Board ${boards.find(b => b.id === g.board_id)?.number}` : ' · Nicht zugewiesen'}
-                  </div>
-                </button>
-              ))}
-              {games.length === 0 && <p style={{ color: 'var(--pe-text-muted)', textAlign: 'center' }}>Keine Spiele verfügbar</p>}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -1117,12 +1117,30 @@ function TournamentExtendedTab() {
   };
 
   // --- Wizard Step 4: Auslosung ---
+  // Aktueller Turnierstatus (wird nach jeder Aktion aktualisiert)
+  const [wizardTour, setWizardTour] = useState(null); // aktuelles Turnier-Objekt mit status/group_draw_done
+
+  const refreshWizardTour = async () => {
+    const tid = newTournament?.id || selectedId;
+    if (!tid) return null;
+    try {
+      const t = await api.get(`/tournaments/${tid}`);
+      setWizardTour(t);
+      if (t.group_draw_done) {
+        const gd = await api.get(`/tournaments/${tid}/groups`);
+        setGroups(gd.groups || []);
+      }
+      return t;
+    } catch { return null; }
+  };
+
+  useEffect(() => { if (wizardStep === 4) refreshWizardTour(); }, [wizardStep]);
+
   const drawGroups = async () => {
     const tid = newTournament?.id || selectedId;
     try {
       await api.post(`/tournaments/${tid}/draw-groups`);
-      const data = await api.get(`/tournaments/${tid}/groups`);
-      setGroups(data.groups || []);
+      await refreshWizardTour();
     } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
   };
 
@@ -1132,18 +1150,8 @@ function TournamentExtendedTab() {
     try {
       const r = await api.post(`/tournaments/${tid}/generate-group-schedule`);
       alert(`Spielplan erstellt! ${r.games_created} Partien auf Boards verteilt.`);
-      // Reload groups to show updated board assignments
-      const gd = await api.get(`/tournaments/${tid}/groups`);
-      setGroups(Array.isArray(gd) ? gd : (gd.groups || []));
-    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
-  };
-
-  const generateBracket = async () => {
-    const tid = newTournament?.id || selectedId;
-    try {
-      await api.post(`/tournaments/${tid}/generate-bracket`);
-      alert('KO-Bracket generiert! Das Turnier kann jetzt starten.');
-      loadTournaments();
+      await refreshWizardTour();
+      await loadTournaments();
     } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
   };
 
@@ -1151,10 +1159,10 @@ function TournamentExtendedTab() {
     const tid = newTournament?.id || selectedId;
     try {
       await api.put(`/tournaments/${tid}/start`);
-      alert('Turnier gestartet!');
+      await loadTournaments();
       setWizardStep(0);
       setNewTournament(null);
-      loadTournaments();
+      setWizardTour(null);
     } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
   };
 
@@ -1178,9 +1186,10 @@ function TournamentExtendedTab() {
   };
 
   const assignGroupToBoard = async (groupId, boardId) => {
+    const tid = newTournament?.id || selectedId;
     try {
-      await api.put(`/tournaments/${selectedId}/groups/${groupId}/board`, { board_id: boardId || null });
-      const data = await api.get(`/tournaments/${selectedId}/groups`);
+      await api.put(`/tournaments/${tid}/groups/${groupId}/board`, { board_id: boardId || null });
+      const data = await api.get(`/tournaments/${tid}/groups`);
       setGroups(data.groups || []);
     } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
   };
@@ -1269,9 +1278,12 @@ function TournamentExtendedTab() {
               </form>
               {/* Mock */}
               <div style={{ display: 'flex', gap: '8px', padding: '10px', borderRadius: '8px', background: 'var(--pe-bg-elevated)', border: '1px dashed var(--pe-border)' }}>
-                <select value={mockCount} onChange={e => setMockCount(e.target.value)} style={{ flex: 1, ...inputStyle, padding: '8px' }}>
-                  {[4,8,16,30,32].map(n => <option key={n} value={n}>{n} Fake-Spieler</option>)}
-                </select>
+                <input
+                  type="number" min="2" max="64" value={mockCount}
+                  onChange={e => setMockCount(e.target.value)}
+                  placeholder="Anzahl (2–64)"
+                  style={{ flex: 1, ...inputStyle, padding: '8px' }}
+                />
                 <button onClick={handleMock} style={{ padding: '8px 16px', borderRadius: '8px', background: 'var(--pe-warning)', color: '#000', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px' }}>Simulieren</button>
               </div>
             </div>
@@ -1298,55 +1310,110 @@ function TournamentExtendedTab() {
         )}
 
         {/* Step 4: Auslosung / Start */}
-        {wizardStep === 4 && (
-          <div>
-            <div style={card}>
-              <p style={{ color: 'var(--pe-text-sub)', fontSize: '13px', marginBottom: '16px' }}>{players.length} Spieler bereit. Wähle den Start-Modus.</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <button onClick={drawGroups} style={{ padding: '14px', borderRadius: '10px', background: 'var(--pe-blue-deep)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '52px', textAlign: 'left' }}>
-                  <div style={{ fontWeight: 'bold' }}>Gruppenphase auslosen</div>
-                  <div style={{ fontSize: '12px', opacity: 0.8, marginTop: '2px' }}>Automatische Verteilung in Gruppen nach Anzahl Spieler</div>
-                </button>
-                <button onClick={generateBracket} style={{ padding: '14px', borderRadius: '10px', background: 'var(--pe-blue-mid)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '52px', textAlign: 'left' }}>
-                  <div style={{ fontWeight: 'bold' }}>Direkt KO-Bracket starten</div>
-                  <div style={{ fontSize: '12px', opacity: 0.8, marginTop: '2px' }}>Ohne Gruppenphase direkt ins K.O.-System</div>
-                </button>
-                <button onClick={startTournament} style={{ padding: '14px', borderRadius: '10px', background: 'var(--pe-success)', color: '#000', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '52px', textAlign: 'left' }}>
-                  <div style={{ fontWeight: 'bold' }}>Turnier starten (klassisch)</div>
-                  <div style={{ fontSize: '12px', opacity: 0.7, marginTop: '2px' }}>Bracket automatisch aus Spielerliste generieren</div>
-                </button>
-              </div>
-            </div>
-            {groups.length > 0 && (
-              <div style={card}>
-                <h3 style={{ color: 'var(--pe-text-sub)', fontWeight: 'bold', fontSize: '13px', marginBottom: '12px', textTransform: 'uppercase' }}>GRUPPEN — BOARD ZUORDNUNG</h3>
-                {groups.map(g => (
-                  <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', borderRadius: '8px', background: 'var(--pe-bg-elevated)', marginBottom: '6px' }}>
-                    <div>
-                      <span style={{ color: 'var(--pe-text)', fontWeight: 'bold' }}>Gruppe {g.name}</span>
-                      <span style={{ color: 'var(--pe-text-muted)', fontSize: '12px', marginLeft: '8px' }}>{(g.standings||[]).length} Spieler</span>
-                    </div>
-                    <select value={g.board_id || ''} onChange={e => assignGroupToBoard(g.id, e.target.value ? parseInt(e.target.value) : null)} style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '8px', padding: '4px 8px', fontSize: '13px', fontFamily: 'Verdana, Geneva, sans-serif' }}>
-                      <option value="">Kein Board</option>
-                      {boards.map(b => <option key={b.id} value={b.id}>Board {b.number}{b.is_final ? ' ★' : ''}</option>)}
-                    </select>
+        {wizardStep === 4 && (() => {
+          const tourStatus = wizardTour?.status || newTournament?.status || 'open';
+          const groupDrawDone = !!(wizardTour?.group_draw_done ?? newTournament?.group_draw_done);
+
+          // Phase C: Turnier läuft
+          if (tourStatus === 'active') {
+            return (
+              <div>
+                <div style={{ ...card, borderColor: 'var(--pe-success)', textAlign: 'center', padding: '32px 16px' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '12px' }}>🎯</div>
+                  <div style={{ color: 'var(--pe-success)', fontWeight: 'bold', fontSize: '20px', marginBottom: '8px' }}>Turnier läuft!</div>
+                  <div style={{ color: 'var(--pe-text-sub)', fontSize: '14px', marginBottom: '24px' }}>
+                    {wizardTour?.name || newTournament?.name} wurde erfolgreich gestartet.
                   </div>
-                ))}
+                  <button onClick={() => { setWizardStep(0); setNewTournament(null); setWizardTour(null); }} style={{ padding: '14px 28px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '52px' }}>
+                    Zur Turnierliste →
+                  </button>
+                </div>
               </div>
-            )}
-            {groups.length > 0 && (
-              <div style={card}>
-                <p style={{ color: 'var(--pe-text-sub)', fontSize: '13px', marginBottom: '10px' }}>
-                  Boards werden automatisch per Losverfahren den Gruppen zugewiesen und der komplette Round-Robin Spielplan generiert.
-                </p>
-                <button onClick={generateGroupSchedule} style={{ width: '100%', padding: '14px', borderRadius: '10px', background: 'linear-gradient(135deg, #00E5A0, #1E7FEB)', color: '#000', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '52px' }}>
-                  Boards einlosen & Spielplan automatisch erstellen
+            );
+          }
+
+          // Phase B: Gruppen ausgelost → Board-Zuordnung + Spielplan starten
+          if (groupDrawDone && groups.length > 0) {
+            return (
+              <div>
+                {/* Status Banner */}
+                <div style={{ ...card, borderColor: 'var(--pe-blue-mid)', background: 'rgba(30,127,235,0.08)', display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px' }}>
+                  <span style={{ fontSize: '22px' }}>✅</span>
+                  <div>
+                    <div style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '14px' }}>{groups.length} Gruppen ausgelost</div>
+                    <div style={{ color: 'var(--pe-text-muted)', fontSize: '12px' }}>Prüfe die Board-Zuordnung und starte dann den Spielplan.</div>
+                  </div>
+                </div>
+
+                {/* Nächster Schritt Banner */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(255,176,32,0.1)', border: '1px solid var(--pe-warning)', marginBottom: '12px' }}>
+                  <span style={{ color: 'var(--pe-warning)', fontSize: '16px' }}>→</span>
+                  <span style={{ color: 'var(--pe-warning)', fontSize: '13px', fontWeight: 'bold' }}>Nächster Schritt: Board-Zuordnung prüfen, dann Spielplan generieren</span>
+                </div>
+
+                {/* Gruppen & Board-Zuordnung */}
+                <div style={card}>
+                  <h3 style={{ color: 'var(--pe-text-sub)', fontWeight: 'bold', fontSize: '12px', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Gruppen — Board-Zuordnung</h3>
+                  {groups.map(g => (
+                    <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: '8px', background: 'var(--pe-bg-elevated)', marginBottom: '6px', border: g.board_id ? '1px solid var(--pe-blue-mid)' : '1px solid var(--pe-border)' }}>
+                      <div>
+                        <span style={{ color: 'var(--pe-text)', fontWeight: 'bold' }}>Gruppe {g.name}</span>
+                        <span style={{ color: 'var(--pe-text-muted)', fontSize: '12px', marginLeft: '8px' }}>{(g.standings||g.players||[]).length} Spieler</span>
+                        {g.board_id && <span style={{ marginLeft: '8px', fontSize: '11px', color: 'var(--pe-cyan-bright)' }}>✓</span>}
+                      </div>
+                      <select value={g.board_id || ''} onChange={e => assignGroupToBoard(g.id, e.target.value ? parseInt(e.target.value) : null)} style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '8px', padding: '6px 10px', fontSize: '13px', fontFamily: 'Verdana, Geneva, sans-serif', minHeight: '38px' }}>
+                        <option value="">Kein Board</option>
+                        {boards.map(b => <option key={b.id} value={b.id}>Board {b.number}{b.is_final ? ' ★' : ''}</option>)}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Primärer CTA */}
+                <button onClick={generateGroupSchedule} style={{ width: '100%', padding: '16px', borderRadius: '12px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '60px', fontSize: '15px', marginBottom: '8px' }}>
+                  🎲 Spielplan generieren & Turnier starten
                 </button>
+                <p style={{ color: 'var(--pe-text-muted)', fontSize: '11px', textAlign: 'center', marginBottom: '16px' }}>
+                  Boards werden per Los zugewiesen und der komplette Round-Robin Spielplan erstellt.
+                </p>
+                <button onClick={() => setWizardStep(3)} style={{ width: '100%', padding: '10px', borderRadius: '10px', background: 'transparent', color: 'var(--pe-text-muted)', border: '1px solid var(--pe-border)', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer' }}>← Zurück zu Spielern</button>
               </div>
-            )}
-            <button onClick={() => setWizardStep(3)} style={{ width: '100%', padding: '12px', borderRadius: '10px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-text-sub)', border: '1px solid var(--pe-border)', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', marginTop: '8px' }}>← Zurück zu Spielern</button>
-          </div>
-        )}
+            );
+          }
+
+          // Phase A: Startmodus wählen
+          return (
+            <div>
+              <div style={card}>
+                <p style={{ color: 'var(--pe-text-sub)', fontSize: '14px', marginBottom: '4px', fontWeight: 'bold' }}>{players.length} Spieler bereit</p>
+                <p style={{ color: 'var(--pe-text-muted)', fontSize: '12px', marginBottom: '20px' }}>Wähle den Start-Modus für das Turnier:</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+
+                  {/* Option A: Gruppenphase */}
+                  <button onClick={drawGroups} style={{ padding: '16px', borderRadius: '12px', background: 'var(--pe-blue-deep)', color: '#fff', border: '2px solid var(--pe-blue-mid)', fontFamily: 'Verdana, Geneva, sans-serif', cursor: 'pointer', minHeight: '64px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <span style={{ fontSize: '28px', flexShrink: 0 }}>🏆</span>
+                    <div>
+                      <div style={{ fontWeight: 'bold', fontSize: '15px' }}>Mit Gruppenphase starten</div>
+                      <div style={{ fontSize: '12px', opacity: 0.8, marginTop: '3px' }}>Automatische Gruppenauslosung → Round-Robin → KO-Runde</div>
+                      <div style={{ fontSize: '11px', color: 'var(--pe-cyan-light)', marginTop: '2px' }}>Empfohlen ab 8 Spielern</div>
+                    </div>
+                  </button>
+
+                  {/* Option B: Direkt KO */}
+                  <button onClick={startTournament} style={{ padding: '16px', borderRadius: '12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-text)', border: '1px solid var(--pe-border)', fontFamily: 'Verdana, Geneva, sans-serif', cursor: 'pointer', minHeight: '64px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <span style={{ fontSize: '28px', flexShrink: 0 }}>⚡</span>
+                    <div>
+                      <div style={{ fontWeight: 'bold', fontSize: '15px' }}>Direkt KO-Bracket</div>
+                      <div style={{ fontSize: '12px', opacity: 0.7, marginTop: '3px' }}>Ohne Gruppenphase direkt ins K.O.-System</div>
+                      <div style={{ fontSize: '11px', color: 'var(--pe-text-muted)', marginTop: '2px' }}>Schnellstart, ideal für kleine Turniere</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+              <button onClick={() => setWizardStep(3)} style={{ width: '100%', padding: '10px', borderRadius: '10px', background: 'transparent', color: 'var(--pe-text-muted)', border: '1px solid var(--pe-border)', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer' }}>← Zurück zu Spielern</button>
+            </div>
+          );
+        })()}
       </div>
     );
   }
@@ -1948,28 +2015,74 @@ export default function AdminPage({ tab }) {
     : visibleTabs[0]?.id || 'overview';
 
   const [activeTab, setActiveTab] = useState(resolvedDefault);
+  const [userPopoverOpen, setUserPopoverOpen] = useState(false);
 
   const ROLE_LABEL = { admin: 'Admin', director: 'Turnierleitung', referee: 'Schiedsrichter', gastronomy: 'Gastronomie' };
 
   return (
-    <div className="min-h-screen" style={{ fontFamily: 'Verdana, Geneva, sans-serif' }}>
+    <div className="min-h-screen" style={{ fontFamily: 'Verdana, Geneva, sans-serif' }} onClick={() => setUserPopoverOpen(false)}>
       {/* Header */}
       <div style={{ background: 'var(--pe-gradient)', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Link to="/" style={{ color: '#fff', textDecoration: 'none', fontSize: '20px' }}>&larr;</Link>
+          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', color: '#fff', textDecoration: 'none', fontSize: '18px', flexShrink: 0 }}>&#8592;</Link>
           <img src="/logo.jpeg" alt="DartEvent" style={{ height: '40px' }} />
           <div>
             <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '18px' }}>
               {userRole === 'director' ? 'Turnierleiter' : 'Admin Dashboard'}
             </span>
-            <span style={{ display: 'block', fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>
-              {payload?.username || ''} · {ROLE_LABEL[userRole] || userRole}
-            </span>
           </div>
         </div>
-        <button onClick={logout} style={{ background: 'rgba(0,0,0,0.3)', color: 'var(--pe-danger)', border: '1px solid var(--pe-danger)', borderRadius: '8px', padding: '8px 16px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer' }}>
-          Abmelden
-        </button>
+
+        {/* User Context Button */}
+        <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
+          <button
+            onClick={() => setUserPopoverOpen(o => !o)}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: '10px', padding: '8px 14px', cursor: 'pointer', color: '#fff', fontFamily: 'Verdana, Geneva, sans-serif' }}
+          >
+            {/* Avatar */}
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: ROLE_COLORS[userRole] || 'var(--pe-blue-mid)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px', color: '#fff', flexShrink: 0 }}>
+              {(payload?.username || '?')[0].toUpperCase()}
+            </div>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontWeight: 'bold', fontSize: '14px', lineHeight: 1.2 }}>{payload?.username || '—'}</div>
+              <div style={{ fontSize: '11px', color: ROLE_COLORS[userRole] || 'rgba(255,255,255,0.7)', lineHeight: 1.2 }}>{ROLE_LABEL[userRole] || userRole}</div>
+            </div>
+            <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', marginLeft: '2px' }}>▼</span>
+          </button>
+
+          {/* Popover */}
+          {userPopoverOpen && (
+            <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, minWidth: '220px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', zIndex: 1000, overflow: 'hidden' }}>
+              {/* User Info */}
+              <div style={{ padding: '16px', borderBottom: '1px solid var(--pe-border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: ROLE_COLORS[userRole] || 'var(--pe-blue-mid)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', color: '#fff', flexShrink: 0 }}>
+                    {(payload?.username || '?')[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <div style={{ color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '15px' }}>{payload?.username || '—'}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--pe-text-muted)' }}>{payload?.display_name || ''}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', padding: '4px 10px' }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: ROLE_COLORS[userRole] || 'var(--pe-blue-mid)' }} />
+                  <span style={{ fontSize: '12px', color: ROLE_COLORS[userRole] || 'var(--pe-text-sub)', fontWeight: 'bold' }}>{ROLE_LABEL[userRole] || userRole}</span>
+                </div>
+              </div>
+              {/* Logout */}
+              <div style={{ padding: '8px' }}>
+                <button
+                  onClick={() => { setUserPopoverOpen(false); logout(); }}
+                  style={{ width: '100%', padding: '10px 14px', background: 'transparent', color: 'var(--pe-danger)', border: 'none', borderRadius: '8px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,69,96,0.12)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  <span>&#x2192;</span> Abmelden
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Body: Sidebar + Content */}

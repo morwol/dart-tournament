@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import NFCScanner from '../components/nfc/NFCScanner';
+import BackButton from '../components/BackButton';
 
 // NEU: Gastronomy Login (nur gastronomy + admin)
 function GastronomyLogin({ onLogin }) {
@@ -264,7 +265,7 @@ export default function GastronomyPage() {
       {/* NEU: Header */}
       <div className="flex items-center justify-between mb-4 max-w-5xl mx-auto">
         <div className="flex items-center gap-3">
-          <Link to="/" className="text-2xl no-underline" style={{ color: 'var(--pe-text-sub)' }}>&larr;</Link>
+          <BackButton to="/" />
           <img src="/logo.jpeg" alt="DartEvent" className="h-10" />
         </div>
         <h1

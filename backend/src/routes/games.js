@@ -783,8 +783,6 @@ router.put('/:id/assign-board', requireAuth, (req, res) => {
   if (board_id) {
     const board = db.prepare('SELECT * FROM boards WHERE id = ?').get(board_id);
     if (!board) return res.status(404).json({ error: 'Scheibe nicht gefunden' });
-    // Altes Spiel von dieser Scheibe entfernen
-    db.prepare('UPDATE games SET board_id = NULL WHERE board_id = ? AND id != ?').run(board_id, req.params.id);
   }
   db.prepare('UPDATE games SET board_id = ? WHERE id = ?').run(board_id || null, req.params.id);
   res.json({ success: true, game_id: req.params.id, board_id: board_id || null });

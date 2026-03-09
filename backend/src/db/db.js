@@ -23,6 +23,40 @@ function initialize() {
   const schema = fs.readFileSync(schemaPath, 'utf-8');
   db.exec(schema);
 
+  // Persistente Spielerprofile: tournament_registrations Tabelle anlegen
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tournament_registrations (
+      id INTEGER PRIMARY KEY,
+      player_id INTEGER NOT NULL REFERENCES players(id),
+      tournament_id INTEGER NOT NULL REFERENCES tournaments(id),
+      seed INTEGER,
+      cancel_token TEXT UNIQUE,
+      registered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(player_id, tournament_id)
+    )
+  `);
+
+  // Datenmigration: bestehende players.tournament_id → tournament_registrations
+  try {
+    const hasTournamentId = db.prepare("PRAGMA table_info(players)").all().some(c => c.name === 'tournament_id');
+    if (hasTournamentId) {
+      const playersWithTournament = db.prepare(
+        'SELECT id, tournament_id, seed, cancel_token, registered_at FROM players WHERE tournament_id IS NOT NULL'
+      ).all();
+      const insertReg = db.prepare(
+        'INSERT OR IGNORE INTO tournament_registrations (player_id, tournament_id, seed, cancel_token, registered_at) VALUES (?, ?, ?, ?, ?)'
+      );
+      const migrateTx = db.transaction(() => {
+        for (const p of playersWithTournament) {
+          insertReg.run(p.id, p.tournament_id, p.seed || null, p.cancel_token || null, p.registered_at);
+        }
+      });
+      migrateTx();
+    }
+  } catch (e) {
+    // Migration bereits durchgeführt oder nicht notwendig
+  }
+
   // NEU: Spalten zu bestehenden Tabellen hinzufuegen (mit try/catch da IF NOT EXISTS nicht unterstuetzt)
   const alterStatements = [
     "ALTER TABLE tournaments ADD COLUMN board_count INTEGER DEFAULT 1",
@@ -48,6 +82,9 @@ function initialize() {
     "ALTER TABLE boards ADD COLUMN is_final BOOLEAN DEFAULT 0",
     "ALTER TABLE groups ADD COLUMN board_id INTEGER REFERENCES boards(id)",
     "ALTER TABLE players ADD COLUMN cancel_token TEXT UNIQUE",
+    "ALTER TABLE users ADD COLUMN vorname TEXT",
+    "ALTER TABLE users ADD COLUMN nickname TEXT",
+    "ALTER TABLE users ADD COLUMN nachname TEXT",
   ];
 
   for (const stmt of alterStatements) {

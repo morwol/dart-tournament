@@ -4,6 +4,7 @@ import { api } from '../api/client';
 import Scoreboard from '../components/game/Scoreboard';
 import ThrowInput from '../components/game/ThrowInput';
 import BulloffScreen from '../components/game/BulloffScreen';
+import BackButton from '../components/BackButton';
 import CheckoutSuggestions from '../components/game/CheckoutSuggestions';
 
 export default function GamePage() {
@@ -34,9 +35,7 @@ export default function GamePage() {
   return (
     <div className="min-h-screen p-4 max-w-lg mx-auto">
       <div className="flex items-center gap-3 mb-4">
-        <Link to={game.tournament_id ? `/tournament/${game.tournament_id}` : '/'} className="text-2xl no-underline" style={{ color: 'var(--pe-text-sub)' }}>
-          &larr;
-        </Link>
+        <BackButton to={game.tournament_id ? `/tournament/${game.tournament_id}` : '/'} />
         <img src="/logo.jpeg" alt="DartEvent" className="h-10" />
       </div>
 
