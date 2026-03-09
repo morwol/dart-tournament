@@ -1,0 +1,26 @@
+[Unit]
+Description=DartEvent Manager Backend
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=dartevent
+Group=dartevent
+WorkingDirectory=/var/www/dartsturnier/backend
+ExecStart=/usr/bin/node src/app.js
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dartevent
+EnvironmentFile=/var/www/dartsturnier/backend/.env
+
+# Sicherheit
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/www/dartsturnier/backend/data
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

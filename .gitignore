@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+
+# Build-Ausgaben
+frontend/dist/
+build/
+*.local
+
+# Umgebung & Secrets (niemals committen)
+.env
+.env.*
+!.env.example
+
+# SQLite-Datenbank (Backend)
+backend/data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Cache & temporäre Dateien
+.cache/
+*.tsbuildinfo
+frontend/node_modules/.vite/
+
+# IDE & Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test & Coverage
+coverage/
+.nyc_output/
+*.lcov
+
+# PWA / Service Worker (generiert bei Build)
+# frontend/dist/ ist bereits ignoriert
+
+# Optional: Lockfiles behalten für reproduzierbare Builds
+# package-lock.json und yarn.lock werden NICHT ignoriert

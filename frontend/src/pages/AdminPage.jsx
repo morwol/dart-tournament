@@ -1,0 +1,2032 @@
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useStore } from '../store';
+import { api } from '../api/client';
+import AdminLogin from '../components/admin/AdminLogin';
+import TournamentManager from '../components/admin/TournamentManager';
+
+const ALL_TABS = [
+  { id: 'overview',    label: 'Übersicht',      roles: ['admin', 'director'] },
+  { id: 'director',    label: 'Turnierleiter',   roles: ['admin', 'director'] },
+  { id: 'tournaments', label: 'Turniere',         roles: ['admin', 'director'] },
+  { id: 'players',     label: 'Spieler',          roles: ['admin', 'director'] },
+  { id: 'boards',      label: 'Boards',           roles: ['admin', 'director'] },
+  { id: 'users',       label: 'User',             roles: ['admin'] },
+  { id: 'gastro',      label: 'Gastro',           roles: ['admin'] },
+  { id: 'mailing',     label: 'Mailing',          roles: ['admin'] },
+  { id: 'settings',    label: 'Einstellungen',    roles: ['admin'] },
+  { id: 'log',         label: 'System-Log',       roles: ['admin', 'director'] },
+  { id: 'help',        label: '? Hilfe',          roles: ['admin', 'director'] },
+];
+
+function parseJwt(token) {
+  try { return JSON.parse(atob(token.split('.')[1])); } catch { return null; }
+}
+
+// NEU: Rollen-Farben
+const ROLE_COLORS = {
+  admin:      'var(--pe-danger)',
+  director:   'var(--pe-blue-mid)',
+  referee:    'var(--pe-warning)',
+  gastronomy: 'var(--pe-success)',
+};
+
+// NEU: Gemeinsamer Input-Style
+const inputStyle = {
+  background: 'var(--pe-bg-card)',
+  border: '1px solid var(--pe-border)',
+  color: 'var(--pe-text)',
+  minHeight: '48px',
+  fontFamily: 'Verdana, Geneva, sans-serif',
+};
+
+const btnSmall = {
+  fontFamily: 'Verdana, Geneva, sans-serif',
+  borderRadius: '8px',
+  fontWeight: 'bold',
+  border: '1px solid var(--pe-border)',
+  cursor: 'pointer',
+  fontSize: '14px',
+};
+
+// NEU: Tab "Übersicht" — Alle laufenden Spiele, Boards-Status
+function OverviewTab() {
+  const [boards, setBoards] = useState([]);
+  const [games, setGames] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTournament, setActiveTournament] = useState(null);
+
+  useEffect(() => {
+    Promise.all([
+      api.get('/boards').catch(() => []),
+      api.get('/games?status=active').catch(() => []),
+      api.get('/tournaments/active').catch(() => null),
+    ])
+      .then(([b, g, t]) => { setBoards(b); setGames(Array.isArray(g) ? g : []); if(t) setActiveTournament(t); })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <p style={{ color: 'var(--pe-text-sub)' }}>Lade...</p>;
+
+  return (
+    <div>
+      <h2 className="text-lg font-bold mb-4" style={{ color: 'var(--pe-cyan-bright)' }}>Übersicht{activeTournament ? ` — ${activeTournament.name}` : ''}</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+        <div className="p-4 rounded-xl" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
+          <p className="text-sm" style={{ color: 'var(--pe-text-muted)' }}>Aktive Spiele</p>
+          <p className="text-3xl font-bold" style={{ color: 'var(--pe-success)' }}>{games.length}</p>
+        </div>
+        <div className="p-4 rounded-xl" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
+          <p className="text-sm" style={{ color: 'var(--pe-text-muted)' }}>Boards</p>
+          <p className="text-3xl font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>{boards.length}</p>
+        </div>
+      </div>
+      <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--pe-text-sub)' }}>LAUFENDE SPIELE</h3>
+      <div className="space-y-2">
+        {games.length === 0 && <p className="text-sm" style={{ color: 'var(--pe-text-muted)' }}>Keine laufenden Spiele</p>}
+        {games.map((g) => (
+          <div key={g.id} className="p-3 rounded-lg flex justify-between items-center" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
+            <span style={{ color: 'var(--pe-text)' }}>{g.player1_name || 'TBD'} vs {g.player2_name || 'TBD'}</span>
+            <span className="text-xs" style={{ color: 'var(--pe-text-muted)' }}>Runde {g.round}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// NEU: Tab "Boards" — Scheiben verwalten
+function BoardsTab() {
+  const [boards, setBoards] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ number: '', name: '' });
+  const [schedule, setSchedule] = useState([]);
+
+  const loadBoards = () => {
+    api.get('/boards').then(setBoards).catch(() => {});
+    api.get('/schedule').then(data => setSchedule(Array.isArray(data) ? data : [])).catch(() => setSchedule([]));
+  };
+
+  useEffect(() => { loadBoards(); }, []);
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    if (!form.number) return;
+    try {
+      await api.post('/boards', form);
+      setForm({ number: '', name: '' });
+      setShowForm(false);
+      loadBoards();
+    } catch (err) {
+      alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen');
+    }
+  };
+
+  const handleSkip = async (scheduleId) => {
+    try {
+      await api.put(`/schedule/${scheduleId}/skip`);
+      loadBoards();
+    } catch (err) {
+      alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen');
+    }
+  };
+
+  const handleActivate = async (scheduleId) => {
+    try {
+      await api.put(`/schedule/${scheduleId}/activate`);
+      loadBoards();
+    } catch (err) {
+      alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen');
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>Boards</h2>
+        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+          {showForm ? 'Abbrechen' : '+ Neu'}
+        </button>
+      </div>
+
+      {showForm && (
+        <form onSubmit={handleCreate} className="p-4 rounded-xl mb-6 space-y-3" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
+          <input type="number" value={form.number} onChange={(e) => setForm({ ...form, number: e.target.value })} placeholder="Board-Nummer" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Name (optional)" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          <button type="submit" className="w-full py-3 rounded-lg font-bold disabled:opacity-50" style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '48px', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+            Board erstellen
+          </button>
+        </form>
+      )}
+
+      <div className="space-y-3">
+        {boards.map((b) => (
+          <div key={b.id} className="p-4 rounded-xl" style={{ background: 'var(--pe-bg-card)', border: `1px solid ${b.is_final ? 'var(--pe-warning)' : 'var(--pe-border)'}` }}>
+            <div className="flex justify-between items-center mb-3">
+              <div>
+                <span className="font-bold" style={{ color: 'var(--pe-text)' }}>Board {b.number}</span>
+                {b.name && <span className="ml-2 text-sm" style={{ color: 'var(--pe-text-sub)' }}>({b.name})</span>}
+                {b.is_final ? <span className="ml-2 text-xs font-bold" style={{ color: 'var(--pe-warning)' }}>★ FINAL</span> : null}
+              </div>
+              <span className="text-xs" style={{ color: b.current_game_id ? 'var(--pe-success)' : 'var(--pe-text-muted)' }}>
+                {b.current_game_id ? 'Aktiv' : 'Frei'}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                disabled={!b.is_final && boards.some(x => x.is_final && x.id !== b.id)}
+                onClick={async () => {
+                  try {
+                    await api.put(`/boards/${b.id}/final`, { is_final: !b.is_final });
+                    loadBoards();
+                  } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+                }}
+                title={!b.is_final && boards.some(x => x.is_final && x.id !== b.id) ? 'Es kann nur ein Final-Board geben' : ''}
+                style={{ ...btnSmall, padding: '4px 12px', background: b.is_final ? 'var(--pe-warning)' : 'var(--pe-bg-elevated)', color: b.is_final ? '#000' : 'var(--pe-text-sub)', minHeight: '36px', flex: 1, opacity: (!b.is_final && boards.some(x => x.is_final && x.id !== b.id)) ? 0.4 : 1, cursor: (!b.is_final && boards.some(x => x.is_final && x.id !== b.id)) ? 'not-allowed' : 'pointer' }}
+              >
+                {b.is_final ? '★ Final' : 'Als Final markieren'}
+              </button>
+              <button
+                onClick={async () => {
+                  if (!confirm(`Board ${b.number} löschen?`)) return;
+                  try { await api.del(`/boards/${b.id}`); loadBoards(); }
+                  catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+                }}
+                style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', minHeight: '36px' }}
+              >
+                Löschen
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {schedule.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--pe-text-sub)' }}>SPIELPLAN</h3>
+          <div className="space-y-2">
+            {schedule.map((s) => (
+              <div key={s.id} className="p-3 rounded-lg flex justify-between items-center" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
+                <span className="text-sm" style={{ color: 'var(--pe-text)' }}>
+                  {s.player1_name || 'TBD'} vs {s.player2_name || 'TBD'} — Board {s.board_number || '?'}
+                </span>
+                <div className="flex gap-2">
+                  <button onClick={() => handleActivate(s.id)} style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-success)', color: '#000' }}>Start</button>
+                  <button onClick={() => handleSkip(s.id)} style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-warning)' }}>Skip</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// NEU: Tab "Spieler" — Anlegen, Walk-On Song, Statistiken
+function PlayersTab() {
+  const [tournaments, setTournaments] = useState([]);
+  const [selectedTournament, setSelectedTournament] = useState('');
+  const [tournamentStatus, setTournamentStatus] = useState('open');
+  const [players, setPlayers] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ vorname: '', nickname: '', nachname: '', walk_on_song: '' });
+  const [editingPlayer, setEditingPlayer] = useState(null); // { id, vorname, nickname, nachname }
+
+  useEffect(() => {
+    api.get('/tournaments').then((t) => {
+      setTournaments(t);
+      if (t.length > 0) {
+        setSelectedTournament(t[0].id);
+        setTournamentStatus(t[0].status);
+      }
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!selectedTournament) return;
+    api.get(`/tournaments/${selectedTournament}/players`).then(setPlayers).catch(() => {});
+    const t = tournaments.find(t => String(t.id) === String(selectedTournament));
+    if (t) setTournamentStatus(t.status);
+  }, [selectedTournament]);
+
+  const isActive = tournamentStatus === 'active';
+
+  const loadPlayers = async () => {
+    const updated = await api.get(`/tournaments/${selectedTournament}/players`);
+    setPlayers(updated);
+  };
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    if (!form.vorname.trim() || !form.nickname.trim() || !form.nachname.trim() || !selectedTournament) return;
+    try {
+      await api.post(`/tournaments/${selectedTournament}/players`, form);
+      setForm({ vorname: '', nickname: '', nachname: '', walk_on_song: '' });
+      setShowForm(false);
+      await loadPlayers();
+    } catch (err) {
+      alert(err.message || 'Spieler konnte nicht angelegt werden');
+    }
+  };
+
+  const handleEdit = async (e) => {
+    e.preventDefault();
+    if (!editingPlayer) return;
+    try {
+      await api.put(`/tournaments/${selectedTournament}/players/${editingPlayer.id}`, editingPlayer);
+      setEditingPlayer(null);
+      await loadPlayers();
+    } catch (err) {
+      alert(err.message || 'Spieler konnte nicht gespeichert werden');
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>Spieler</h2>
+        {!isActive && (
+          <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+            {showForm ? 'Abbrechen' : '+ Neu'}
+          </button>
+        )}
+      </div>
+
+      <select value={selectedTournament} onChange={(e) => setSelectedTournament(e.target.value)} className="w-full p-3 rounded-lg outline-none mb-4" style={inputStyle}>
+        {tournaments.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.status})</option>)}
+      </select>
+
+      {isActive && (
+        <div className="mb-4 px-3 py-2 rounded-lg text-sm" style={{ background: 'rgba(255,69,96,0.1)', border: '1px solid var(--pe-danger)', color: 'var(--pe-danger)' }}>
+          Turnier aktiv — Löschen gesperrt. Namen können noch geändert werden.
+        </div>
+      )}
+
+      {showForm && !isActive && (
+        <form onSubmit={handleCreate} className="p-4 rounded-xl mb-6 space-y-3" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
+          <input type="text" value={form.vorname} onChange={(e) => setForm({ ...form, vorname: e.target.value })} placeholder="Vorname *" required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          <input type="text" value={form.nickname} onChange={(e) => setForm({ ...form, nickname: e.target.value })} placeholder="Nickname *" required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          <input type="text" value={form.nachname} onChange={(e) => setForm({ ...form, nachname: e.target.value })} placeholder="Nachname *" required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          <input type="url" value={form.walk_on_song} onChange={(e) => setForm({ ...form, walk_on_song: e.target.value })} placeholder="Walk-On Song URL (optional)" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          {form.vorname && form.nickname && form.nachname && (
+            <p style={{ fontSize: '12px', color: 'var(--pe-text-muted)' }}>
+              Angezeigt als: <strong style={{ color: 'var(--pe-text)' }}>{form.vorname.trim()} &ldquo;{form.nickname.trim()}&rdquo; {form.nachname.trim()}</strong>
+            </p>
+          )}
+          <button type="submit" disabled={!form.vorname.trim() || !form.nickname.trim() || !form.nachname.trim()} className="w-full py-3 rounded-lg font-bold disabled:opacity-50" style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '48px', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+            Spieler anlegen
+          </button>
+        </form>
+      )}
+
+      {editingPlayer && (
+        <form onSubmit={handleEdit} className="p-4 rounded-xl mb-4 space-y-3" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-cyan-bright)' }}>
+          <p className="text-sm font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>Spieler bearbeiten</p>
+          <input type="text" value={editingPlayer.vorname} onChange={(e) => setEditingPlayer({ ...editingPlayer, vorname: e.target.value })} placeholder="Vorname *" required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          <input type="text" value={editingPlayer.nickname} onChange={(e) => setEditingPlayer({ ...editingPlayer, nickname: e.target.value })} placeholder="Nickname *" required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          <input type="text" value={editingPlayer.nachname} onChange={(e) => setEditingPlayer({ ...editingPlayer, nachname: e.target.value })} placeholder="Nachname *" required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          {editingPlayer.vorname && editingPlayer.nickname && editingPlayer.nachname && (
+            <p style={{ fontSize: '12px', color: 'var(--pe-text-muted)' }}>
+              Angezeigt als: <strong style={{ color: 'var(--pe-text)' }}>{editingPlayer.vorname.trim()} &ldquo;{editingPlayer.nickname.trim()}&rdquo; {editingPlayer.nachname.trim()}</strong>
+            </p>
+          )}
+          <div className="flex gap-2">
+            <button type="submit" className="flex-1 py-2 rounded-lg font-bold" style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>Speichern</button>
+            <button type="button" onClick={() => setEditingPlayer(null)} className="px-4 py-2 rounded-lg" style={{ background: 'var(--pe-bg-elevated)', color: 'var(--pe-text-sub)', fontFamily: 'Verdana, Geneva, sans-serif' }}>Abbrechen</button>
+          </div>
+        </form>
+      )}
+
+      <div className="space-y-2">
+        {players.map((p) => (
+          <div key={p.id} className="p-3 rounded-lg flex justify-between items-center" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
+            <div>
+              <span className="font-bold" style={{ color: 'var(--pe-text)' }}>{p.name}</span>
+              {p.walkon_youtube && <span className="ml-2 text-xs" style={{ color: 'var(--pe-text-muted)' }}>♪</span>}
+              <span className="ml-3 text-xs" style={{ color: 'var(--pe-text-muted)' }}>Seed: {p.seed || '—'}</span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setEditingPlayer({ id: p.id, vorname: p.vorname || '', nickname: p.nickname || '', nachname: p.nachname || '' })}
+                style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-cyan-bright)', minHeight: '36px' }}
+              >
+                Bearbeiten
+              </button>
+              <button
+                disabled={isActive}
+                onClick={async () => {
+                  if (!confirm(`${p.name} löschen?`)) return;
+                  try { await api.del(`/tournaments/${selectedTournament}/players/${p.id}`); await loadPlayers(); }
+                  catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+                }}
+                style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: isActive ? 'var(--pe-text-muted)' : 'var(--pe-danger)', minHeight: '36px', cursor: isActive ? 'not-allowed' : 'pointer', opacity: isActive ? 0.4 : 1 }}
+              >
+                Löschen
+              </button>
+            </div>
+          </div>
+        ))}
+        {players.length === 0 && <p className="text-sm" style={{ color: 'var(--pe-text-muted)' }}>Keine Spieler</p>}
+      </div>
+    </div>
+  );
+}
+
+// NEU: Tab "User" — Mitarbeiter-Verwaltung
+const ROLE_LABELS = { admin: 'Admin', director: 'Turnierleitung', referee: 'Schiedsrichter', gastronomy: 'Gastronomie' };
+
+function UsersTab() {
+  const [users, setUsers] = useState([]);
+  const [showCreate, setShowCreate] = useState(false);
+  const [createForm, setCreateForm] = useState({ username: '', password: '', role: 'director', email: '', display_name: '' });
+  // editId: which user is being edited; editForm: current edit state
+  const [editId, setEditId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+
+  const loadUsers = () => {
+    api.get('/users').then(setUsers).catch(() => {});
+  };
+
+  useEffect(() => { loadUsers(); }, []);
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    if (!createForm.username.trim() || !createForm.password) return;
+    try {
+      await api.post('/users', createForm);
+      setCreateForm({ username: '', password: '', role: 'director', email: '', display_name: '' });
+      setShowCreate(false);
+      loadUsers();
+    } catch (err) {
+      alert(err.message || 'Aktion fehlgeschlagen');
+    }
+  };
+
+  const startEdit = (u) => {
+    setEditId(u.id);
+    setEditForm({ role: u.role, password: '', display_name: u.display_name || '', email: u.email || '' });
+  };
+
+  const handleSaveEdit = async (userId) => {
+    const payload = { role: editForm.role };
+    if (editForm.display_name !== undefined) payload.display_name = editForm.display_name;
+    if (editForm.email !== undefined) payload.email = editForm.email;
+    if (editForm.password) payload.password = editForm.password;
+    try {
+      await api.put(`/users/${userId}`, payload);
+      setEditId(null);
+      loadUsers();
+    } catch (err) {
+      alert(err.message || 'Speichern fehlgeschlagen');
+    }
+  };
+
+  const handleDelete = async (userId) => {
+    if (!confirm('User wirklich deaktivieren?')) return;
+    try {
+      await api.del(`/users/${userId}`);
+      loadUsers();
+    } catch (err) {
+      alert(err.message || 'Aktion fehlgeschlagen');
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>User</h2>
+        <button onClick={() => { setShowCreate(!showCreate); setEditId(null); }} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+          {showCreate ? 'Abbrechen' : '+ Neu'}
+        </button>
+      </div>
+
+      {showCreate && (
+        <form onSubmit={handleCreate} className="p-4 rounded-xl mb-6 space-y-3" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
+          <p className="text-xs font-bold" style={{ color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: 1, margin: 0 }}>Neuer User</p>
+          <input type="text" value={createForm.username} onChange={(e) => setCreateForm({ ...createForm, username: e.target.value })} placeholder="Benutzername *" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          <input type="text" value={createForm.display_name} onChange={(e) => setCreateForm({ ...createForm, display_name: e.target.value })} placeholder="Anzeigename (optional)" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          <input type="email" value={createForm.email} onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })} placeholder="E-Mail (optional)" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          <input type="password" value={createForm.password} onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })} placeholder="Passwort *" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          <select value={createForm.role} onChange={(e) => setCreateForm({ ...createForm, role: e.target.value })} className="w-full p-3 rounded-lg outline-none" style={inputStyle}>
+            <option value="director">Turnierleitung</option>
+            <option value="referee">Schiedsrichter</option>
+            <option value="gastronomy">Gastronomie</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button type="submit" disabled={!createForm.username.trim() || !createForm.password} className="w-full py-3 rounded-lg font-bold disabled:opacity-50" style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '48px', fontFamily: 'Verdana, Geneva, sans-serif', border: 'none', cursor: 'pointer' }}>
+            User anlegen
+          </button>
+        </form>
+      )}
+
+      <div className="space-y-2">
+        {users.map((u) => (
+          <div key={u.id} className="rounded-xl overflow-hidden" style={{ background: 'var(--pe-bg-card)', border: `1px solid ${editId === u.id ? 'var(--pe-blue-mid)' : 'var(--pe-border)'}` }}>
+            {/* User-Zeile */}
+            <div className="p-3 flex justify-between items-center">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="min-w-0">
+                  <span className="font-bold" style={{ color: u.active ? 'var(--pe-text)' : 'var(--pe-text-muted)' }}>{u.display_name || u.username}</span>
+                  {u.display_name && <span className="ml-2 text-xs" style={{ color: 'var(--pe-text-muted)' }}>@{u.username}</span>}
+                  {!u.active && <span className="ml-2 text-xs" style={{ color: 'var(--pe-danger)' }}>inaktiv</span>}
+                </div>
+                <span className="text-xs px-2 py-1 rounded-full font-bold flex-shrink-0" style={{ color: ROLE_COLORS[u.role] || 'var(--pe-text-muted)', border: `1px solid ${ROLE_COLORS[u.role] || 'var(--pe-border)'}` }}>
+                  {ROLE_LABELS[u.role] || u.role}
+                </span>
+              </div>
+              <div className="flex gap-2 flex-shrink-0">
+                <button
+                  onClick={() => editId === u.id ? setEditId(null) : startEdit(u)}
+                  style={{ ...btnSmall, background: editId === u.id ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: editId === u.id ? '#fff' : 'var(--pe-text-sub)', padding: '5px 12px' }}
+                >
+                  {editId === u.id ? 'Abbrechen' : 'Bearbeiten'}
+                </button>
+                {u.active && (
+                  <button onClick={() => handleDelete(u.id)} style={{ ...btnSmall, background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', padding: '5px 12px' }}>
+                    Deaktivieren
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Inline-Edit-Bereich */}
+            {editId === u.id && (
+              <div className="p-4 space-y-3" style={{ borderTop: '1px solid var(--pe-border)', background: 'var(--pe-bg-elevated)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div>
+                    <label className="text-xs font-bold block mb-1" style={{ color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rolle</label>
+                    <select
+                      value={editForm.role}
+                      onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                      style={{ ...inputStyle, width: '100%', padding: '10px 12px' }}
+                    >
+                      <option value="director">Turnierleitung</option>
+                      <option value="referee">Schiedsrichter</option>
+                      <option value="gastronomy">Gastronomie</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold block mb-1" style={{ color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Anzeigename</label>
+                    <input
+                      type="text"
+                      value={editForm.display_name}
+                      onChange={(e) => setEditForm({ ...editForm, display_name: e.target.value })}
+                      placeholder="Anzeigename"
+                      style={{ ...inputStyle, width: '100%', padding: '10px 12px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label className="text-xs font-bold block mb-1" style={{ color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Neues Passwort <span style={{ color: 'var(--pe-text-muted)', fontWeight: 'normal' }}>(leer lassen = unverändert)</span></label>
+                    <input
+                      type="password"
+                      value={editForm.password}
+                      onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                      placeholder="Neues Passwort eingeben..."
+                      style={{ ...inputStyle, width: '100%', padding: '10px 12px', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleSaveEdit(u.id)}
+                  style={{ background: 'var(--pe-gradient)', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px 20px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', width: '100%', minHeight: '44px' }}
+                >
+                  Änderungen speichern
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+        {users.length === 0 && <p className="text-sm" style={{ color: 'var(--pe-text-muted)' }}>Keine User</p>}
+      </div>
+    </div>
+  );
+}
+
+// NEU: Tab "Gastronomie (Admin)" — Produkt-Verwaltung + Umsatz + Tagesabrechnung
+function GastroAdminTab() {
+  const [products, setProducts] = useState([]);
+  const [dashboard, setDashboard] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ name: '', category: 'drink', price: '', sort_order: '0' });
+
+  const loadData = () => {
+    api.get('/products').then(setProducts).catch(() => {});
+    api.get('/orders/dashboard').then(setDashboard).catch(() => {});
+    api.get('/orders/summary').then(setSummary).catch(() => {});
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim() || !form.price) return;
+    try {
+      await api.post('/products', { ...form, price: parseFloat(form.price), sort_order: parseInt(form.sort_order) || 0 });
+      setForm({ name: '', category: 'drink', price: '', sort_order: '0' });
+      setShowForm(false);
+      loadData();
+    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+  };
+
+  const toggleAvailable = async (product) => {
+    try {
+      await api.put(`/products/${product.id}`, { available: !product.available });
+      loadData();
+    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+  };
+
+  const handleDeleteProduct = async (product) => {
+    if (!window.confirm(`"${product.name}" wirklich löschen?`)) return;
+    try {
+      await api.del(`/products/${product.id}`);
+      loadData();
+    } catch (err) { alert(err.message || 'Löschen fehlgeschlagen'); }
+  };
+
+  const totals = dashboard?.totals || {};
+  const summaryProducts = summary?.products || [];
+
+  const thStyle = { padding: '10px 14px', textAlign: 'left', fontSize: '11px', color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 'bold', whiteSpace: 'nowrap' };
+  const tdStyle = { padding: '10px 14px', fontSize: '13px', borderTop: '1px solid var(--pe-border)' };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Gastronomie</h2>
+
+      {/* Umsatz-Kacheln */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px' }}>
+        {[
+          { label: 'Gesamtumsatz', value: totals.grand_total, color: 'var(--pe-success)' },
+          { label: 'Bezahlt', value: totals.total_paid, color: 'var(--pe-cyan-bright)' },
+          { label: 'Offen', value: totals.total_open, color: 'var(--pe-warning)' },
+        ].map(({ label, value, color }) => (
+          <div key={label} style={{ padding: '14px', borderRadius: '12px', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
+            <div style={{ fontSize: '11px', color: 'var(--pe-text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>{label}</div>
+            <div style={{ fontSize: '22px', fontWeight: 'bold', color }}>{parseFloat(value || 0).toFixed(2)} €</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Produkte */}
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <h3 style={{ color: 'var(--pe-text-sub)', fontWeight: 'bold', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>Produkte ({products.length})</h3>
+          <button onClick={() => setShowForm(!showForm)} style={{ ...btnSmall, background: 'var(--pe-blue-deep)', color: '#fff', padding: '6px 14px' }}>
+            {showForm ? 'Abbrechen' : '+ Neu'}
+          </button>
+        </div>
+
+        {showForm && (
+          <form onSubmit={handleCreate} style={{ padding: '16px', borderRadius: '12px', marginBottom: '12px', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Name *" required style={{ ...inputStyle, gridColumn: '1/-1' }} />
+            <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} style={inputStyle}>
+              <option value="drink">Getränk</option>
+              <option value="food">Speise</option>
+            </select>
+            <input type="number" step="0.01" min="0" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="Preis (€) *" required style={inputStyle} />
+            <input type="number" value={form.sort_order} onChange={e => setForm({ ...form, sort_order: e.target.value })} placeholder="Sortierung" style={inputStyle} />
+            <button type="submit" disabled={!form.name.trim() || !form.price} style={{ gridColumn: '1/-1', background: 'var(--pe-gradient)', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '44px', opacity: (!form.name.trim() || !form.price) ? 0.5 : 1 }}>
+              Produkt anlegen
+            </button>
+          </form>
+        )}
+
+        <div style={{ borderRadius: '12px', border: '1px solid var(--pe-border)', overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead style={{ background: 'var(--pe-bg-elevated)' }}>
+              <tr>
+                <th style={thStyle}>Name</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Preis</th>
+                <th style={{ ...thStyle, textAlign: 'center' }}>Kategorie</th>
+                <th style={{ ...thStyle, textAlign: 'center' }}>Status</th>
+                <th style={{ ...thStyle, textAlign: 'center' }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.length === 0 && (
+                <tr><td colSpan={5} style={{ ...tdStyle, textAlign: 'center', color: 'var(--pe-text-muted)' }}>Keine Produkte vorhanden</td></tr>
+              )}
+              {products.map(p => (
+                <tr key={p.id} style={{ background: p.available ? 'var(--pe-bg-card)' : 'var(--pe-bg-elevated)' }}>
+                  <td style={{ ...tdStyle, fontWeight: 'bold', color: p.available ? 'var(--pe-text)' : 'var(--pe-text-muted)' }}>{p.name}</td>
+                  <td style={{ ...tdStyle, textAlign: 'right', color: 'var(--pe-cyan-bright)', fontWeight: 'bold' }}>{parseFloat(p.price).toFixed(2)} €</td>
+                  <td style={{ ...tdStyle, textAlign: 'center' }}>
+                    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: p.category === 'drink' ? 'rgba(0,184,255,0.15)' : 'rgba(255,176,32,0.15)', color: p.category === 'drink' ? 'var(--pe-cyan-bright)' : 'var(--pe-warning)' }}>
+                      {p.category === 'drink' ? 'Getränk' : 'Speise'}
+                    </span>
+                  </td>
+                  <td style={{ ...tdStyle, textAlign: 'center' }}>
+                    <button onClick={() => toggleAvailable(p)} style={{ ...btnSmall, background: p.available ? 'var(--pe-success)' : 'var(--pe-bg-card)', color: p.available ? '#000' : 'var(--pe-text-muted)', padding: '3px 10px', border: `1px solid ${p.available ? 'var(--pe-success)' : 'var(--pe-border)'}` }}>
+                      {p.available ? 'Aktiv' : 'Inaktiv'}
+                    </button>
+                  </td>
+                  <td style={{ ...tdStyle, textAlign: 'center' }}>
+                    <button onClick={() => handleDeleteProduct(p)} style={{ ...btnSmall, background: 'rgba(255,69,96,0.12)', color: 'var(--pe-danger)', border: '1px solid var(--pe-danger)', padding: '3px 10px' }}>
+                      Löschen
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Tagesabrechnung */}
+      <div>
+        <h3 style={{ color: 'var(--pe-text-sub)', fontWeight: 'bold', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Tagesabrechnung</h3>
+        <div style={{ borderRadius: '12px', border: '1px solid var(--pe-border)', overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead style={{ background: 'var(--pe-bg-elevated)' }}>
+              <tr>
+                <th style={thStyle}>Produkt</th>
+                <th style={{ ...thStyle, textAlign: 'center' }}>Menge</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Umsatz</th>
+              </tr>
+            </thead>
+            <tbody>
+              {summaryProducts.length === 0 && (
+                <tr><td colSpan={3} style={{ ...tdStyle, textAlign: 'center', color: 'var(--pe-text-muted)' }}>Keine Bestellungen heute</td></tr>
+              )}
+              {summaryProducts.map((p, i) => (
+                <tr key={i} style={{ background: 'var(--pe-bg-card)' }}>
+                  <td style={{ ...tdStyle, color: 'var(--pe-text)' }}>{p.product_name}</td>
+                  <td style={{ ...tdStyle, textAlign: 'center', color: 'var(--pe-text-sub)' }}>{p.total_quantity}</td>
+                  <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 'bold', color: 'var(--pe-success)' }}>{parseFloat(p.total_price || 0).toFixed(2)} €</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {summaryProducts.length > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderRadius: '0 0 12px 12px', background: 'var(--pe-bg-elevated)', borderTop: '1px solid var(--pe-border)', marginTop: '-1px' }}>
+            <span style={{ fontWeight: 'bold', color: 'var(--pe-text)' }}>Gesamtumsatz</span>
+            <span style={{ fontWeight: 'bold', fontSize: '18px', color: 'var(--pe-success)' }}>{parseFloat(totals.grand_total || 0).toFixed(2)} €</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// NEU: Tab "Mailing" — Post-Event
+function MailingTab() {
+  const [templates, setTemplates] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ name: '', subject: '', body_html: '' });
+  const [testEmail, setTestEmail] = useState('');
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    api.get('/mail/templates').then(setTemplates).catch(() => {});
+  }, []);
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim() || !form.subject.trim()) return;
+    try {
+      await api.post('/mail/templates', form);
+      setForm({ name: '', subject: '', body_html: '' });
+      setShowForm(false);
+      const updated = await api.get('/mail/templates');
+      setTemplates(updated);
+    } catch (err) {
+      alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen');
+    }
+  };
+
+  const handleTestMail = async () => {
+    if (!testEmail.trim()) return;
+    setSending(true);
+    try {
+      await api.post('/mail/send-test', { email: testEmail });
+      alert('Test-Mail gesendet!');
+      setTestEmail('');
+    } catch (err) {
+      alert(err.message || 'Fehler beim Senden');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleSendEventSummary = async () => {
+    if (!confirm('Event-Zusammenfassung an alle senden?')) return;
+    setSending(true);
+    try {
+      await api.post('/mail/send-event-summary');
+      alert('Event-Zusammenfassung gesendet!');
+    } catch (err) {
+      alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>Mailing</h2>
+        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+          {showForm ? 'Abbrechen' : '+ Template'}
+        </button>
+      </div>
+
+      {showForm && (
+        <form onSubmit={handleCreate} className="p-4 rounded-xl mb-6 space-y-3" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
+          <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Template-Name" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          <input type="text" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} placeholder="Betreff" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          <textarea value={form.body_html} onChange={(e) => setForm({ ...form, body_html: e.target.value })} placeholder="HTML Body" rows={6} className="w-full p-3 rounded-lg outline-none resize-y" style={{ ...inputStyle, minHeight: '120px' }} />
+          <button type="submit" disabled={!form.name.trim() || !form.subject.trim()} className="w-full py-3 rounded-lg font-bold disabled:opacity-50" style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '48px', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+            Template speichern
+          </button>
+        </form>
+      )}
+
+      <div className="space-y-2 mb-6">
+        {templates.map((t) => (
+          <div key={t.id} className="p-3 rounded-lg" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
+            <p className="font-bold" style={{ color: 'var(--pe-text)' }}>{t.name}</p>
+            <p className="text-sm" style={{ color: 'var(--pe-text-sub)' }}>Betreff: {t.subject}</p>
+          </div>
+        ))}
+        {templates.length === 0 && <p className="text-sm" style={{ color: 'var(--pe-text-muted)' }}>Keine Templates</p>}
+      </div>
+
+      <div className="p-4 rounded-xl mb-4" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
+        <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--pe-text-sub)' }}>TEST-MAIL</h3>
+        <div className="flex gap-2">
+          <input type="email" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} placeholder="test@email.de" className="flex-1 p-3 rounded-lg outline-none" style={inputStyle} />
+          <button onClick={handleTestMail} disabled={sending || !testEmail.trim()} className="px-4 py-3 rounded-lg font-bold text-sm disabled:opacity-50" style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+            Senden
+          </button>
+        </div>
+      </div>
+
+      <button
+        onClick={handleSendEventSummary}
+        disabled={sending}
+        className="w-full py-3 rounded-lg font-bold disabled:opacity-50"
+        style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '48px', fontFamily: 'Verdana, Geneva, sans-serif' }}
+      >
+        {sending ? 'Wird gesendet...' : 'Event-Zusammenfassung senden'}
+      </button>
+    </div>
+  );
+}
+
+// NEU: Turnierleiter-Ansicht — Board-Spalten mit Spielqueue
+const STATUS_DE = { pending: 'Ausstehend', bulloff: 'Ausbullen', active: 'Läuft', finished: 'Beendet' };
+const STATUS_COLOR = { pending: 'var(--pe-text-muted)', bulloff: 'var(--pe-warning)', active: 'var(--pe-success)', finished: 'var(--pe-border)' };
+
+function TournamentDirectorTab() {
+  const [boards, setBoards] = useState([]);
+  const [games, setGames] = useState([]);
+  const [activeTournament, setActiveTournament] = useState(null);
+  const [assignModal, setAssignModal] = useState(null); // { boardId }
+
+  const load = async () => {
+    const [b, t] = await Promise.all([
+      api.get('/boards').catch(() => []),
+      api.get('/tournaments').catch(() => []),
+    ]);
+    setBoards(b);
+    const active = t.find(x => x.status === 'active') || t[0];
+    setActiveTournament(active);
+    if (active) {
+      const detail = await api.get(`/tournaments/${active.id}`).catch(() => null);
+      if (detail?.games) setGames(detail.games.filter(g => ['pending','bulloff','active'].includes(g.status) && g.player1_name));
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+  useEffect(() => { const i = setInterval(load, 10000); return () => clearInterval(i); }, []);
+
+  const assignGame = async (gameId, boardId) => {
+    await api.put(`/games/${gameId}/assign-board`, { board_id: boardId });
+    setAssignModal(null);
+    load();
+  };
+  const removeFromBoard = async (gameId) => {
+    await api.del(`/games/${gameId}/assign-board`);
+    load();
+  };
+
+  // Group games by board
+  const gamesByBoard = {};
+  for (const b of boards) gamesByBoard[b.id] = [];
+  for (const g of games) {
+    if (g.board_id && gamesByBoard[g.board_id]) gamesByBoard[g.board_id].push(g);
+  }
+  const unassigned = games.filter(g => !g.board_id);
+
+  // unassigned games available for modal (exclude already-on-board)
+  const assignableGames = games.filter(g => !g.board_id || assignModal?.boardId === g.board_id || true);
+
+  const btnBase = { border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', borderRadius: '8px', fontSize: '12px', minHeight: '36px' };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px' }}>
+          Turnierleiter {activeTournament ? `— ${activeTournament.name}` : ''}
+        </h2>
+        <span style={{ color: 'var(--pe-text-muted)', fontSize: '13px' }}>Auto-Refresh 10s</span>
+      </div>
+
+      {/* Board columns — horizontal scroll on narrow screens */}
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${boards.length || 1}, minmax(240px, 1fr))`, gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
+        {boards.map(board => {
+          const boardGames = gamesByBoard[board.id] || [];
+          const activeGame = boardGames.find(g => g.status === 'active' || g.status === 'bulloff');
+          const queue = boardGames.filter(g => g.status === 'pending').sort((a, b) => a.id - b.id);
+          const hasGames = boardGames.length > 0;
+
+          return (
+            <div key={board.id} style={{ background: 'var(--pe-bg-card)', border: `2px solid ${activeGame ? 'var(--pe-blue-mid)' : hasGames ? 'var(--pe-border)' : 'var(--pe-bg-elevated)'}`, borderRadius: '14px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              {/* Board header */}
+              <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--pe-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: activeGame ? 'rgba(30,127,235,0.12)' : 'transparent' }}>
+                <span style={{ fontWeight: 'bold', color: 'var(--pe-text)', fontSize: '15px' }}>
+                  Board {board.number}{board.name ? ` — ${board.name}` : ''}{board.is_final ? ' ★' : ''}
+                </span>
+                <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold', background: activeGame ? 'var(--pe-success)' : hasGames ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: activeGame ? '#000' : 'var(--pe-text)' }}>
+                  {activeGame ? 'Aktiv' : hasGames ? `${boardGames.length} Spiele` : 'Frei'}
+                </span>
+              </div>
+
+              {/* Active / current game */}
+              {activeGame && (
+                <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--pe-border)', background: 'rgba(30,127,235,0.07)' }}>
+                  <div style={{ fontSize: '11px', color: STATUS_COLOR[activeGame.status], fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '6px' }}>
+                    ▶ {STATUS_DE[activeGame.status]}
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--pe-text)' }}>{activeGame.player1_name}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--pe-text-muted)', margin: '2px 0' }}>vs</div>
+                  <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--pe-text)' }}>{activeGame.player2_name}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--pe-text-muted)', marginTop: '4px' }}>Runde {activeGame.round === 0 ? 'Gruppe' : activeGame.round}</div>
+                  <button onClick={() => removeFromBoard(activeGame.id)} style={{ ...btnBase, marginTop: '8px', width: '100%', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', border: '1px solid var(--pe-border)' }}>
+                    Freigeben
+                  </button>
+                </div>
+              )}
+
+              {/* Pending queue */}
+              <div style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '360px', overflowY: 'auto' }}>
+                {queue.map((g, idx) => (
+                  <div key={g.id} style={{ padding: '8px 10px', borderRadius: '8px', background: idx === 0 && !activeGame ? 'var(--pe-bg-elevated)' : 'var(--pe-bg-card)', border: `1px solid ${idx === 0 && !activeGame ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}` }}>
+                    {idx === 0 && !activeGame && (
+                      <div style={{ fontSize: '10px', color: 'var(--pe-cyan-bright)', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '3px' }}>Nächstes</div>
+                    )}
+                    <div style={{ fontSize: '13px', color: 'var(--pe-text)', fontWeight: 'bold' }}>{g.player1_name}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--pe-text-muted)', marginBottom: '1px' }}>vs {g.player2_name}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--pe-text-muted)' }}>Runde {g.round === 0 ? 'Gruppe' : g.round}</div>
+                  </div>
+                ))}
+                {queue.length === 0 && !activeGame && (
+                  <div style={{ textAlign: 'center', padding: '16px 8px', color: 'var(--pe-text-muted)', fontSize: '12px' }}>Keine Spiele</div>
+                )}
+              </div>
+
+              {/* Assign button */}
+              <div style={{ padding: '10px 14px', borderTop: '1px solid var(--pe-border)' }}>
+                <button onClick={() => setAssignModal({ boardId: board.id })} style={{ ...btnBase, width: '100%', background: 'var(--pe-blue-deep)', color: '#fff', minHeight: '40px' }}>
+                  + Spiel zuweisen
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Unassigned games */}
+      {unassigned.length > 0 && (
+        <div style={{ marginTop: '24px' }}>
+          <h3 style={{ color: 'var(--pe-text-sub)', fontWeight: 'bold', fontSize: '12px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            Nicht zugewiesen ({unassigned.length})
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '6px' }}>
+            {unassigned.map(g => (
+              <div key={g.id} style={{ padding: '10px 12px', borderRadius: '8px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)' }}>
+                <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--pe-text)' }}>{g.player1_name} vs {g.player2_name}</div>
+                <div style={{ fontSize: '11px', color: 'var(--pe-text-muted)', marginTop: '2px' }}>Runde {g.round === 0 ? 'Gruppe' : g.round}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Assign modal */}
+      {assignModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <div style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', borderRadius: '16px', padding: '24px', maxWidth: '480px', width: '100%', maxHeight: '80vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', margin: 0 }}>
+                Spiel zuweisen — Board {boards.find(b => b.id === assignModal.boardId)?.number}
+              </h3>
+              <button onClick={() => setAssignModal(null)} style={{ background: 'none', border: 'none', color: 'var(--pe-text-muted)', fontSize: '22px', cursor: 'pointer', lineHeight: 1 }}>×</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {games.map(g => (
+                <button key={g.id} onClick={() => assignGame(g.id, assignModal.boardId)}
+                  style={{ padding: '12px 14px', borderRadius: '10px', background: g.board_id === assignModal.boardId ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', border: `1px solid ${g.board_id === assignModal.boardId ? 'var(--pe-blue-mid)' : 'var(--pe-border)'}`, color: 'var(--pe-text)', textAlign: 'left', fontFamily: 'Verdana, Geneva, sans-serif', cursor: 'pointer', minHeight: '56px' }}>
+                  <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{g.player1_name || 'TBD'} vs {g.player2_name || 'TBD'}</div>
+                  <div style={{ color: 'var(--pe-text-muted)', fontSize: '12px', marginTop: '2px' }}>
+                    Runde {g.round === 0 ? 'Gruppe' : g.round} · {STATUS_DE[g.status]}
+                    {g.board_id ? ` · Board ${boards.find(b => b.id === g.board_id)?.number}` : ' · Nicht zugewiesen'}
+                  </div>
+                </button>
+              ))}
+              {games.length === 0 && <p style={{ color: 'var(--pe-text-muted)', textAlign: 'center' }}>Keine Spiele verfügbar</p>}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const FORMAT_OPTIONS = [
+  { value: '501_double_out', label: '501 — Double Out' },
+  { value: '501_single_out', label: '501 — Single Out' },
+  { value: '301_double_out', label: '301 — Double Out' },
+  { value: '301_single_out', label: '301 — Single Out' },
+];
+
+function TournamentExtendedTab() {
+  const [tournaments, setTournaments] = useState([]);
+  const [selectedId, setSelectedId] = useState('');
+  const [groups, setGroups] = useState([]);
+  const [boards, setBoards] = useState([]);
+  const [wizardStep, setWizardStep] = useState(0); // 0=list, 1=basic, 2=format, 3=players, 4=draw
+  const [creating, setCreating] = useState(false);
+  const [newTournament, setNewTournament] = useState(null); // after step 1
+  const [createForm, setCreateForm] = useState({ name: '', date: '', format: '501', checkout: 'double_out' });
+  const [config, setConfig] = useState({
+    prelim_format: '301_single_out', prelim_legs: '1',
+    qf_format: '501_double_out',     qf_legs: '3',
+    sf_format: '501_double_out',     sf_legs: '3',
+    final_format: '501_double_out',  final_legs: '5',
+    board_count: '1',
+  });
+  const [savingConfig, setSavingConfig] = useState(false);
+  const [playerForm, setPlayerForm] = useState({ vorname: '', nickname: '', nachname: '', seed: '' });
+  const [players, setPlayers] = useState([]);
+  const [mockCount, setMockCount] = useState('8');
+
+  const loadTournaments = () => {
+    api.get('/tournaments').then((t) => {
+      setTournaments(t);
+      if (t.length > 0 && !selectedId) setSelectedId(String(t[0].id));
+    }).catch(() => {});
+    api.get('/boards').then(setBoards).catch(() => {});
+  };
+
+  useEffect(() => { loadTournaments(); }, []);
+
+  useEffect(() => {
+    if (!selectedId || tournaments.length === 0) return;
+    const t = tournaments.find((x) => String(x.id) === String(selectedId));
+    if (t) {
+      setConfig({
+        prelim_format: t.prelim_format || '301_single_out',
+        prelim_legs:   String(t.prelim_legs  ?? 1),
+        qf_format:     t.qf_format    || '501_double_out',
+        qf_legs:       String(t.qf_legs      ?? 3),
+        sf_format:     t.sf_format    || '501_double_out',
+        sf_legs:       String(t.sf_legs      ?? 3),
+        final_format:  t.final_format || '501_double_out',
+        final_legs:    String(t.final_legs   ?? 5),
+        board_count:   String(t.board_count  ?? 1),
+      });
+    }
+    api.get(`/tournaments/${selectedId}/groups`).then((d) => setGroups(d.groups || [])).catch(() => setGroups([]));
+    api.get(`/tournaments/${selectedId}/players`).then(setPlayers).catch(() => setPlayers([]));
+  }, [selectedId, tournaments.length]);
+
+  const selectedTournament = tournaments.find((t) => String(t.id) === String(selectedId));
+
+  // --- Wizard Step 1: Turnier anlegen ---
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    if (!createForm.name.trim()) return;
+    setCreating(true);
+    try {
+      const t = await api.post('/tournaments', createForm);
+      setNewTournament(t);
+      setSelectedId(String(t.id));
+      await loadTournaments();
+      setWizardStep(2); // direkt zu Format
+    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+    finally { setCreating(false); }
+  };
+
+  // --- Wizard Step 2: Format speichern ---
+  const handleSaveConfig = async () => {
+    setSavingConfig(true);
+    const tid = newTournament?.id || selectedId;
+    try {
+      await api.put(`/tournaments/${tid}`, {
+        prelim_format: config.prelim_format, prelim_legs: parseInt(config.prelim_legs) || 1,
+        qf_format:     config.qf_format,     qf_legs:    parseInt(config.qf_legs)    || 3,
+        sf_format:     config.sf_format,     sf_legs:    parseInt(config.sf_legs)    || 3,
+        final_format:  config.final_format,  final_legs: parseInt(config.final_legs) || 5,
+        board_count:   parseInt(config.board_count) || 1,
+      });
+      setWizardStep(3);
+    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+    finally { setSavingConfig(false); }
+  };
+
+  // --- Wizard Step 3: Spieler ---
+  const addPlayer = async (e) => {
+    e.preventDefault();
+    if (!playerForm.vorname.trim() || !playerForm.nickname.trim() || !playerForm.nachname.trim()) return;
+    const tid = newTournament?.id || selectedId;
+    try {
+      await api.post(`/tournaments/${tid}/players`, {
+        vorname: playerForm.vorname.trim(),
+        nickname: playerForm.nickname.trim(),
+        nachname: playerForm.nachname.trim(),
+        seed: playerForm.seed ? parseInt(playerForm.seed) : undefined,
+      });
+      setPlayerForm({ vorname: '', nickname: '', nachname: '', seed: '' });
+      const updated = await api.get(`/tournaments/${tid}/players`);
+      setPlayers(updated);
+    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+  };
+
+  const deletePlayer = async (playerId) => {
+    const tid = newTournament?.id || selectedId;
+    if (!confirm('Spieler löschen?')) return;
+    try {
+      await api.del(`/tournaments/${tid}/players/${playerId}`);
+      setPlayers(prev => prev.filter(p => p.id !== playerId));
+    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+  };
+
+  const handleMock = async () => {
+    const tid = newTournament?.id || selectedId;
+    if (!confirm(`${mockCount} Fake-Spieler erstellen?`)) return;
+    try {
+      await api.post(`/tournaments/${tid}/mock`, { player_count: parseInt(mockCount) });
+      const updated = await api.get(`/tournaments/${tid}/players`);
+      setPlayers(updated);
+    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+  };
+
+  // --- Wizard Step 4: Auslosung ---
+  const drawGroups = async () => {
+    const tid = newTournament?.id || selectedId;
+    try {
+      await api.post(`/tournaments/${tid}/draw-groups`);
+      const data = await api.get(`/tournaments/${tid}/groups`);
+      setGroups(data.groups || []);
+    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+  };
+
+  const generateGroupSchedule = async () => {
+    const tid = newTournament?.id || selectedId;
+    if (!tid) return;
+    try {
+      const r = await api.post(`/tournaments/${tid}/generate-group-schedule`);
+      alert(`Spielplan erstellt! ${r.games_created} Partien auf Boards verteilt.`);
+      // Reload groups to show updated board assignments
+      const gd = await api.get(`/tournaments/${tid}/groups`);
+      setGroups(Array.isArray(gd) ? gd : (gd.groups || []));
+    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+  };
+
+  const generateBracket = async () => {
+    const tid = newTournament?.id || selectedId;
+    try {
+      await api.post(`/tournaments/${tid}/generate-bracket`);
+      alert('KO-Bracket generiert! Das Turnier kann jetzt starten.');
+      loadTournaments();
+    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+  };
+
+  const startTournament = async () => {
+    const tid = newTournament?.id || selectedId;
+    try {
+      await api.put(`/tournaments/${tid}/start`);
+      alert('Turnier gestartet!');
+      setWizardStep(0);
+      setNewTournament(null);
+      loadTournaments();
+    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+  };
+
+  const lockTournament = async () => {
+    if (!confirm('Turnier wirklich abschließen?')) return;
+    try { await api.put(`/tournaments/${selectedId}/lock`); loadTournaments(); }
+    catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+  };
+
+  const deleteTournament = async (id) => {
+    if (!confirm('Turnier und alle Daten löschen?')) return;
+    try { await api.del(`/tournaments/${id}`); setSelectedId(''); loadTournaments(); }
+    catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+  };
+
+  const handleWipe = async () => {
+    const confirmed = prompt('Zum Bestätigen "WIPE" eingeben:');
+    if (confirmed !== 'WIPE') return;
+    try { await api.post('/admin/wipe', {}); alert('Alle Turnierdaten gelöscht!'); setSelectedId(''); loadTournaments(); }
+    catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+  };
+
+  const assignGroupToBoard = async (groupId, boardId) => {
+    try {
+      await api.put(`/tournaments/${selectedId}/groups/${groupId}/board`, { board_id: boardId || null });
+      const data = await api.get(`/tournaments/${selectedId}/groups`);
+      setGroups(data.groups || []);
+    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+  };
+
+  const card = { background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', borderRadius: '12px', padding: '16px', marginBottom: '12px' };
+
+  // WIZARD MODE (steps 1-4)
+  if (wizardStep > 0) {
+    const steps = ['', 'Grunddaten', 'Format', 'Spieler', 'Auslosung'];
+    return (
+      <div>
+        {/* Wizard Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+          <button onClick={() => { setWizardStep(0); setNewTournament(null); }} style={{ background: 'none', border: 'none', color: 'var(--pe-text-muted)', fontSize: '20px', cursor: 'pointer' }}>←</button>
+          <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', flex: 1 }}>
+            Neues Turnier — Schritt {wizardStep}/4: {steps[wizardStep]}
+          </h2>
+        </div>
+        {/* Progress Bar */}
+        <div style={{ display: 'flex', gap: '4px', marginBottom: '24px' }}>
+          {[1,2,3,4].map(s => (
+            <div key={s} style={{ flex: 1, height: '4px', borderRadius: '2px', background: s <= wizardStep ? 'var(--pe-cyan-bright)' : 'var(--pe-border)' }} />
+          ))}
+        </div>
+
+        {/* Step 1: Grunddaten */}
+        {wizardStep === 1 && (
+          <form onSubmit={handleCreate} style={card}>
+            <p style={{ color: 'var(--pe-text-sub)', fontSize: '13px', marginBottom: '16px' }}>Gib dem Turnier einen Namen und optionales Datum.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <input type="text" value={createForm.name} onChange={e => setCreateForm({...createForm, name: e.target.value})} placeholder="Turniername *" required style={{ ...inputStyle, padding: '12px 14px' }} />
+              <input type="date" value={createForm.date} onChange={e => setCreateForm({...createForm, date: e.target.value})} style={{ ...inputStyle, padding: '12px 14px' }} />
+            </div>
+            <button type="submit" disabled={creating || !createForm.name.trim()} style={{ width: '100%', marginTop: '16px', padding: '14px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer', minHeight: '52px', opacity: creating ? 0.6 : 1 }}>
+              {creating ? 'Wird angelegt...' : 'Turnier anlegen & weiter →'}
+            </button>
+          </form>
+        )}
+
+        {/* Step 2: Format */}
+        {wizardStep === 2 && (
+          <div style={card}>
+            <p style={{ color: 'var(--pe-text-sub)', fontSize: '13px', marginBottom: '16px' }}>Format und Legs pro Runde konfigurieren.</p>
+            {[
+              { key: 'prelim', label: 'Vorrunde / Gruppen' },
+              { key: 'qf',     label: 'Viertelfinale' },
+              { key: 'sf',     label: 'Halbfinale' },
+              { key: 'final',  label: 'Finale' },
+            ].map(({ key, label }) => (
+              <div key={key} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '8px', alignItems: 'center', marginBottom: '10px' }}>
+                <div style={{ color: 'var(--pe-text-sub)', fontSize: '13px', fontWeight: 'bold' }}>{label}</div>
+                <select value={config[`${key}_format`]} onChange={e => setConfig({...config, [`${key}_format`]: e.target.value})} style={{ ...inputStyle, padding: '8px', fontSize: '13px' }}>
+                  {FORMAT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <input type="number" min="1" max="11" value={config[`${key}_legs`]} onChange={e => setConfig({...config, [`${key}_legs`]: e.target.value})} style={{ ...inputStyle, width: '60px', padding: '8px', textAlign: 'center', fontSize: '13px' }} />
+                  <span style={{ color: 'var(--pe-text-muted)', fontSize: '12px' }}>Legs</span>
+                </div>
+              </div>
+            ))}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px' }}>
+              <span style={{ color: 'var(--pe-text-sub)', fontSize: '13px', fontWeight: 'bold' }}>Anzahl Boards</span>
+              <input type="number" min="1" value={config.board_count} onChange={e => setConfig({...config, board_count: e.target.value})} style={{ ...inputStyle, width: '70px', padding: '8px', textAlign: 'center' }} />
+            </div>
+            <button onClick={handleSaveConfig} disabled={savingConfig} style={{ width: '100%', marginTop: '16px', padding: '14px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer', minHeight: '52px', opacity: savingConfig ? 0.6 : 1 }}>
+              {savingConfig ? 'Speichern...' : 'Format speichern & weiter →'}
+            </button>
+          </div>
+        )}
+
+        {/* Step 3: Spieler */}
+        {wizardStep === 3 && (
+          <div>
+            <div style={card}>
+              <p style={{ color: 'var(--pe-text-sub)', fontSize: '13px', marginBottom: '12px' }}>Spieler anlegen oder Simulation für Tests nutzen.</p>
+              <form onSubmit={addPlayer} style={{ marginBottom: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', marginBottom: '6px' }}>
+                  <input type="text" value={playerForm.vorname} onChange={e => setPlayerForm({...playerForm, vorname: e.target.value})} placeholder="Vorname *" required style={{ ...inputStyle, padding: '10px 12px' }} />
+                  <input type="text" value={playerForm.nickname} onChange={e => setPlayerForm({...playerForm, nickname: e.target.value})} placeholder="Nickname *" required style={{ ...inputStyle, padding: '10px 12px' }} />
+                  <input type="text" value={playerForm.nachname} onChange={e => setPlayerForm({...playerForm, nachname: e.target.value})} placeholder="Nachname *" required style={{ ...inputStyle, padding: '10px 12px' }} />
+                </div>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <input type="number" value={playerForm.seed} onChange={e => setPlayerForm({...playerForm, seed: e.target.value})} placeholder="Seed" style={{ ...inputStyle, width: '70px', padding: '10px' }} />
+                  <button type="submit" disabled={!playerForm.vorname.trim() || !playerForm.nickname.trim() || !playerForm.nachname.trim()} style={{ flex: 1, padding: '10px 16px', borderRadius: '8px', background: 'var(--pe-blue-deep)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px', opacity: (!playerForm.vorname.trim() || !playerForm.nickname.trim() || !playerForm.nachname.trim()) ? 0.5 : 1 }}>+ Spieler hinzufügen</button>
+                </div>
+              </form>
+              {/* Mock */}
+              <div style={{ display: 'flex', gap: '8px', padding: '10px', borderRadius: '8px', background: 'var(--pe-bg-elevated)', border: '1px dashed var(--pe-border)' }}>
+                <select value={mockCount} onChange={e => setMockCount(e.target.value)} style={{ flex: 1, ...inputStyle, padding: '8px' }}>
+                  {[4,8,16,30,32].map(n => <option key={n} value={n}>{n} Fake-Spieler</option>)}
+                </select>
+                <button onClick={handleMock} style={{ padding: '8px 16px', borderRadius: '8px', background: 'var(--pe-warning)', color: '#000', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px' }}>Simulieren</button>
+              </div>
+            </div>
+            {/* Spieler-Liste */}
+            <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
+              {players.map(p => (
+                <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: '8px', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
+                  <span style={{ color: 'var(--pe-text)', fontWeight: 'bold' }}>{p.name}</span>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {p.seed && <span style={{ color: 'var(--pe-text-muted)', fontSize: '12px' }}>#{p.seed}</span>}
+                    <button onClick={() => deletePlayer(p.id)} style={{ ...btnSmall, padding: '4px 10px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', minHeight: '30px' }}>✕</button>
+                  </div>
+                </div>
+              ))}
+              {players.length === 0 && <p style={{ color: 'var(--pe-text-muted)', textAlign: 'center', padding: '16px' }}>Noch keine Spieler</p>}
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={() => setWizardStep(2)} style={{ flex: 1, padding: '14px', borderRadius: '10px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-text-sub)', border: '1px solid var(--pe-border)', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '52px' }}>← Zurück</button>
+              <button onClick={() => setWizardStep(4)} disabled={players.length < 2} style={{ flex: 2, padding: '14px', borderRadius: '10px', background: players.length >= 2 ? 'var(--pe-gradient)' : 'var(--pe-bg-elevated)', color: players.length >= 2 ? '#fff' : 'var(--pe-text-muted)', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '16px', cursor: players.length >= 2 ? 'pointer' : 'not-allowed', minHeight: '52px' }}>
+                Weiter mit {players.length} Spielern →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Auslosung / Start */}
+        {wizardStep === 4 && (
+          <div>
+            <div style={card}>
+              <p style={{ color: 'var(--pe-text-sub)', fontSize: '13px', marginBottom: '16px' }}>{players.length} Spieler bereit. Wähle den Start-Modus.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <button onClick={drawGroups} style={{ padding: '14px', borderRadius: '10px', background: 'var(--pe-blue-deep)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '52px', textAlign: 'left' }}>
+                  <div style={{ fontWeight: 'bold' }}>Gruppenphase auslosen</div>
+                  <div style={{ fontSize: '12px', opacity: 0.8, marginTop: '2px' }}>Automatische Verteilung in Gruppen nach Anzahl Spieler</div>
+                </button>
+                <button onClick={generateBracket} style={{ padding: '14px', borderRadius: '10px', background: 'var(--pe-blue-mid)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '52px', textAlign: 'left' }}>
+                  <div style={{ fontWeight: 'bold' }}>Direkt KO-Bracket starten</div>
+                  <div style={{ fontSize: '12px', opacity: 0.8, marginTop: '2px' }}>Ohne Gruppenphase direkt ins K.O.-System</div>
+                </button>
+                <button onClick={startTournament} style={{ padding: '14px', borderRadius: '10px', background: 'var(--pe-success)', color: '#000', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '52px', textAlign: 'left' }}>
+                  <div style={{ fontWeight: 'bold' }}>Turnier starten (klassisch)</div>
+                  <div style={{ fontSize: '12px', opacity: 0.7, marginTop: '2px' }}>Bracket automatisch aus Spielerliste generieren</div>
+                </button>
+              </div>
+            </div>
+            {groups.length > 0 && (
+              <div style={card}>
+                <h3 style={{ color: 'var(--pe-text-sub)', fontWeight: 'bold', fontSize: '13px', marginBottom: '12px', textTransform: 'uppercase' }}>GRUPPEN — BOARD ZUORDNUNG</h3>
+                {groups.map(g => (
+                  <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', borderRadius: '8px', background: 'var(--pe-bg-elevated)', marginBottom: '6px' }}>
+                    <div>
+                      <span style={{ color: 'var(--pe-text)', fontWeight: 'bold' }}>Gruppe {g.name}</span>
+                      <span style={{ color: 'var(--pe-text-muted)', fontSize: '12px', marginLeft: '8px' }}>{(g.standings||[]).length} Spieler</span>
+                    </div>
+                    <select value={g.board_id || ''} onChange={e => assignGroupToBoard(g.id, e.target.value ? parseInt(e.target.value) : null)} style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '8px', padding: '4px 8px', fontSize: '13px', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+                      <option value="">Kein Board</option>
+                      {boards.map(b => <option key={b.id} value={b.id}>Board {b.number}{b.is_final ? ' ★' : ''}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
+            )}
+            {groups.length > 0 && (
+              <div style={card}>
+                <p style={{ color: 'var(--pe-text-sub)', fontSize: '13px', marginBottom: '10px' }}>
+                  Boards werden automatisch per Losverfahren den Gruppen zugewiesen und der komplette Round-Robin Spielplan generiert.
+                </p>
+                <button onClick={generateGroupSchedule} style={{ width: '100%', padding: '14px', borderRadius: '10px', background: 'linear-gradient(135deg, #00E5A0, #1E7FEB)', color: '#000', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '52px' }}>
+                  Boards einlosen & Spielplan automatisch erstellen
+                </button>
+              </div>
+            )}
+            <button onClick={() => setWizardStep(3)} style={{ width: '100%', padding: '12px', borderRadius: '10px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-text-sub)', border: '1px solid var(--pe-border)', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', marginTop: '8px' }}>← Zurück zu Spielern</button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // TOURNAMENT LIST VIEW (wizardStep === 0)
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px' }}>Turniere</h2>
+        <button onClick={() => { setWizardStep(1); setNewTournament(null); setCreateForm({ name: '', date: '', format: '501', checkout: 'double_out' }); }} style={{ padding: '10px 20px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px' }}>
+          + Neues Turnier
+        </button>
+      </div>
+
+      {/* Turnier-Liste */}
+      {tournaments.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '48px 16px' }}>
+          <p style={{ color: 'var(--pe-text-muted)', fontSize: '16px', marginBottom: '16px' }}>Noch keine Turniere vorhanden.</p>
+          <button onClick={() => setWizardStep(1)} style={{ padding: '14px 28px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '52px' }}>
+            Erstes Turnier anlegen
+          </button>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+        {tournaments.map(t => (
+          <div key={t.id} onClick={() => setSelectedId(String(t.id))} style={{ padding: '16px', borderRadius: '12px', background: 'var(--pe-bg-card)', border: `2px solid ${String(t.id) === String(selectedId) ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, cursor: 'pointer' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div style={{ color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '16px' }}>{t.name}</div>
+                {t.date && <div style={{ color: 'var(--pe-text-muted)', fontSize: '13px', marginTop: '2px' }}>{t.date}</div>}
+              </div>
+              <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', background: t.status === 'active' ? 'var(--pe-success)' : t.status === 'finished' ? 'var(--pe-border)' : 'var(--pe-blue-deep)', color: t.status === 'active' ? '#000' : '#fff' }}>
+                {t.status === 'open' ? 'Offen' : t.status === 'active' ? 'Aktiv' : 'Beendet'}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Selected tournament actions */}
+      {selectedTournament && (
+        <div>
+          <h3 style={{ color: 'var(--pe-text-sub)', fontWeight: 'bold', fontSize: '13px', marginBottom: '12px', textTransform: 'uppercase' }}>
+            AKTIONEN: {selectedTournament.name}
+          </h3>
+
+          {/* Tournament info row */}
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+            <span style={{ padding: '4px 10px', borderRadius: '8px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', color: 'var(--pe-text-sub)', fontSize: '12px', fontWeight: 'bold' }}>
+              {selectedTournament.format || '501'}
+            </span>
+            <span style={{ padding: '4px 10px', borderRadius: '8px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', color: 'var(--pe-text-sub)', fontSize: '12px' }}>
+              {selectedTournament.checkout === 'double_out' ? 'Double Out' : 'Single Out'}
+            </span>
+            <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', background: selectedTournament.status === 'active' ? 'var(--pe-success)' : selectedTournament.status === 'finished' ? 'var(--pe-border)' : 'var(--pe-blue-deep)', color: selectedTournament.status === 'active' ? '#000' : '#fff' }}>
+              {selectedTournament.status === 'open' ? 'Offen' : selectedTournament.status === 'active' ? 'Aktiv' : 'Beendet'}
+            </span>
+          </div>
+
+          {/* Groups section — shown if group draw done or groups exist */}
+          {(selectedTournament.group_draw_done || groups.length > 0) && groups.length > 0 && (
+            <div style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', borderRadius: '12px', padding: '14px', marginBottom: '12px' }}>
+              <h4 style={{ color: 'var(--pe-text-sub)', fontWeight: 'bold', fontSize: '12px', marginBottom: '10px', textTransform: 'uppercase' }}>Gruppen — Board Zuordnung</h4>
+              {groups.map(g => (
+                <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px', borderRadius: '8px', background: 'var(--pe-bg-elevated)', marginBottom: '6px' }}>
+                  <div>
+                    <span style={{ color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '13px' }}>Gruppe {g.name}</span>
+                    <span style={{ color: 'var(--pe-text-muted)', fontSize: '11px', marginLeft: '8px' }}>{(g.standings||[]).length} Spieler</span>
+                  </div>
+                  <select value={g.board_id || ''} onChange={e => assignGroupToBoard(g.id, e.target.value ? parseInt(e.target.value) : null)} style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+                    <option value="">Kein Board</option>
+                    {boards.map(b => <option key={b.id} value={b.id}>Board {b.number}{b.is_final ? ' ★' : ''}</option>)}
+                  </select>
+                </div>
+              ))}
+              <button onClick={generateGroupSchedule} style={{ width: '100%', marginTop: '8px', padding: '12px', borderRadius: '10px', background: 'linear-gradient(135deg, #00E5A0, #1E7FEB)', color: '#000', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '44px', fontSize: '13px' }}>
+                Spielplan generieren
+              </button>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+            {selectedTournament.status === 'open' && (
+              <>
+                <button onClick={() => { setWizardStep(3); }} style={{ padding: '12px 16px', borderRadius: '10px', background: 'var(--pe-blue-deep)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px', textAlign: 'left' }}>
+                  Spieler verwalten →
+                </button>
+                <button onClick={() => { setWizardStep(4); }} style={{ padding: '12px 16px', borderRadius: '10px', background: 'var(--pe-blue-mid)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px', textAlign: 'left' }}>
+                  Auslosung →
+                </button>
+              </>
+            )}
+            {selectedTournament.status === 'active' && !selectedTournament.locked && (
+              <button onClick={lockTournament} style={{ padding: '12px 16px', borderRadius: '10px', background: 'var(--pe-warning)', color: '#000', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px' }}>
+                Turnier abschließen
+              </button>
+            )}
+            <button onClick={() => deleteTournament(selectedId)} style={{ padding: '12px 16px', borderRadius: '10px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', border: '1px solid var(--pe-danger)', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px' }}>
+              Turnier löschen
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Danger Zone */}
+      <div style={{ padding: '16px', borderRadius: '12px', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-danger)', marginTop: '24px' }}>
+        <h3 style={{ color: 'var(--pe-danger)', fontWeight: 'bold', fontSize: '13px', marginBottom: '8px' }}>DANGER ZONE</h3>
+        <p style={{ color: 'var(--pe-text-muted)', fontSize: '12px', marginBottom: '12px' }}>Löscht ALLE Turniere, Spieler, Spiele, Bestellungen. Boards, User und Produkte bleiben.</p>
+        <button onClick={handleWipe} style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'var(--pe-danger)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px' }}>
+          Datenbank zurücksetzen (WIPE)
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Tab "System-Log" — Audit-Log im Terminal-Stil
+const LOG_CATEGORY_COLORS = {
+  tournament: '#1E7FEB',
+  player:     '#00B8FF',
+  game:       '#00E5A0',
+  config:     '#FFB020',
+  user:       '#C850FF',
+  board:      '#5DD5FF',
+  auth:       '#9CA3AF',
+  system:     '#FF4560',
+};
+
+const LOG_ACTION_COLORS = {
+  CREATE:    '#00E5A0',
+  REGISTER:  '#00E5A0',
+  START:     '#00E5A0',
+  FINISH:    '#1E7FEB',
+  UPDATE:    '#FFB020',
+  LOGIN:     '#9CA3AF',
+  DELETE:    '#FF4560',
+  RESET:     '#FF4560',
+  WIPE:      '#FF4560',
+  LOCK:      '#FFB020',
+  LOG_CLEAR: '#FF4560',
+};
+
+function LogTab() {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [filterCat, setFilterCat] = useState('');
+  const [filterAction, setFilterAction] = useState('');
+  const [clearing, setClearing] = useState(false);
+
+  const load = () => {
+    setLoading(true);
+    setLoadError('');
+    const params = new URLSearchParams({ limit: 300 });
+    if (filterCat)    params.set('category', filterCat);
+    if (filterAction) params.set('action', filterAction);
+    api.get(`/admin/logs?${params}`)
+      .then(data => { setLogs(data); setLoadError(''); })
+      .catch(err => { setLogs([]); setLoadError(err.message || 'Fehler beim Laden'); })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { load(); }, [filterCat, filterAction]);
+  useEffect(() => { const i = setInterval(load, 15000); return () => clearInterval(i); }, [filterCat, filterAction]);
+
+  const handleClear = async () => {
+    if (!confirm('Gesamtes Audit-Log löschen?')) return;
+    setClearing(true);
+    try { await api.del('/admin/logs'); load(); }
+    catch (err) { alert(err.message || 'Löschen fehlgeschlagen'); }
+    finally { setClearing(false); }
+  };
+
+  const categories = ['', 'tournament', 'player', 'game', 'config', 'user', 'board', 'auth', 'system'];
+  const actions    = ['', 'CREATE', 'REGISTER', 'START', 'FINISH', 'UPDATE', 'DELETE', 'RESET', 'LOCK', 'WIPE', 'LOGIN', 'LOG_CLEAR'];
+
+  const termStyle = {
+    background: '#050A10',
+    border: '1px solid #1A2840',
+    borderRadius: '10px',
+    fontFamily: '"Courier New", Courier, monospace',
+    fontSize: '12px',
+    padding: '12px',
+    maxHeight: 'calc(100vh - 320px)',
+    overflowY: 'auto',
+    lineHeight: '1.7',
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {/* Header + Controls */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>
+          System-Log
+          <span style={{ fontSize: '13px', color: 'var(--pe-text-muted)', marginLeft: '10px', fontWeight: 'normal' }}>
+            Auto-Refresh 15s
+          </span>
+        </h2>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <select value={filterCat} onChange={e => setFilterCat(e.target.value)} style={{ ...inputStyle, padding: '6px 10px', fontSize: '12px', minHeight: '36px' }}>
+            {categories.map(c => <option key={c} value={c}>{c || 'Alle Kategorien'}</option>)}
+          </select>
+          <select value={filterAction} onChange={e => setFilterAction(e.target.value)} style={{ ...inputStyle, padding: '6px 10px', fontSize: '12px', minHeight: '36px' }}>
+            {actions.map(a => <option key={a} value={a}>{a || 'Alle Actions'}</option>)}
+          </select>
+          <button onClick={load} style={{ ...btnSmall, padding: '6px 14px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-text-sub)', minHeight: '36px' }}>
+            ↻ Aktualisieren
+          </button>
+          <button onClick={handleClear} disabled={clearing} style={{ ...btnSmall, padding: '6px 14px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', minHeight: '36px', opacity: clearing ? 0.5 : 1 }}>
+            Log leeren
+          </button>
+        </div>
+      </div>
+
+      {/* Terminal */}
+      <div style={termStyle}>
+        {loading && logs.length === 0 && (
+          <span style={{ color: '#4A6A8A' }}>Lade Log-Einträge...</span>
+        )}
+        {!loading && loadError && (
+          <span style={{ color: '#FF4560' }}>Fehler: {loadError} — Backend neu starten?</span>
+        )}
+        {!loading && !loadError && logs.length === 0 && (
+          <span style={{ color: '#4A6A8A' }}>Keine Log-Einträge gefunden.</span>
+        )}
+        {logs.map(entry => {
+          const catColor    = LOG_CATEGORY_COLORS[entry.category] || '#9CA3AF';
+          const actionColor = LOG_ACTION_COLORS[entry.action]    || '#FFFFFF';
+          const ts = entry.ts ? entry.ts.replace('T', ' ').slice(0, 19) : '';
+          return (
+            <div key={entry.id} style={{ marginBottom: '2px', display: 'flex', gap: '8px', alignItems: 'baseline' }}>
+              <span style={{ color: '#4A6A8A', flexShrink: 0 }}>{ts}</span>
+              <span style={{ color: '#6B8AB0', flexShrink: 0 }}>[{entry.actor}/{entry.role}]</span>
+              <span style={{ color: catColor, fontWeight: 'bold', flexShrink: 0 }}>{entry.category}</span>
+              <span style={{ color: actionColor, fontWeight: 'bold', flexShrink: 0 }}>{entry.action}</span>
+              <span style={{ color: '#C8D8E8' }}>{entry.detail}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ fontSize: '12px', color: 'var(--pe-text-muted)', textAlign: 'right' }}>
+        {logs.length} Einträge
+      </div>
+    </div>
+  );
+}
+
+// Tab "Einstellungen" — Theming + App-Daten (nur Admin)
+function SettingsTab() {
+  const PRESETS = [
+    { name: 'P Entertainment', color_primary: '#1A4FD6', color_mid: '#1E7FEB', color_accent: '#00B8FF', color_accent_light: '#5DD5FF', color_bg: '#090E1A', color_bg_card: '#101829', color_success: '#00E5A0', color_warning: '#FFB020', color_danger: '#FF4560' },
+    { name: 'Lila Nacht',      color_primary: '#7B2FBF', color_mid: '#9B3FD6', color_accent: '#C850FF', color_accent_light: '#D87AFF', color_bg: '#0D0A1A', color_bg_card: '#160E28', color_success: '#00E5A0', color_warning: '#FFB020', color_danger: '#FF4560' },
+    { name: 'Feuer',           color_primary: '#C42B14', color_mid: '#D94020', color_accent: '#FF6600', color_accent_light: '#FF9144', color_bg: '#120804', color_bg_card: '#1E0E07', color_success: '#00E5A0', color_warning: '#FFB020', color_danger: '#FF4560' },
+    { name: 'Smaragd',         color_primary: '#0D7A3E', color_mid: '#119E4F', color_accent: '#00C464', color_accent_light: '#4FFFAA', color_bg: '#071A0E', color_bg_card: '#0E2918', color_success: '#00E5A0', color_warning: '#FFB020', color_danger: '#FF4560' },
+    { name: 'Monochrom',       color_primary: '#374151', color_mid: '#4B5563', color_accent: '#9CA3AF', color_accent_light: '#D1D5DB', color_bg: '#0A0A0A', color_bg_card: '#141414', color_success: '#22C55E', color_warning: '#EAB308', color_danger: '#EF4444' },
+  ];
+
+  const COLOR_FIELDS = [
+    { key: 'color_primary',      label: 'Primärfarbe (dunkel)' },
+    { key: 'color_mid',          label: 'Primärfarbe (mittel)' },
+    { key: 'color_accent',       label: 'Akzentfarbe (hell)' },
+    { key: 'color_accent_light', label: 'Akzentfarbe (sehr hell)' },
+    { key: 'color_bg',           label: 'Hintergrund' },
+    { key: 'color_bg_card',      label: 'Karten-Hintergrund' },
+    { key: 'color_success',      label: 'Erfolg (grün)' },
+    { key: 'color_warning',      label: 'Warnung (gelb)' },
+    { key: 'color_danger',       label: 'Gefahr (rot)' },
+  ];
+
+  const [cfg, setCfg] = useState({
+    app_name: '', logo_url: '',
+    color_primary: '#1A4FD6', color_mid: '#1E7FEB', color_accent: '#00B8FF', color_accent_light: '#5DD5FF',
+    color_bg: '#090E1A', color_bg_card: '#101829',
+    color_success: '#00E5A0', color_warning: '#FFB020', color_danger: '#FF4560',
+  });
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    api.get('/config').then(data => setCfg(prev => ({ ...prev, ...data }))).catch(() => {});
+  }, []);
+
+  const applyLive = (updated) => {
+    const root = document.documentElement;
+    const map = {
+      color_primary: '--pe-blue-deep', color_mid: '--pe-blue-mid',
+      color_accent: '--pe-cyan-bright', color_accent_light: '--pe-cyan-light',
+      color_bg: '--pe-bg', color_bg_card: '--pe-bg-card',
+      color_success: '--pe-success', color_warning: '--pe-warning', color_danger: '--pe-danger',
+    };
+    for (const [key, cssVar] of Object.entries(map)) {
+      if (updated[key]) root.style.setProperty(cssVar, updated[key]);
+    }
+    root.style.setProperty('--pe-gradient',
+      `linear-gradient(135deg, ${updated.color_accent_light || '#5DD5FF'}, ${updated.color_mid || '#1E7FEB'}, ${updated.color_primary || '#1A4FD6'})`
+    );
+    if (updated.app_name) document.title = updated.app_name;
+  };
+
+  const update = (key, val) => {
+    const next = { ...cfg, [key]: val };
+    setCfg(next);
+    applyLive(next);
+  };
+
+  const applyPreset = (preset) => {
+    const next = { ...cfg, ...preset };
+    setCfg(next);
+    applyLive(next);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await api.put('/config', cfg);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      alert(err.message || 'Speichern fehlgeschlagen');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReset = async () => {
+    if (!confirm('Alle Einstellungen auf Standardwerte zurücksetzen?')) return;
+    try {
+      const defaults = await api.post('/config/reset', {});
+      const next = { ...cfg, ...defaults };
+      setCfg(next);
+      applyLive(next);
+    } catch (err) {
+      alert(err.message || 'Reset fehlgeschlagen');
+    }
+  };
+
+  const sectionStyle = { padding: '16px', borderRadius: '12px', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' };
+  const labelStyle = { fontSize: '12px', color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', fontWeight: 'bold' };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Einstellungen</h2>
+
+      {/* App-Daten */}
+      <div style={sectionStyle}>
+        <h3 style={{ color: 'var(--pe-text-sub)', fontWeight: 'bold', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>App-Daten</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <div>
+            <div style={labelStyle}>App-Name</div>
+            <input type="text" value={cfg.app_name} onChange={e => update('app_name', e.target.value)} style={{ ...inputStyle, width: '100%', padding: '10px 12px' }} />
+          </div>
+          <div>
+            <div style={labelStyle}>Logo URL</div>
+            <input type="text" value={cfg.logo_url} onChange={e => update('logo_url', e.target.value)} placeholder="/logo.jpeg" style={{ ...inputStyle, width: '100%', padding: '10px 12px' }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Gradient-Vorschau */}
+      <div style={{ height: '36px', borderRadius: '10px', background: `linear-gradient(135deg, ${cfg.color_accent_light}, ${cfg.color_mid}, ${cfg.color_primary})` }} />
+
+      {/* Theme-Vorlagen */}
+      <div style={sectionStyle}>
+        <h3 style={{ color: 'var(--pe-text-sub)', fontWeight: 'bold', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Theme-Vorlagen</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px' }}>
+          {PRESETS.map(preset => (
+            <button key={preset.name} onClick={() => applyPreset(preset)} style={{
+              padding: '12px 8px', borderRadius: '10px', border: '2px solid transparent',
+              background: preset.color_bg, cursor: 'pointer', fontFamily: 'Verdana, Geneva, sans-serif',
+              transition: 'border-color 0.15s',
+            }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = preset.color_accent}
+              onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
+            >
+              <div style={{ height: '6px', borderRadius: '3px', background: `linear-gradient(135deg, ${preset.color_accent_light}, ${preset.color_mid}, ${preset.color_primary})`, marginBottom: '8px' }} />
+              <span style={{ color: preset.color_accent, fontSize: '12px', fontWeight: 'bold' }}>{preset.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Farb-Picker */}
+      <div style={sectionStyle}>
+        <h3 style={{ color: 'var(--pe-text-sub)', fontWeight: 'bold', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Farben anpassen</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
+          {COLOR_FIELDS.map(({ key, label }) => (
+            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', borderRadius: '8px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)' }}>
+              <input
+                type="color"
+                value={cfg[key] || '#000000'}
+                onChange={e => update(key, e.target.value)}
+                style={{ width: '44px', height: '44px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: 'none', padding: '2px', flexShrink: 0 }}
+              />
+              <div>
+                <div style={{ color: 'var(--pe-text)', fontSize: '13px', fontWeight: 'bold' }}>{label}</div>
+                <div style={{ color: 'var(--pe-text-muted)', fontSize: '11px', fontFamily: 'monospace' }}>{cfg[key]}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Aktionen */}
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          style={{
+            flex: 2, padding: '14px', borderRadius: '10px', border: 'none', cursor: saving ? 'not-allowed' : 'pointer',
+            background: saved ? 'var(--pe-success)' : 'var(--pe-gradient)', color: saved ? '#000' : '#fff',
+            fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '15px', minHeight: '52px',
+            opacity: saving ? 0.6 : 1,
+          }}
+        >
+          {saving ? 'Speichern...' : saved ? 'Gespeichert ✓' : 'Einstellungen speichern'}
+        </button>
+        <button
+          onClick={handleReset}
+          style={{
+            flex: 1, padding: '14px', borderRadius: '10px', border: '1px solid var(--pe-border)', cursor: 'pointer',
+            background: 'var(--pe-bg-elevated)', color: 'var(--pe-warning)',
+            fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', minHeight: '52px',
+          }}
+        >
+          Zurücksetzen
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// NEU: Hilfe-Tab mit vollständiger Bedienungsanleitung
+function HelpTab() {
+  const card = { background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', borderRadius: '12px', padding: '16px', marginBottom: '12px' };
+  const h2 = { color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '16px', marginBottom: '12px' };
+  const h3 = { color: 'var(--pe-text-sub)', fontWeight: 'bold', fontSize: '13px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' };
+  const p = { color: 'var(--pe-text-sub)', fontSize: '14px', lineHeight: '1.6', marginBottom: '6px' };
+  const code = { background: 'var(--pe-bg-elevated)', color: 'var(--pe-cyan-light)', padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace', fontSize: '13px' };
+  const badge = (color) => ({ display: 'inline-block', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', border: `1px solid ${color}`, color, marginRight: '6px' });
+  const step = { display: 'flex', gap: '12px', marginBottom: '10px', alignItems: 'flex-start' };
+  const stepNum = { minWidth: '28px', height: '28px', borderRadius: '50%', background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '13px', flexShrink: 0 };
+
+  return (
+    <div>
+      <h2 style={h2}>Bedienungsanleitung</h2>
+
+      {/* ── DASHBOARDS & URLs ── */}
+      <div style={card}>
+        <h3 style={h3}>Dashboards &amp; URLs</h3>
+
+        <div style={{ marginBottom: '12px' }}>
+          <p style={{ ...p, marginBottom: '4px' }}><strong style={{ color: 'var(--pe-text)' }}>Öffentliche Startseite</strong></p>
+          <p style={p}>Turnier-Übersicht, Spielerliste, Bracket und Scheibenstatus. Kein Login nötig.</p>
+          <span style={code}>/</span>
+        </div>
+
+        <div style={{ marginBottom: '12px' }}>
+          <p style={{ ...p, marginBottom: '4px' }}><strong style={{ color: 'var(--pe-text)' }}>Monitor-Ansicht (Beamer / TV)</strong></p>
+          <p style={p}>Vollbild-Spielstand einer Scheibe — read-only, kein Login, geeignet für Großbildschirme.</p>
+          <span style={code}>/board/1</span>
+          <span style={{ color: 'var(--pe-text-muted)', fontSize: '13px', marginLeft: '8px' }}>/board/2, /board/3 …</span>
+        </div>
+
+        <div style={{ marginBottom: '12px' }}>
+          <p style={{ ...p, marginBottom: '4px' }}><strong style={{ color: 'var(--pe-text)' }}>Schiedsrichter-Modus</strong></p>
+          <p style={p}>Eingabe-Interface für Würfe. Login mit Rolle <span style={badge('var(--pe-warning)')}>referee</span> oder <span style={badge('var(--pe-danger)')}>admin</span> erforderlich.</p>
+          <span style={code}>/referee/1</span>
+          <span style={{ color: 'var(--pe-text-muted)', fontSize: '13px', marginLeft: '8px' }}>/referee/2 für Scheibe 2 usw.</span>
+        </div>
+
+        <div style={{ marginBottom: '12px' }}>
+          <p style={{ ...p, marginBottom: '4px' }}><strong style={{ color: 'var(--pe-text)' }}>Gastronomie-Kasse</strong></p>
+          <p style={p}>Bestellerfassung und Kassenmodus. Login mit Rolle <span style={badge('var(--pe-success)')}>gastronomy</span> oder <span style={badge('var(--pe-danger)')}>admin</span>.</p>
+          <span style={code}>/gastronomy</span>
+        </div>
+
+        <div>
+          <p style={{ ...p, marginBottom: '4px' }}><strong style={{ color: 'var(--pe-text)' }}>Admin Dashboard</strong></p>
+          <p style={p}>Vollzugriff auf alle Einstellungen. Login mit Rolle <span style={badge('var(--pe-danger)')}>admin</span>.</p>
+          <span style={code}>/admin</span>
+        </div>
+      </div>
+
+      {/* ── ROLLEN ── */}
+      <div style={card}>
+        <h3 style={h3}>Rollen &amp; Berechtigungen</h3>
+        <div style={{ display: 'grid', gap: '8px' }}>
+          {[
+            { role: 'admin',      color: 'var(--pe-danger)',    desc: 'Vollzugriff — Turnierverwaltung, User anlegen, Einstellungen, Abrechnung, Mailing' },
+            { role: 'director',   color: 'var(--pe-blue-mid)',  desc: 'Turnierleitung — Spielplan, Boards, Auslosung, Spielerverwaltung (kein User/Gastro/Einstellungen-Zugriff)' },
+            { role: 'referee',    color: 'var(--pe-warning)',   desc: 'Schiedsrichter — darf Würfe eingeben und Spiele leiten (/referee/:boardId)' },
+            { role: 'gastronomy', color: 'var(--pe-success)',   desc: 'Bar / Küche — Bestellungen erfassen und abrechnen (/gastronomy)' },
+          ].map(({ role, color, desc }) => (
+            <div key={role} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+              <span style={badge(color)}>{role}</span>
+              <span style={{ ...p, marginBottom: 0 }}>{desc}</span>
+            </div>
+          ))}
+        </div>
+        <p style={{ ...p, marginTop: '10px', color: 'var(--pe-text-muted)' }}>
+          User anlegen: Tab <strong style={{ color: 'var(--pe-text-sub)' }}>User</strong> → "+ Neu"
+        </p>
+      </div>
+
+      {/* ── TURNIER VORBEREITUNG ── */}
+      <div style={card}>
+        <h3 style={h3}>Turnier-Vorbereitung — Schritt für Schritt</h3>
+        {[
+          { n: 1, title: 'Boards anlegen', desc: 'Tab "Boards" → "+ Neu" → Nummer (1, 2, 3 …) und optionalen Namen eingeben. Für jede physische Dartscheibe einen Board anlegen.' },
+          { n: 2, title: 'Mitarbeiter anlegen', desc: 'Tab "User" → "+ Neu" → Schiedsrichter mit Rolle "referee", Barpersonal mit "gastronomy" anlegen. Ohne User-Accounts können Schiedsrichter nicht einloggen.' },
+          { n: 3, title: 'Produkte anlegen', desc: 'Tab "Gastro" → "+ Neu" → Alle Speisen und Getränke mit Preis eintragen. Erst danach kann die Kasse Bestellungen aufnehmen.' },
+          { n: 4, title: 'Turnier erstellen', desc: 'Tab "Turniere" → Turnier auswählen oder neu anlegen. Format (501/301), Checkout (Single/Double Out) und Anzahl der Legs je Runde konfigurieren.' },
+          { n: 5, title: 'Spieler anmelden', desc: 'Tab "Spieler" → Turnier auswählen → "+ Neu" → Namen eingeben. Optional: Walk-On Song URL für Viertelfinale+. Mindestens 4 Spieler für Gruppenphase.' },
+          { n: 6, title: 'Gruppen auslosen', desc: 'Tab "Turniere" → "Gruppen auslosen". Automatische Serpentinen-Verteilung: 4–7 Spieler = 2 Gruppen, 8–15 = 4 Gruppen, 16+ = 8 Gruppen.' },
+          { n: 7, title: 'Turnier starten', desc: 'Turnier auf "aktiv" setzen. Schiedsrichter loggen sich unter /referee/:boardId ein und können sofort Würfe eingeben.' },
+          { n: 8, title: 'KO-Bracket generieren', desc: 'Nach Abschluss der Gruppenphase: Tab "Turniere" → "KO-Bracket generieren". Gruppensieger und -zweite ziehen ins KO-System ein.' },
+          { n: 9, title: 'Turnier abschließen', desc: 'Tab "Turniere" → "Turnier abschließen" (rote Taste). Danach ist das Turnier gesperrt (nur noch lesbar). Mailing-Zusammenfassung danach unter "Mailing" versenden.' },
+        ].map(({ n, title, desc }) => (
+          <div key={n} style={step}>
+            <div style={stepNum}>{n}</div>
+            <div>
+              <p style={{ ...p, marginBottom: '2px', color: 'var(--pe-text)', fontWeight: 'bold' }}>{title}</p>
+              <p style={{ ...p, marginBottom: 0 }}>{desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── SCHIEDSRICHTER ── */}
+      <div style={card}>
+        <h3 style={h3}>Schiedsrichter-Interface</h3>
+        <p style={p}>URL: <span style={code}>/referee/[Board-Nummer]</span> — Login mit Schiedsrichter-Account.</p>
+        <div style={{ display: 'grid', gap: '6px', marginTop: '8px' }}>
+          {[
+            ['Modifier wählen', 'Single / Double / Triple — vor der Zahl drücken. Standard ist Single.'],
+            ['Zahl tippen', '[1]–[20] für das Feld. BULL = 25 Pkt, D-BULL = 50 Pkt, MISS = 0 Pkt.'],
+            ['Runde bestätigen', 'Nach 3 Würfen automatisch oder manuell mit "Runde bestätigen".'],
+            ['Undo', 'Bis zu 9 Würfe zurück über den ↩ Button neben jedem Wurf.'],
+          ].map(([action, desc]) => (
+            <div key={action} style={{ display: 'flex', gap: '10px' }}>
+              <span style={{ ...p, marginBottom: 0, minWidth: '150px', color: 'var(--pe-text)', fontWeight: 'bold' }}>{action}</span>
+              <span style={{ ...p, marginBottom: 0 }}>{desc}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── GASTRONOMIE ── */}
+      <div style={card}>
+        <h3 style={h3}>Gastronomie-Kasse</h3>
+        <p style={p}>URL: <span style={code}>/gastronomy</span> — Login mit Gastronomy-Account.</p>
+        <div style={{ display: 'grid', gap: '6px', marginTop: '8px' }}>
+          {[
+            ['NFC-Scan', 'NFC-Chip oder QR-Code scannen → Gast wird geladen.'],
+            ['Bestellung', 'Produkt-Buttons antippen → Warenkorb → "Bestellen" zum Speichern.'],
+            ['Kassenmodus', 'Oben auf "Kasse" umschalten → alle offenen Bestellungen je Gast sehen.'],
+            ['Abrechnen', '"Jetzt abrechnen" beim Gast → Posten werden auf bezahlt gesetzt, Quittung erscheint.'],
+          ].map(([action, desc]) => (
+            <div key={action} style={{ display: 'flex', gap: '10px' }}>
+              <span style={{ ...p, marginBottom: 0, minWidth: '120px', color: 'var(--pe-text)', fontWeight: 'bold' }}>{action}</span>
+              <span style={{ ...p, marginBottom: 0 }}>{desc}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── NFC ── */}
+      <div style={card}>
+        <h3 style={h3}>NFC &amp; Gäste</h3>
+        <p style={p}>NFC-Tags werden über <span style={code}>/nfc-scan</span> oder direkt in der Gastronomie-Kasse gescannt. Jeder Tag entspricht einem Gast-Konto. NFC funktioniert nativ in Chrome auf Android.</p>
+        <p style={{ ...p, color: 'var(--pe-text-muted)', marginBottom: 0 }}>Ohne NFC-Hardware: Gäste manuell über die Gastro-Suche laden oder QR-Code verwenden.</p>
+      </div>
+
+      {/* ── MAILING ── */}
+      <div style={card}>
+        <h3 style={h3}>Mailing (Post-Event)</h3>
+        <p style={p}>Tab <strong style={{ color: 'var(--pe-text-sub)' }}>Mailing</strong> → Templates anlegen → Test-Mail senden → nach dem Event "Event-Zusammenfassung senden".</p>
+        <p style={{ ...p, color: 'var(--pe-text-muted)', marginBottom: 0 }}>Ohne SMTP-Konfiguration (MAIL_HOST in <span style={code}>/backend/.env</span>) werden Mails nur in der Server-Konsole geloggt (dry-run).</p>
+      </div>
+    </div>
+  );
+}
+
+// NEU: tab prop für URL-basierte Tab-Auswahl (z.B. /admin/users)
+export default function AdminPage({ tab }) {
+  const { token, logout } = useStore();
+
+  if (!token) return <AdminLogin />;
+
+  const payload = parseJwt(token);
+  const userRole = payload?.role || 'admin';
+  const visibleTabs = ALL_TABS.filter(t => t.roles.includes(userRole));
+
+  // Ensure requested tab is visible for this role; fallback to first visible
+  const resolvedDefault = visibleTabs.find(t => t.id === (tab || 'overview'))
+    ? (tab || 'overview')
+    : visibleTabs[0]?.id || 'overview';
+
+  const [activeTab, setActiveTab] = useState(resolvedDefault);
+
+  const ROLE_LABEL = { admin: 'Admin', director: 'Turnierleitung', referee: 'Schiedsrichter', gastronomy: 'Gastronomie' };
+
+  return (
+    <div className="min-h-screen" style={{ fontFamily: 'Verdana, Geneva, sans-serif' }}>
+      {/* Header */}
+      <div style={{ background: 'var(--pe-gradient)', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Link to="/" style={{ color: '#fff', textDecoration: 'none', fontSize: '20px' }}>&larr;</Link>
+          <img src="/logo.jpeg" alt="DartEvent" style={{ height: '40px' }} />
+          <div>
+            <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '18px' }}>
+              {userRole === 'director' ? 'Turnierleiter' : 'Admin Dashboard'}
+            </span>
+            <span style={{ display: 'block', fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>
+              {payload?.username || ''} · {ROLE_LABEL[userRole] || userRole}
+            </span>
+          </div>
+        </div>
+        <button onClick={logout} style={{ background: 'rgba(0,0,0,0.3)', color: 'var(--pe-danger)', border: '1px solid var(--pe-danger)', borderRadius: '8px', padding: '8px 16px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer' }}>
+          Abmelden
+        </button>
+      </div>
+
+      {/* Body: Sidebar + Content */}
+      <div style={{ display: 'flex', minHeight: 'calc(100vh - 64px)' }}>
+        {/* Sidebar (Desktop) */}
+        <div style={{ width: '200px', flexShrink: 0, background: 'var(--pe-bg-card)', borderRight: '1px solid var(--pe-border)', padding: '16px 0', display: 'none' }} className="sidebar-desktop">
+          {visibleTabs.map(t => (
+            <button key={t.id} onClick={() => setActiveTab(t.id)} style={{ width: '100%', padding: '14px 20px', textAlign: 'left', background: activeTab === t.id ? 'var(--pe-bg-elevated)' : 'transparent', color: activeTab === t.id ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)', border: 'none', borderLeft: activeTab === t.id ? '3px solid var(--pe-cyan-bright)' : '3px solid transparent', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Main area */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {/* Mobile Tab-Leiste */}
+          <div className="mobile-tabs" style={{ display: 'flex', overflowX: 'auto', padding: '8px', gap: '8px', background: 'var(--pe-bg-card)', borderBottom: '1px solid var(--pe-border)', WebkitOverflowScrolling: 'touch' }}>
+            {visibleTabs.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '13px',
+                  whiteSpace: 'nowrap',
+                  background: activeTab === t.id ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)',
+                  border: '1px solid var(--pe-border)',
+                  color: activeTab === t.id ? 'var(--pe-text)' : 'var(--pe-text-sub)',
+                  minHeight: '44px',
+                  fontFamily: 'Verdana, Geneva, sans-serif',
+                  flexShrink: 0,
+                  cursor: 'pointer',
+                }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Content */}
+          <div style={{ flex: 1, padding: '24px', maxWidth: '1400px', overflowY: 'auto' }}>
+            {activeTab === 'overview'    && <OverviewTab />}
+            {activeTab === 'director'    && <TournamentDirectorTab />}
+            {activeTab === 'tournaments' && <TournamentExtendedTab />}
+            {activeTab === 'players'     && <PlayersTab />}
+            {activeTab === 'boards'      && <BoardsTab />}
+            {activeTab === 'users'       && <UsersTab />}
+            {activeTab === 'gastro'      && <GastroAdminTab />}
+            {activeTab === 'mailing'     && <MailingTab />}
+            {activeTab === 'settings'    && <SettingsTab />}
+            {activeTab === 'log'         && <LogTab />}
+            {activeTab === 'help'        && <HelpTab />}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
