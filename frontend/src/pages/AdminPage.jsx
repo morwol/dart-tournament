@@ -801,8 +801,9 @@ function TournamentDirectorTab() {
   const [boards, setBoards] = useState([]);
   const [games, setGames] = useState([]);
   const [activeTournament, setActiveTournament] = useState(null);
-  const [dragGameId, setDragGameId] = useState(null); // ID des gerade gezogenen Spiels
-  const [dragOverBoard, setDragOverBoard] = useState(null); // boardId über dem der Cursor ist
+  const [dragGameId, setDragGameId] = useState(null);
+  const [dragOverBoard, setDragOverBoard] = useState(null);
+  const [tapGameId, setTapGameId] = useState(null); // Mobile tap-to-assign selection
 
   const load = async () => {
     const [b, t] = await Promise.all([
@@ -822,12 +823,20 @@ function TournamentDirectorTab() {
   useEffect(() => { const i = setInterval(load, 10000); return () => clearInterval(i); }, []);
 
   const assignGame = async (gameId, boardId) => {
+    setTapGameId(null);
     await api.put(`/games/${gameId}/assign-board`, { board_id: boardId });
     load();
   };
   const removeFromBoard = async (gameId) => {
+    setTapGameId(null);
     await api.del(`/games/${gameId}/assign-board`);
     load();
+  };
+
+  // Tap-to-assign: select a pending game, then tap a board to assign
+  const onTapGame = (g) => {
+    if (g.status === 'active' || g.status === 'bulloff') return;
+    setTapGameId(prev => prev === g.id ? null : g.id);
   };
 
   // Drag handlers
@@ -866,47 +875,80 @@ function TournamentDirectorTab() {
 
   const btnBase = { border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', borderRadius: '8px', fontSize: '12px', minHeight: '36px' };
 
+  const tapGame = tapGameId ? games.find(g => g.id === tapGameId) : null;
+
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>
           Turnierleiter {activeTournament ? `— ${activeTournament.name}` : ''}
         </h2>
-        <span style={{ color: 'var(--pe-text-muted)', fontSize: '13px' }}>Auto-Refresh 10s</span>
+        <span style={{ color: 'var(--pe-text-muted)', fontSize: '12px' }}>Auto-Refresh 10s</span>
       </div>
 
-      <div style={{ visibility: dragGameId ? 'visible' : 'hidden', marginBottom: '8px', padding: '8px 14px', borderRadius: '8px', background: 'rgba(0,184,255,0.1)', border: '1px solid var(--pe-cyan-bright)', color: 'var(--pe-cyan-bright)', fontSize: '12px', fontWeight: 'bold' }}>
-        ↗ Auf ein Board ziehen zum Zuweisen · auf «Nicht zugewiesen» ziehen zum Entfernen
+      {/* Status bar: drag hint OR tap-to-assign mode */}
+      <div style={{
+        visibility: (dragGameId || tapGameId) ? 'visible' : 'hidden',
+        marginBottom: '10px', padding: '10px 14px', borderRadius: '8px',
+        background: tapGameId ? 'rgba(0,229,160,0.1)' : 'rgba(0,184,255,0.1)',
+        border: `1px solid ${tapGameId ? 'var(--pe-success)' : 'var(--pe-cyan-bright)'}`,
+        color: tapGameId ? 'var(--pe-success)' : 'var(--pe-cyan-bright)',
+        fontSize: '13px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+      }}>
+        <span>
+          {tapGameId
+            ? `▶ ${tapGame?.player1_name} vs ${tapGame?.player2_name} — Board antippen zum Zuweisen`
+            : '↗ Auf ein Board ziehen zum Zuweisen · auf «Nicht zugewiesen» ziehen zum Entfernen'}
+        </span>
+        {tapGameId && (
+          <button onClick={() => setTapGameId(null)} style={{ background: 'none', border: 'none', color: 'var(--pe-success)', cursor: 'pointer', fontSize: '18px', lineHeight: 1, padding: '0 4px' }}>✕</button>
+        )}
       </div>
 
-      {/* Board columns — horizontal scroll on narrow screens */}
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${boards.length || 1}, minmax(240px, 1fr))`, gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
+      {/* Board grid — responsive: auto-fill wraps on mobile */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px', marginBottom: '20px' }}>
         {boards.map(board => {
           const boardGames = gamesByBoard[board.id] || [];
           const activeGame = boardGames.find(g => g.status === 'active' || g.status === 'bulloff');
           const queue = boardGames.filter(g => g.status === 'pending').sort((a, b) => a.id - b.id);
           const hasGames = boardGames.length > 0;
           const isDropTarget = dragOverBoard === board.id;
+          const isTapTarget = !!tapGameId;
 
           return (
             <div key={board.id}
               onDragOver={e => onDragOver(e, board.id)}
               onDragLeave={onDragLeave}
               onDrop={e => onDrop(e, board.id)}
-              style={{ background: 'var(--pe-bg-card)', border: `2px solid ${isDropTarget ? 'var(--pe-cyan-bright)' : activeGame ? 'var(--pe-blue-mid)' : hasGames ? 'var(--pe-border)' : 'var(--pe-bg-elevated)'}`, borderRadius: '14px', overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'border-color 0.15s', background: isDropTarget ? 'rgba(0,184,255,0.06)' : 'var(--pe-bg-card)' }}
+              onClick={isTapTarget ? () => assignGame(tapGameId, board.id) : undefined}
+              style={{
+                background: isDropTarget || (isTapTarget && !activeGame) ? 'rgba(0,184,255,0.06)' : 'var(--pe-bg-card)',
+                border: `2px solid ${isDropTarget ? 'var(--pe-cyan-bright)' : isTapTarget && !activeGame ? 'var(--pe-success)' : activeGame ? 'var(--pe-blue-mid)' : hasGames ? 'var(--pe-border)' : 'var(--pe-bg-elevated)'}`,
+                borderRadius: '14px', overflow: 'hidden', display: 'flex', flexDirection: 'column',
+                transition: 'border-color 0.15s, background 0.15s',
+                cursor: isTapTarget && !activeGame ? 'pointer' : 'default',
+              }}
             >
               {/* Board header */}
               <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--pe-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: activeGame ? 'rgba(30,127,235,0.12)' : 'transparent' }}>
                 <span style={{ fontWeight: 'bold', color: 'var(--pe-text)', fontSize: '15px' }}>
                   Board {board.number}{board.name ? ` — ${board.name}` : ''}{board.is_final ? ' ★' : ''}
                 </span>
-                <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold', background: activeGame ? 'var(--pe-success)' : hasGames ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: activeGame ? '#000' : 'var(--pe-text)' }}>
-                  {activeGame ? 'Aktiv' : hasGames ? `${boardGames.length} Spiele` : isDropTarget ? 'Hier ablegen' : 'Frei'}
+                <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '10px', fontWeight: 'bold', background: activeGame ? 'var(--pe-success)' : hasGames ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: activeGame ? '#000' : 'var(--pe-text)' }}>
+                  {activeGame ? 'Aktiv' : hasGames ? `${boardGames.length} Spiele` : isDropTarget || (isTapTarget && !activeGame) ? 'Hier zuweisen' : 'Frei'}
                 </span>
               </div>
 
-              {/* Drop hint when empty */}
-              {!hasGames && (
+              {/* Tap-to-assign CTA when board is free */}
+              {isTapTarget && !activeGame && !hasGames && (
+                <div style={{ padding: '18px', textAlign: 'center', color: 'var(--pe-success)', fontSize: '13px', fontWeight: 'bold' }}>
+                  Antippen zum Zuweisen
+                </div>
+              )}
+
+              {/* Drop hint when empty and not tap mode */}
+              {!hasGames && !isTapTarget && (
                 <div style={{ padding: '20px', textAlign: 'center', color: isDropTarget ? 'var(--pe-cyan-bright)' : 'var(--pe-text-muted)', fontSize: '12px', border: isDropTarget ? '2px dashed var(--pe-cyan-bright)' : '2px dashed transparent', margin: '8px', borderRadius: '8px', transition: 'all 0.15s' }}>
                   {isDropTarget ? '⬇ Hier ablegen' : 'Spiel herziehen'}
                 </div>
@@ -914,70 +956,85 @@ function TournamentDirectorTab() {
 
               {/* Active / current game */}
               {activeGame && (
-                <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--pe-border)', background: 'rgba(30,127,235,0.07)' }}>
+                <div style={{ padding: '12px 14px', borderBottom: queue.length > 0 ? '1px solid var(--pe-border)' : 'none', background: 'rgba(30,127,235,0.07)' }}>
                   <div style={{ fontSize: '11px', color: STATUS_COLOR[activeGame.status], fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '6px' }}>
                     ▶ {STATUS_DE[activeGame.status]}
                   </div>
-                  <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--pe-text)' }}>{activeGame.player1_name}</div>
-                  <div style={{ fontSize: '11px', color: 'var(--pe-text-muted)', margin: '2px 0' }}>vs</div>
-                  <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--pe-text)' }}>{activeGame.player2_name}</div>
+                  <div style={{ fontSize: '15px', fontWeight: 'bold', color: 'var(--pe-text)' }}>{activeGame.player1_name}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--pe-text-muted)', margin: '3px 0' }}>vs</div>
+                  <div style={{ fontSize: '15px', fontWeight: 'bold', color: 'var(--pe-text)' }}>{activeGame.player2_name}</div>
                   <div style={{ fontSize: '11px', color: 'var(--pe-text-muted)', marginTop: '4px' }}>Runde {activeGame.round === 0 ? 'Gruppe' : activeGame.round}</div>
-                  <button onClick={() => removeFromBoard(activeGame.id)} style={{ ...btnBase, marginTop: '8px', width: '100%', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', border: '1px solid var(--pe-border)' }}>
+                  <button onClick={e => { e.stopPropagation(); removeFromBoard(activeGame.id); }} style={{ ...btnBase, marginTop: '10px', width: '100%', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', border: '1px solid var(--pe-border)', minHeight: '44px' }}>
                     Freigeben
                   </button>
                 </div>
               )}
 
-              {/* Pending queue — draggable */}
-              <div style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '360px', overflowY: 'auto' }}>
-                {queue.map((g, idx) => (
-                  <div key={g.id}
-                    draggable
-                    onDragStart={e => onDragStart(e, g.id)}
-                    onDragEnd={onDragEnd}
-                    style={{ padding: '8px 10px', borderRadius: '8px', background: idx === 0 && !activeGame ? 'var(--pe-bg-elevated)' : 'var(--pe-bg-card)', border: `1px solid ${dragGameId === g.id ? 'var(--pe-cyan-bright)' : idx === 0 && !activeGame ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, cursor: 'grab', opacity: dragGameId === g.id ? 0.5 : 1 }}>
-                    {idx === 0 && !activeGame && (
-                      <div style={{ fontSize: '10px', color: 'var(--pe-cyan-bright)', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '3px' }}>Nächstes</div>
-                    )}
-                    <div style={{ fontSize: '13px', color: 'var(--pe-text)', fontWeight: 'bold' }}>{g.player1_name}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--pe-text-muted)', marginBottom: '1px' }}>vs {g.player2_name}</div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ fontSize: '10px', color: 'var(--pe-text-muted)' }}>Runde {g.round === 0 ? 'Gruppe' : g.round}</div>
-                      <button onClick={() => removeFromBoard(g.id)} style={{ fontSize: '10px', background: 'none', border: 'none', color: 'var(--pe-danger)', cursor: 'pointer', padding: '2px 4px' }}>✕</button>
+              {/* Pending queue — draggable on desktop, tap-removable on mobile */}
+              {queue.length > 0 && (
+                <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {queue.map((g, idx) => (
+                    <div key={g.id}
+                      draggable
+                      onDragStart={e => { e.stopPropagation(); onDragStart(e, g.id); }}
+                      onDragEnd={onDragEnd}
+                      style={{ padding: '10px 12px', borderRadius: '8px', background: idx === 0 && !activeGame ? 'var(--pe-bg-elevated)' : 'var(--pe-bg)', border: `1px solid ${dragGameId === g.id ? 'var(--pe-cyan-bright)' : idx === 0 && !activeGame ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, cursor: 'grab', opacity: dragGameId === g.id ? 0.5 : 1, userSelect: 'none' }}>
+                      {idx === 0 && !activeGame && (
+                        <div style={{ fontSize: '10px', color: 'var(--pe-cyan-bright)', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '3px' }}>Nächstes</div>
+                      )}
+                      <div style={{ fontSize: '13px', color: 'var(--pe-text)', fontWeight: 'bold' }}>{g.player1_name}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--pe-text-muted)', marginBottom: '2px' }}>vs {g.player2_name}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ fontSize: '10px', color: 'var(--pe-text-muted)' }}>Runde {g.round === 0 ? 'Gruppe' : g.round}</div>
+                        <button onClick={e => { e.stopPropagation(); removeFromBoard(g.id); }} style={{ fontSize: '11px', background: 'none', border: 'none', color: 'var(--pe-danger)', cursor: 'pointer', padding: '4px 8px', minHeight: '32px' }}>✕</button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
       </div>
 
-      {/* Unassigned games — drag source + drop zone */}
-      <div style={{ marginTop: '20px' }}
+      {/* Unassigned games — drag source + drop zone + tap-to-select */}
+      <div
         onDragOver={e => { e.preventDefault(); setDragOverBoard('unassigned'); }}
         onDragLeave={onDragLeave}
         onDrop={onDropUnassigned}
       >
         <h3 style={{ color: dragOverBoard === 'unassigned' ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)', fontWeight: 'bold', fontSize: '12px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px', transition: 'color 0.15s' }}>
-          Nicht zugewiesen ({unassigned.length}) {dragOverBoard === 'unassigned' ? '← Hier ablegen zum Entfernen' : '— Spiele ziehen zum Zuweisen'}
+          Nicht zugewiesen ({unassigned.length})
+          {dragOverBoard === 'unassigned' ? ' ← Hier ablegen zum Entfernen' : unassigned.length > 0 ? ' — Antippen oder ziehen zum Zuweisen' : ''}
         </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '6px', minHeight: unassigned.length === 0 ? '60px' : 'auto', border: dragOverBoard === 'unassigned' ? '2px dashed var(--pe-cyan-bright)' : '2px dashed transparent', borderRadius: '10px', padding: dragOverBoard === 'unassigned' ? '8px' : '0', transition: 'all 0.15s' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '8px', minHeight: '60px', border: dragOverBoard === 'unassigned' ? '2px dashed var(--pe-cyan-bright)' : '2px dashed transparent', borderRadius: '10px', padding: dragOverBoard === 'unassigned' ? '8px' : '2px', transition: 'all 0.15s' }}>
           {unassigned.map(g => {
             const isActive = g.status === 'active' || g.status === 'bulloff';
+            const isSelected = tapGameId === g.id;
             return (
               <div key={g.id}
                 draggable={!isActive}
                 onDragStart={!isActive ? e => onDragStart(e, g.id) : undefined}
                 onDragEnd={!isActive ? onDragEnd : undefined}
-                style={{ padding: '10px 12px', borderRadius: '8px', background: dragGameId === g.id ? 'rgba(0,184,255,0.1)' : 'var(--pe-bg-elevated)', border: `1px solid ${isActive ? 'var(--pe-warning)' : dragGameId === g.id ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, cursor: isActive ? 'not-allowed' : 'grab', opacity: dragGameId === g.id ? 0.6 : 1, transition: 'all 0.1s' }}>
-                {isActive && <div style={{ fontSize: '10px', color: 'var(--pe-warning)', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '3px' }}>▶ Läuft — nicht verschiebbar</div>}
-                <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--pe-text)' }}>{g.player1_name} vs {g.player2_name}</div>
-                <div style={{ fontSize: '11px', color: 'var(--pe-text-muted)', marginTop: '2px' }}>Runde {g.round === 0 ? 'Gruppe' : g.round}</div>
+                onClick={!isActive ? () => onTapGame(g) : undefined}
+                style={{
+                  padding: '12px', borderRadius: '10px',
+                  background: isSelected ? 'rgba(0,229,160,0.12)' : dragGameId === g.id ? 'rgba(0,184,255,0.1)' : 'var(--pe-bg-elevated)',
+                  border: `2px solid ${isActive ? 'var(--pe-warning)' : isSelected ? 'var(--pe-success)' : dragGameId === g.id ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`,
+                  cursor: isActive ? 'not-allowed' : 'pointer',
+                  opacity: dragGameId === g.id ? 0.6 : 1,
+                  transition: 'all 0.1s', userSelect: 'none',
+                }}>
+                {isActive && <div style={{ fontSize: '10px', color: 'var(--pe-warning)', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '4px' }}>▶ Läuft</div>}
+                {isSelected && <div style={{ fontSize: '10px', color: 'var(--pe-success)', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '4px' }}>✓ Ausgewählt</div>}
+                <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--pe-text)', lineHeight: 1.3 }}>{g.player1_name}</div>
+                <div style={{ fontSize: '11px', color: 'var(--pe-text-muted)', margin: '2px 0' }}>vs</div>
+                <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--pe-text)', lineHeight: 1.3 }}>{g.player2_name}</div>
+                <div style={{ fontSize: '10px', color: 'var(--pe-text-muted)', marginTop: '4px' }}>Runde {g.round === 0 ? 'Gruppe' : g.round}</div>
               </div>
             );
           })}
-          {unassigned.length === 0 && !dragGameId && (
+          {unassigned.length === 0 && (
             <div style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--pe-text-muted)', fontSize: '12px', padding: '16px' }}>Alle Spiele zugewiesen</div>
           )}
         </div>
