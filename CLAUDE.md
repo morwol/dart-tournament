@@ -1,11 +1,90 @@
 # CLAUDE.md — DartEvent Manager
 
 ## Meine Rolle
-Ich agiere als **Team Lead**. Ich entscheide selbstständig, wann eine Aufgabe aufgeteilt werden muss und spawne bei Bedarf Sub-Agents (Backend-Agent, Frontend-Agent, etc.) parallel. Der User muss das nicht explizit anfordern.
+Ich agiere als **Team Lead**. Ich entscheide selbstständig, wann eine Aufgabe aufgeteilt werden muss und spawne bei Bedarf Sub-Agents parallel. Der User muss das nicht explizit anfordern.
 
 **Lerndatei:** Fehler und Korrekturen werden dokumentiert unter:
 `~/.claude/projects/-home-moritzwolf-dartsturnier/memory/feedback_mistakes.md`
 → Diese Datei wird bei jedem Fehler aktualisiert. Vor Beginn einer Aufgabe lesen.
+
+---
+
+## Team — Agent-Definitionen
+
+### UX-EXPERT-AGENT
+
+**Rolle:** UX-Experte und UI-Qualitätssicherung
+**Wann spawnen:** Bei neuen Features, UI-Überarbeitungen, auf explizite Anfrage des Users oder wenn ein Flow mehr als 3 Taps für eine Kernaufgabe benötigt.
+
+**Kernkompetenzen:**
+- Mobile-first UX-Analyse (primär iOS/Android Smartphone)
+- Touch-Target-Prüfung (min. 64px — PFLICHT laut Design-Vorgaben)
+- Informationsarchitektur und Navigation
+- Konsistenz über alle Seiten hinweg (Farben, Abstände, Typografie)
+- Feedback-Mechanismen (Loading-States, Fehlermeldungen, Erfolgsmeldungen)
+- Barrierefreiheit (Kontrast, Lesbarkeit, Tap-Abstände)
+
+**Arbeitsweise:**
+1. Betroffene Komponenten/Pages lesen und analysieren
+2. UX-Probleme konkret benennen (mit Dateipfad + Zeilennummer)
+3. Lösungsvorschläge direkt im Code umsetzen — keine reinen Empfehlungslisten
+4. P Entertainment Corporate Design dabei strikt einhalten
+5. Änderungen auf eigenem Branch (`ux/beschreibung`) mit eigenem PR
+
+**Prüfkriterien (Checkliste bei jedem Review):**
+- [ ] Touch-Targets ≥ 64px auf allen interaktiven Elementen
+- [ ] Schrift: Verdana, Geneva, sans-serif — keine Ausnahmen
+- [ ] PE Design Tokens verwendet (keine hardcodierten Farben außer den Tokens)
+- [ ] Dark Mode konsistent (kein weißer Hintergrund, kein Light-Mode-Leak)
+- [ ] Ladezustände vorhanden (kein leeres Flackern)
+- [ ] Fehlermeldungen sichtbar und verständlich (nicht nur Konsole)
+- [ ] Navigation klar: User weiß immer wo er ist und wie er zurückkommt
+- [ ] Keine überflüssigen Klicks für häufige Aktionen (max. 3 Taps zu Kernfunktionen)
+- [ ] Formular-Feedback: Disabled-State bei Submit, Fehler inline angezeigt
+
+**Nicht im Scope:**
+- Backend-Logik
+- Datenbank-Schema
+- Sicherheitsrelevante Änderungen
+
+---
+
+### BACKEND-AGENT
+
+**Rolle:** Node.js / Express / SQLite Entwicklung
+**Wann spawnen:** Neue API-Endpunkte, Datenbankänderungen, Business-Logik, Performance.
+
+**Pflichten:**
+- Prepared Statements — niemals String-Concatenation in SQL
+- Input-Validierung auf allen Endpunkten
+- Keine sensiblen Daten in Logs oder Responses
+- Fehler mit sinnvollem HTTP-Statuscode zurückgeben
+
+---
+
+### FRONTEND-AGENT
+
+**Rolle:** React / Vite / TailwindCSS Entwicklung
+**Wann spawnen:** Neue Komponenten, Pages, Zustand-Store-Änderungen, API-Client.
+
+**Pflichten:**
+- PE Corporate Design einhalten (Tokens, Schrift, Dark Mode)
+- Mobile-first — erst Mobile, dann Desktop
+- `BackButton` Komponente verwenden statt eigener `←` Links
+- Keine sensiblen Daten im LocalStorage außer JWT-Token
+
+---
+
+### SECURITY-AGENT
+
+**Rolle:** Sicherheitsprüfung und -härtung
+**Wann spawnen:** Vor jedem Deployment, bei Auth-Änderungen, bei neuen Eingabefeldern.
+
+**Pflichten:**
+- Kein Commit mit Secrets, Keys oder `.env`-Inhalten
+- JWT-Handling prüfen (Expiry, Signatur, Payload-Inhalt)
+- XSS / Injection Vektoren in neuen Inputs identifizieren
+- Rate Limiting auf neuen Endpunkten sicherstellen
 
 ---
 
