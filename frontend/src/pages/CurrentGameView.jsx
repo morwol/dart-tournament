@@ -136,9 +136,35 @@ export default function CurrentGameView() {
       {gameData ? (
         <>
           {/* On mobile: column (stacked), on desktop: row (side by side) */}
+          {(() => {
+            const gameStatus = gameData.game?.status;
+            const currentTurn = gameData.game?.current_turn;
+            const p1id = gameData.player1?.id;
+            const p2id = gameData.player2?.id;
+            // Determine which player is active (has the turn)
+            const p1Active = gameStatus === 'active' && currentTurn === p1id;
+            const p2Active = gameStatus === 'active' && currentTurn === p2id;
+            const gameIsActive = gameStatus === 'active';
+
+            const activeStyle = {
+              background: 'rgba(0,184,255,0.10)',
+              border: '3px solid var(--pe-cyan-bright)',
+              boxShadow: '0 0 32px rgba(0,184,255,0.4), inset 0 0 40px rgba(0,184,255,0.06)',
+              opacity: 1,
+              transition: 'all 0.2s ease',
+            };
+            const inactiveStyle = {
+              background: 'var(--pe-bg-card)',
+              border: '1px solid var(--pe-border)',
+              boxShadow: 'none',
+              opacity: gameIsActive ? 0.52 : 1,
+              transition: 'all 0.2s ease',
+            };
+
+            return (
           <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'stretch', flex: 1, padding: isMobile ? '12px' : isTablet ? '16px 20px' : '24px 32px', gap: isMobile ? 0 : 16 }}>
             {/* Player 1 */}
-            <div style={{ flex: 1, background: 'var(--pe-bg-card)', borderRadius: isMobile ? '12px 12px 0 0' : 16, border: '1px solid var(--pe-border)', borderBottom: isMobile ? 'none' : '1px solid var(--pe-border)', padding: isMobile ? '20px 20px 16px' : isTablet ? '20px 16px' : 32, display: 'flex', flexDirection: isMobile ? 'row' : 'column', alignItems: 'center', justifyContent: isMobile ? 'space-between' : 'center', gap: isMobile ? 12 : 12 }}>
+            <div style={{ flex: 1, ...(p1Active ? activeStyle : inactiveStyle), borderRadius: isMobile ? '12px 12px 0 0' : 16, ...(isMobile && !p1Active ? { borderBottom: 'none' } : {}), padding: isMobile ? '20px 20px 16px' : isTablet ? '20px 16px' : 32, display: 'flex', flexDirection: isMobile ? 'row' : 'column', alignItems: 'center', justifyContent: isMobile ? 'space-between' : 'center', gap: isMobile ? 12 : 12 }}>
               {isMobile ? (
                 // Mobile: name left, score right
                 <>
@@ -199,7 +225,7 @@ export default function CurrentGameView() {
             )}
 
             {/* Player 2 */}
-            <div style={{ flex: 1, background: 'var(--pe-bg-card)', borderRadius: isMobile ? '0 0 12px 12px' : 16, border: '1px solid var(--pe-border)', borderTop: isMobile ? 'none' : '1px solid var(--pe-border)', padding: isMobile ? '16px 20px 20px' : isTablet ? '20px 16px' : 32, display: 'flex', flexDirection: isMobile ? 'row' : 'column', alignItems: 'center', justifyContent: isMobile ? 'space-between' : 'center', gap: isMobile ? 12 : 12 }}>
+            <div style={{ flex: 1, ...(p2Active ? activeStyle : inactiveStyle), borderRadius: isMobile ? '0 0 12px 12px' : 16, ...(isMobile && !p2Active ? { borderTop: 'none' } : {}), padding: isMobile ? '16px 20px 20px' : isTablet ? '20px 16px' : 32, display: 'flex', flexDirection: isMobile ? 'row' : 'column', alignItems: 'center', justifyContent: isMobile ? 'space-between' : 'center', gap: isMobile ? 12 : 12 }}>
               {isMobile ? (
                 // Mobile: score left, name right (mirrored from player 1)
                 <>
@@ -240,6 +266,8 @@ export default function CurrentGameView() {
               )}
             </div>
           </div>
+            );
+          })()}
 
           {/* Aktuelle Würfe */}
           <div style={{ margin: secMar, background: 'var(--pe-bg-elevated)', borderRadius: 12, border: '1px solid var(--pe-border)', padding: isMobile ? '10px 12px' : '16px 24px' }}>

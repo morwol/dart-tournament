@@ -237,9 +237,21 @@ router.post('/:id/draw-groups', requireAdminOrDirector, (req, res) => {
 
     // Gruppenanzahl bestimmen
     let numGroups;
-    if (players.length <= 7) numGroups = 2;
-    else if (players.length <= 15) numGroups = 4;
-    else numGroups = 8;
+    if (req.body.numGroups !== undefined) {
+      const requested = parseInt(req.body.numGroups, 10);
+      if (!Number.isInteger(requested) || requested < 2 || requested > 8) {
+        return res.status(400).json({ error: 'numGroups must be an integer between 2 and 8' });
+      }
+      if (requested > Math.floor(players.length / 2)) {
+        return res.status(400).json({ error: `numGroups too large for ${players.length} players (max ${Math.floor(players.length / 2)})` });
+      }
+      numGroups = requested;
+    } else {
+      // Fallback: automatische Berechnung
+      if (players.length <= 7) numGroups = 2;
+      else if (players.length <= 15) numGroups = 4;
+      else numGroups = 8;
+    }
 
     // Gruppennamen: A, B, C, ...
     const groupNames = Array.from({ length: numGroups }, (_, i) => String.fromCharCode(65 + i));

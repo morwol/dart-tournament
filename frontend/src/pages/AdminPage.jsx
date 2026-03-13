@@ -1057,6 +1057,7 @@ function TournamentExtendedTab() {
   const [groups, setGroups] = useState([]);
   const [boards, setBoards] = useState([]);
   const [wizardStep, setWizardStep] = useState(0); // 0=list, 1=basic, 2=format, 3=players, 4=draw
+  const [numGroups, setNumGroups] = useState(4);
   const [creating, setCreating] = useState(false);
   const [newTournament, setNewTournament] = useState(null); // after step 1
   const [createForm, setCreateForm] = useState({ name: '', date: '', format: '501', checkout: 'double_out' });
@@ -1196,7 +1197,7 @@ function TournamentExtendedTab() {
   const drawGroups = async () => {
     const tid = newTournament?.id || selectedId;
     try {
-      await api.post(`/tournaments/${tid}/draw-groups`);
+      await api.post(`/tournaments/${tid}/draw-groups`, { numGroups });
       await refreshWizardTour();
     } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
   };
@@ -1445,6 +1446,21 @@ function TournamentExtendedTab() {
                 <p style={{ color: 'var(--pe-text-sub)', fontSize: '14px', marginBottom: '4px', fontWeight: 'bold' }}>{players.length} Spieler bereit</p>
                 <p style={{ color: 'var(--pe-text-muted)', fontSize: '12px', marginBottom: '20px' }}>Wähle den Start-Modus für das Turnier:</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+
+                  {/* Gruppenanzahl-Auswahl */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', borderRadius: '10px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)' }}>
+                    <label htmlFor="numGroupsSelect" style={{ color: 'var(--pe-text-sub)', fontSize: '13px', fontFamily: 'Verdana, Geneva, sans-serif', flexShrink: 0 }}>Anzahl Gruppen:</label>
+                    <select
+                      id="numGroupsSelect"
+                      value={numGroups}
+                      onChange={e => setNumGroups(Number(e.target.value))}
+                      style={{ flex: 1, padding: '10px 12px', borderRadius: '8px', background: 'var(--pe-bg-card)', color: 'var(--pe-text)', border: '1px solid var(--pe-border)', fontFamily: 'Verdana, Geneva, sans-serif', fontSize: '14px', minHeight: '44px', cursor: 'pointer' }}
+                    >
+                      {[2, 3, 4, 6, 8].map(n => (
+                        <option key={n} value={n}>{n} Gruppen</option>
+                      ))}
+                    </select>
+                  </div>
 
                   {/* Option A: Gruppenphase */}
                   <button onClick={drawGroups} style={{ padding: '16px', borderRadius: '12px', background: 'var(--pe-blue-deep)', color: '#fff', border: '2px solid var(--pe-blue-mid)', fontFamily: 'Verdana, Geneva, sans-serif', cursor: 'pointer', minHeight: '64px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -2058,9 +2074,14 @@ function HelpTab() {
 
 // NEU: tab prop für URL-basierte Tab-Auswahl (z.B. /admin/users)
 export default function AdminPage({ tab }) {
-  const { token, logout } = useStore();
-
+  const { token } = useStore();
   if (!token) return <AdminLogin />;
+  return <AdminDashboard tab={tab} />;
+}
+
+function AdminDashboard({ tab }) {
+  const { logout } = useStore();
+  const token = useStore(s => s.token);
 
   const payload = parseJwt(token);
   const userRole = payload?.role || 'admin';
