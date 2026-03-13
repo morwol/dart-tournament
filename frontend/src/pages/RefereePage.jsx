@@ -256,7 +256,13 @@ function RoundThrows({ throws, prevThrow, onUndo, disabled, isTablet }) {
                     </button>
                   </>
                 ) : (
-                  <span style={{ color: 'var(--pe-text-muted)', fontSize: '18px' }}>—</span>
+                  <>
+                    <span style={{ color: 'var(--pe-text-muted)', fontSize: '18px' }}>—</span>
+                    <button disabled aria-hidden="true"
+                      style={btn({ padding: '1px 8px', background: 'transparent', color: 'transparent', fontSize: '14px', border: 'none', minHeight: 'unset', visibility: 'hidden', cursor: 'default' })}>
+                      ↩
+                    </button>
+                  </>
                 )}
               </div>
             );
@@ -464,7 +470,7 @@ function TabletLayout({ boardId, token, onLogout, selectedGameId, setSelectedGam
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: 'Verdana, Geneva, sans-serif', background: 'var(--pe-bg)' }}>
 
       {/* ── LEFT PANEL ── */}
-      <div style={{ width: '340px', flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'var(--pe-bg-card)', borderRight: '1px solid var(--pe-border)', overflow: 'hidden' }}>
+      <div style={{ width: '360px', minWidth: '320px', flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'var(--pe-bg-card)', borderRight: '1px solid var(--pe-border)', overflow: 'hidden', overflowX: 'hidden' }}>
 
         {/* Header */}
         <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--pe-border)', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
