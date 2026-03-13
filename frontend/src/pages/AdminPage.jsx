@@ -2058,9 +2058,14 @@ function HelpTab() {
 
 // NEU: tab prop für URL-basierte Tab-Auswahl (z.B. /admin/users)
 export default function AdminPage({ tab }) {
-  const { token, logout } = useStore();
-
+  const { token } = useStore();
   if (!token) return <AdminLogin />;
+  return <AdminDashboard tab={tab} />;
+}
+
+function AdminDashboard({ tab }) {
+  const { logout } = useStore();
+  const token = useStore(s => s.token);
 
   const payload = parseJwt(token);
   const userRole = payload?.role || 'admin';
