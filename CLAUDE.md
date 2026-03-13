@@ -9,6 +9,47 @@ Ich agiere als **Team Lead**. Ich entscheide selbstständig, wann eine Aufgabe a
 
 ---
 
+## Git-Workflow (PFLICHT)
+
+### Branching-Strategie
+- `main` — Produktion, immer stabil
+- `dev` — Basis für neue Branches
+- Feature/Fix-Branches immer von `dev` abzweigen
+
+### Regel: Ein Branch = Ein PR = Ein Thema
+- Jeder Bug → eigener Branch + eigener PR
+- Jedes Feature → eigener Branch + eigener PR
+- Verwandte kleine Bugs dürfen zusammen → PR-Titel muss es klar beschreiben
+- **Niemals** Bug-Fix und Feature im selben PR mischen
+
+### Branch-Namenskonvention
+```
+fix/kurze-beschreibung       # Bug-Fix
+feat/kurze-beschreibung      # Neues Feature
+docs/kurze-beschreibung      # Nur Dokumentation
+```
+
+### Workflow
+```
+1. git checkout dev && git pull origin dev
+2. git checkout -b fix/mein-bug
+3. Änderungen machen + committen
+4. git push origin fix/mein-bug
+5. gh pr create --base main --head fix/mein-bug
+6. PR mergen
+7. git checkout dev && git pull origin dev  (dev aktuell halten)
+```
+
+### Commit-Messages
+```
+feat: kurze Beschreibung      # neues Feature
+fix: kurze Beschreibung       # Bug-Fix
+docs: kurze Beschreibung      # Dokumentation
+refactor: kurze Beschreibung  # Umstrukturierung ohne Funktionsänderung
+```
+
+---
+
 ## Design — P Entertainment Corporate Design (PFLICHT)
 
 **Schrift:** Verdana, Geneva, sans-serif — keine andere
