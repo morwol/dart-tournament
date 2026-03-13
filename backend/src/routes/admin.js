@@ -49,11 +49,35 @@ router.get('/logs', requireAdminOrDirector, (req, res) => {
   res.json(rows);
 });
 
-// DELETE /api/admin/logs — Audit-Log leeren (nur Admin)
-router.delete('/logs', requireAdmin, (req, res) => {
-  db.prepare('DELETE FROM audit_log').run();
-  auditLog(req, 'system', 'LOG_CLEAR', 'Audit-Log geleert');
-  res.json({ success: true });
+// GET /api/admin/logs/export — Audit-Log als CSV exportieren (nur Admin, nicht Director)
+router.get('/logs/export', requireAdmin, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Nur Admins dürfen den Log exportieren.' });
+  }
+
+  const rows = db.prepare('SELECT id, ts, actor, role, category, action, detail, target_id FROM audit_log ORDER BY id DESC').all();
+
+  const escapeCSV = (val) => {
+    if (val === null || val === undefined) return '';
+    const str = String(val);
+    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
+  };
+
+  const header = 'id,ts,actor,role,category,action,detail,target_id';
+  const lines = rows.map(r =>
+    [r.id, r.ts, r.actor, r.role, r.category, r.action, r.detail, r.target_id]
+      .map(escapeCSV)
+      .join(',')
+  );
+  const csv = [header, ...lines].join('\n');
+
+  const filename = `audit_log_${new Date().toISOString().slice(0, 10)}.csv`;
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(csv);
 });
 
 module.exports = router;
