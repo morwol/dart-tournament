@@ -210,36 +210,59 @@ function DartPad({ modifier, setModifier, onThrow, disabled, isTablet }) {
 }
 
 // ── Current Round Throws ───────────────────────────────────────────────────
-function RoundThrows({ throws, onUndo, disabled, isTablet }) {
-  const total = throws.reduce((s, t) => s + segmentScore(t.segment), 0);
+// throws      = current_round_throws (may be empty if a new round just started)
+// prevThrow   = last throw from the previous round (for cross-round undo)
+function RoundThrows({ throws, prevThrow, onUndo, disabled, isTablet }) {
+  // If the current round is empty, show the previous round's last throw so it
+  // can still be undone (cross-round undo).
+  const showPrev = throws.length === 0 && prevThrow;
+  const displayThrows = showPrev ? [] : throws;
+  const total = displayThrows.reduce((s, t) => s + segmentScore(t.segment), 0);
   return (
     <div style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', borderRadius: '12px', padding: isTablet ? '14px' : '10px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-        <span style={{ color: 'var(--pe-text-muted)', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Aktuelle Runde</span>
-        <span style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '16px' }}>Σ {total}</span>
+        <span style={{ color: 'var(--pe-text-muted)', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          {showPrev ? 'Letzter Wurf (vorige Runde)' : 'Aktuelle Runde'}
+        </span>
+        {!showPrev && <span style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '16px' }}>Σ {total}</span>}
       </div>
-      <div style={{ display: 'flex', gap: '8px' }}>
-        {[0, 1, 2].map(i => {
-          const t = throws[i];
-          return (
-            <div key={i} style={{ flex: 1, background: 'var(--pe-bg-elevated)', borderRadius: '8px', padding: '8px', minHeight: '52px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', border: `1px solid ${t ? 'var(--pe-blue-mid)' : 'var(--pe-border)'}` }}>
-              <span style={{ fontSize: '10px', color: 'var(--pe-text-muted)', textTransform: 'uppercase' }}>Wurf {i + 1}</span>
-              {t ? (
-                <>
-                  <span style={{ fontWeight: 'bold', color: t.segment === 'BUST' ? 'var(--pe-danger)' : 'var(--pe-text)', fontSize: '14px' }}>{t.segment}</span>
-                  <span style={{ fontSize: '11px', color: 'var(--pe-text-muted)' }}>{segmentScore(t.segment)} Pkt</span>
-                  <button onClick={() => onUndo(t.id)} disabled={disabled}
-                    style={btn({ padding: '1px 8px', background: 'transparent', color: 'var(--pe-warning)', fontSize: '14px', border: 'none', opacity: disabled ? 0.5 : 1, minHeight: 'unset' })}>
-                    ↩
-                  </button>
-                </>
-              ) : (
-                <span style={{ color: 'var(--pe-text-muted)', fontSize: '18px' }}>—</span>
-              )}
-            </div>
-          );
-        })}
-      </div>
+
+      {showPrev ? (
+        // Show only the last throw from the previous round with a prominent undo button
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--pe-bg-elevated)', borderRadius: '8px', padding: '10px 12px', border: '1px solid var(--pe-warning)' }}>
+          <div style={{ flex: 1 }}>
+            <span style={{ fontWeight: 'bold', color: prevThrow.segment === 'BUST' ? 'var(--pe-danger)' : 'var(--pe-text)', fontSize: '16px' }}>{prevThrow.segment}</span>
+            <span style={{ fontSize: '12px', color: 'var(--pe-text-muted)', marginLeft: '8px' }}>{segmentScore(prevThrow.segment)} Pkt</span>
+          </div>
+          <button onClick={() => onUndo(prevThrow.id)} disabled={disabled}
+            style={btn({ padding: '6px 14px', background: 'rgba(255,176,32,0.15)', color: 'var(--pe-warning)', border: '1px solid var(--pe-warning)', fontSize: '13px', opacity: disabled ? 0.5 : 1 })}>
+            ↩ Rückgängig
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {[0, 1, 2].map(i => {
+            const t = displayThrows[i];
+            return (
+              <div key={i} style={{ flex: 1, background: 'var(--pe-bg-elevated)', borderRadius: '8px', padding: '8px', minHeight: '52px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', border: `1px solid ${t ? 'var(--pe-blue-mid)' : 'var(--pe-border)'}` }}>
+                <span style={{ fontSize: '10px', color: 'var(--pe-text-muted)', textTransform: 'uppercase' }}>Wurf {i + 1}</span>
+                {t ? (
+                  <>
+                    <span style={{ fontWeight: 'bold', color: t.segment === 'BUST' ? 'var(--pe-danger)' : 'var(--pe-text)', fontSize: '14px' }}>{t.segment}</span>
+                    <span style={{ fontSize: '11px', color: 'var(--pe-text-muted)' }}>{segmentScore(t.segment)} Pkt</span>
+                    <button onClick={() => onUndo(t.id)} disabled={disabled}
+                      style={btn({ padding: '1px 8px', background: 'transparent', color: 'var(--pe-warning)', fontSize: '14px', border: 'none', opacity: disabled ? 0.5 : 1, minHeight: 'unset' })}>
+                      ↩
+                    </button>
+                  </>
+                ) : (
+                  <span style={{ color: 'var(--pe-text-muted)', fontSize: '18px' }}>—</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -398,6 +421,22 @@ function GameInfoBar({ game, isTablet }) {
   );
 }
 
+// Compute the last undoable throw from the previous round (cross-round undo).
+// Used when current_round_throws is empty so the last throw of the just-finished
+// round can still be undone.
+function getPrevRoundLastThrow(liveData) {
+  if (!liveData) return null;
+  const { current_round_throws = [], player1, player2 } = liveData;
+  if (current_round_throws.length > 0) return null; // current round has throws — no need
+  const candidates = [
+    ...(player1?.last_throws || []),
+    ...(player2?.last_throws || []),
+  ];
+  if (candidates.length === 0) return null;
+  // Pick the throw with the highest id (most recently added)
+  return candidates.reduce((best, t) => (!best || t.id > best.id ? t : best), null);
+}
+
 // ══════════════════════════════════════════════════════════════════════════
 // ── TABLET LAYOUT ─────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════
@@ -467,7 +506,7 @@ function TabletLayout({ boardId, token, onLogout, selectedGameId, setSelectedGam
               )}
 
               {game.status === 'active' && (
-                <RoundThrows throws={current_round_throws} onUndo={undoThrow} disabled={submitting} isTablet={true} />
+                <RoundThrows throws={current_round_throws} prevThrow={getPrevRoundLastThrow(liveData)} onUndo={undoThrow} disabled={submitting} isTablet={true} />
               )}
 
               {/* Skip / Nächste Partie */}
@@ -653,7 +692,7 @@ function PhoneLayout({ boardId, token, onLogout, selectedGameId, setSelectedGame
           </div>
 
           <div style={{ marginBottom: '10px' }}>
-            <RoundThrows throws={current_round_throws} onUndo={undoThrow} disabled={submitting} isTablet={false} />
+            <RoundThrows throws={current_round_throws} prevThrow={getPrevRoundLastThrow(liveData)} onUndo={undoThrow} disabled={submitting} isTablet={false} />
           </div>
 
           <DartPad
@@ -721,9 +760,20 @@ export default function RefereePage() {
   }, [liveData?.game?.status, fetchLive]);
 
   const throwSegment = async (segment) => {
-    const { game, player1 } = liveData;
+    const { game, player1, player2 } = liveData;
     const throwerId = game.current_turn || game.bull_winner_id || player1.id;
     if (submitting || (liveData.current_round_throws || []).length >= 3) return;
+
+    // Issue #5: Detect potential checkout and ask for confirmation
+    const thrower = throwerId === player1.id ? player1 : player2;
+    const throwScore = segmentScore(segment);
+    if (throwScore > 0 && thrower && thrower.remaining - throwScore === 0) {
+      const confirmed = window.confirm(
+        `Spiel beenden?\n\nLetzter Wurf: ${segment} (${throwScore} Pkt)\n${thrower.name} gewinnt!\n\nBestätigen zum Abschließen, Abbrechen zum Verwerfen.`
+      );
+      if (!confirmed) return;
+    }
+
     setSubmitting(true);
     try {
       await api.post(`/games/${game.id}/throw-segment`, { segment, player_id: throwerId });
