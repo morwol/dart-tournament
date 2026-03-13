@@ -85,6 +85,9 @@ function initialize() {
     "ALTER TABLE users ADD COLUMN vorname TEXT",
     "ALTER TABLE users ADD COLUMN nickname TEXT",
     "ALTER TABLE users ADD COLUMN nachname TEXT",
+    "ALTER TABLE players ADD COLUMN walkon_file TEXT",
+    "ALTER TABLE players ADD COLUMN walkon_start INTEGER DEFAULT 0",
+    "ALTER TABLE players ADD COLUMN walkon_duration INTEGER DEFAULT 30",
   ];
 
   for (const stmt of alterStatements) {
@@ -94,6 +97,19 @@ function initialize() {
       // Spalte existiert bereits — ignorieren
     }
   }
+
+  // Walk-On Jobs Tabelle anlegen
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS walkon_jobs (
+      id INTEGER PRIMARY KEY,
+      player_id INTEGER REFERENCES players(id) ON DELETE CASCADE,
+      status TEXT DEFAULT 'pending',
+      error_msg TEXT,
+      started_at DATETIME,
+      finished_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 
   // App-Konfigurationstabelle anlegen
   db.exec(`
