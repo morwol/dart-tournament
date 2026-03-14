@@ -7,7 +7,7 @@ set -e
 #   nginx, Node.js, SSL, systemd service, firewall
 #
 # One-liner on a fresh Ubuntu server (run as root):
-#   apt-get install -y curl git && \
+#   apt-get update && apt-get install -y curl git && \
 #   git clone https://github.com/morwol/dart-tournament.git /tmp/dartsturnier-setup && \
 #   sudo bash /tmp/dartsturnier-setup/deploy/setup-ubuntu.sh
 #
