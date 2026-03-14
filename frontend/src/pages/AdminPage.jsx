@@ -1238,6 +1238,7 @@ function TournamentExtendedTab() {
   const [players, setPlayers] = useState([]);
   const [mockCount, setMockCount] = useState('8');
   const [wizardError, setWizardError] = useState(''); // inline error for wizard steps
+  const [openGroups, setOpenGroups] = useState(new Set()); // collapsible group cards — default all collapsed
 
   const loadTournaments = () => {
     api.get('/tournaments').then((t) => {
@@ -1303,7 +1304,8 @@ function TournamentExtendedTab() {
       });
       // Auto-create boards for this tournament if they don't exist yet
       const existingBoards = await api.get(`/boards?tournament_id=${tid}`).catch(() => []);
-      const tournamentBoards = existingBoards.filter(b => b.tournament_id === tid);
+      // eslint-disable-next-line eqeqeq
+      const tournamentBoards = existingBoards.filter(b => b.tournament_id == tid);
       if (tournamentBoards.length < boardCount) {
         const toCreate = boardCount - tournamentBoards.length;
         const startNumber = tournamentBoards.length + 1;
@@ -1398,7 +1400,8 @@ function TournamentExtendedTab() {
         const groupData = await api.get(`/tournaments/${tid}/groups`).catch(() => null);
         const drawnGroups = groupData?.groups || [];
         const availableBoards = await api.get(`/boards?tournament_id=${tid}`).catch(() => []);
-        const tournamentBoards = availableBoards.filter(b => b.tournament_id === tid).sort((a, b) => a.number - b.number);
+        // eslint-disable-next-line eqeqeq
+        const tournamentBoards = availableBoards.filter(b => b.tournament_id == tid).sort((a, b) => a.number - b.number);
         await Promise.all(
           drawnGroups.map((g, i) => {
             const board = tournamentBoards[i];
@@ -1628,22 +1631,64 @@ function TournamentExtendedTab() {
                   <span style={{ color: 'var(--pe-warning)', fontSize: '13px', fontWeight: 'bold' }}>Nächster Schritt: Board-Zuordnung prüfen, dann Spielplan generieren</span>
                 </div>
 
-                {/* Gruppen & Board-Zuordnung */}
+                {/* Gruppen & Board-Zuordnung — collapsible cards */}
                 <div style={card}>
                   <h3 style={{ color: 'var(--pe-text-sub)', fontWeight: 'bold', fontSize: '12px', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Gruppen — Board-Zuordnung</h3>
-                  {groups.map(g => (
-                    <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: '8px', background: 'var(--pe-bg-elevated)', marginBottom: '6px', border: g.board_id ? '1px solid var(--pe-blue-mid)' : '1px solid var(--pe-border)' }}>
-                      <div>
-                        <span style={{ color: 'var(--pe-text)', fontWeight: 'bold' }}>Gruppe {g.name}</span>
-                        <span style={{ color: 'var(--pe-text-muted)', fontSize: '12px', marginLeft: '8px' }}>{(g.standings||g.players||[]).length} Spieler</span>
-                        {g.board_id && <span style={{ marginLeft: '8px', fontSize: '11px', color: 'var(--pe-cyan-bright)' }}>✓</span>}
+                  {groups.map(g => {
+                    const isOpen = openGroups.has(g.id);
+                    const playerList = g.standings || g.players || [];
+                    return (
+                      <div key={g.id} style={{ borderRadius: '10px', background: 'var(--pe-bg-elevated)', marginBottom: '8px', border: g.board_id ? '1px solid var(--pe-blue-mid)' : '1px solid var(--pe-border)', overflow: 'hidden' }}>
+                        {/* Card header — always visible, tap to toggle */}
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setOpenGroups(prev => {
+                            const next = new Set(prev);
+                            if (next.has(g.id)) next.delete(g.id); else next.add(g.id);
+                            return next;
+                          })}
+                          onKeyDown={e => e.key === 'Enter' && setOpenGroups(prev => {
+                            const next = new Set(prev);
+                            if (next.has(g.id)) next.delete(g.id); else next.add(g.id);
+                            return next;
+                          })}
+                          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', cursor: 'pointer', minHeight: '52px', userSelect: 'none' }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+                            <span style={{ color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '14px' }}>Gruppe {g.name}</span>
+                            <span style={{ color: 'var(--pe-text-muted)', fontSize: '12px' }}>{playerList.length} Spieler</span>
+                            {g.board_id && <span style={{ fontSize: '11px', color: 'var(--pe-success)', fontWeight: 'bold' }}>✓</span>}
+                          </div>
+                          {/* Board dropdown — always accessible even when collapsed */}
+                          <select
+                            value={g.board_id || ''}
+                            onClick={e => e.stopPropagation()}
+                            onChange={e => assignGroupToBoard(g.id, e.target.value ? parseInt(e.target.value) : null)}
+                            style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '8px', padding: '6px 10px', fontSize: '13px', fontFamily: 'Verdana, Geneva, sans-serif', minHeight: '44px', marginRight: '10px', cursor: 'pointer' }}
+                          >
+                            <option value="">Kein Board</option>
+                            {boards.map(b => <option key={b.id} value={b.id}>Board {b.number}{b.is_final ? ' ★' : ''}</option>)}
+                          </select>
+                          <span style={{ color: 'var(--pe-text-muted)', fontSize: '16px', flexShrink: 0 }}>{isOpen ? '▲' : '▼'}</span>
+                        </div>
+                        {/* Player list — only visible when open */}
+                        {isOpen && (
+                          <div style={{ borderTop: '1px solid var(--pe-border)', padding: '8px 14px 12px' }}>
+                            {playerList.length === 0
+                              ? <span style={{ color: 'var(--pe-text-muted)', fontSize: '12px' }}>Keine Spieler</span>
+                              : playerList.map((p, idx) => (
+                                <div key={p.id || idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0', borderBottom: idx < playerList.length - 1 ? '1px solid var(--pe-border)' : 'none' }}>
+                                  {p.seed != null && <span style={{ color: 'var(--pe-text-muted)', fontSize: '11px', minWidth: '24px' }}>#{p.seed}</span>}
+                                  <span style={{ color: 'var(--pe-text)', fontSize: '13px' }}>{p.name}</span>
+                                </div>
+                              ))
+                            }
+                          </div>
+                        )}
                       </div>
-                      <select value={g.board_id || ''} onChange={e => assignGroupToBoard(g.id, e.target.value ? parseInt(e.target.value) : null)} style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '8px', padding: '6px 10px', fontSize: '13px', fontFamily: 'Verdana, Geneva, sans-serif', minHeight: '38px' }}>
-                        <option value="">Kein Board</option>
-                        {boards.map(b => <option key={b.id} value={b.id}>Board {b.number}{b.is_final ? ' ★' : ''}</option>)}
-                      </select>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Primärer CTA */}

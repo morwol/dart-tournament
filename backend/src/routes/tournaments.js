@@ -385,8 +385,14 @@ router.post('/:id/generate-group-schedule', requireAdminOrDirector, (req, res) =
       `).all(req.params.id, g.id)
     }));
 
-    const boards = db.prepare('SELECT * FROM boards WHERE tournament_id = ? ORDER BY number').all(req.params.id);
-    if (boards.length === 0) return res.status(400).json({ error: 'No boards configured for this tournament. Please add boards first.' });
+    let boards = db.prepare('SELECT * FROM boards WHERE tournament_id = ? ORDER BY number').all(req.params.id);
+    if (boards.length === 0) {
+      const count = tournament.board_count || 1;
+      for (let i = 1; i <= count; i++) {
+        db.prepare('INSERT INTO boards (number, tournament_id) VALUES (?, ?)').run(i, req.params.id);
+      }
+      boards = db.prepare('SELECT * FROM boards WHERE tournament_id = ? ORDER BY number').all(req.params.id);
+    }
 
     // Randomly shuffle boards for the draw
     const shuffled = [...boards].sort(() => Math.random() - 0.5);
