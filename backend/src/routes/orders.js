@@ -115,7 +115,9 @@ router.post('/settle/:guestId', requireAuth, (req, res) => {
       db.prepare("UPDATE orders SET status = 'paid' WHERE guest_id = ? AND status = 'open'").run(guestId);
 
       // Settlement anlegen
-      const settledBy = req.user ? req.user.id : null;
+      // settled_by references users(id) — admins live in a separate table,
+      // so only set it for role-based users (not legacy admins).
+      const settledBy = (req.user && req.user.role) ? req.user.id : null;
       const note = req.body.note || null;
       db.prepare(
         'INSERT INTO settlements (guest_id, total_amount, settled_by, note) VALUES (?, ?, ?, ?)'
