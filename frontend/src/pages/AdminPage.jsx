@@ -4,19 +4,23 @@ import { useStore } from '../store';
 import { api } from '../api/client';
 import AdminLogin from '../components/admin/AdminLogin';
 import TournamentManager from '../components/admin/TournamentManager';
+import {
+  LayoutDashboard, Flag, Trophy, Users, Target,
+  UserCog, UtensilsCrossed, Mail, Settings, ScrollText, HelpCircle,
+} from 'lucide-react';
 
 const ALL_TABS = [
-  { id: 'overview',    label: 'Übersicht',     abbr: 'ÜB', color: 'var(--pe-cyan-bright)', roles: ['admin', 'director'] },
-  { id: 'director',    label: 'Turnierleiter', abbr: 'TL', color: 'var(--pe-blue-mid)',    roles: ['admin', 'director'] },
-  { id: 'tournaments', label: 'Turniere',      abbr: 'TU', color: 'var(--pe-cyan-light)',  roles: ['admin', 'director'] },
-  { id: 'players',     label: 'Spieler',       abbr: 'SP', color: 'var(--pe-success)',     roles: ['admin', 'director'] },
-  { id: 'boards',      label: 'Boards',        abbr: 'BD', color: 'var(--pe-blue-deep)',   roles: ['admin', 'director'] },
-  { id: 'users',       label: 'User',          abbr: 'US', color: 'var(--pe-warning)',     roles: ['admin'] },
-  { id: 'gastro',      label: 'Gastro',        abbr: 'GT', color: 'var(--pe-success)',     roles: ['admin'] },
-  { id: 'mailing',     label: 'Mailing',       abbr: 'ML', color: 'var(--pe-cyan-bright)', roles: ['admin'] },
-  { id: 'settings',    label: 'Einstellungen', abbr: 'EI', color: 'var(--pe-text-sub)',    roles: ['admin'] },
-  { id: 'log',         label: 'System-Log',    abbr: 'LOG', color: 'var(--pe-text-muted)', roles: ['admin', 'director'] },
-  { id: 'help',        label: 'Hilfe',         abbr: '?',  color: 'var(--pe-text-sub)',    roles: ['admin', 'director'] },
+  { id: 'overview',    label: 'Übersicht',     Icon: LayoutDashboard, color: 'var(--pe-cyan-bright)', roles: ['admin', 'director'] },
+  { id: 'director',    label: 'Turnierleiter', Icon: Flag,            color: 'var(--pe-blue-mid)',    roles: ['admin', 'director'] },
+  { id: 'tournaments', label: 'Turniere',      Icon: Trophy,          color: 'var(--pe-cyan-light)',  roles: ['admin', 'director'] },
+  { id: 'players',     label: 'Spieler',       Icon: Users,           color: 'var(--pe-success)',     roles: ['admin', 'director'] },
+  { id: 'boards',      label: 'Boards',        Icon: Target,          color: 'var(--pe-blue-deep)',   roles: ['admin', 'director'] },
+  { id: 'users',       label: 'User',          Icon: UserCog,         color: 'var(--pe-warning)',     roles: ['admin'] },
+  { id: 'gastro',      label: 'Gastro',        Icon: UtensilsCrossed, color: 'var(--pe-success)',     roles: ['admin'] },
+  { id: 'mailing',     label: 'Mailing',       Icon: Mail,            color: 'var(--pe-cyan-bright)', roles: ['admin'] },
+  { id: 'settings',    label: 'Einstellungen', Icon: Settings,        color: 'var(--pe-text-sub)',    roles: ['admin'] },
+  { id: 'log',         label: 'System-Log',    Icon: ScrollText,      color: 'var(--pe-text-muted)',  roles: ['admin', 'director'] },
+  { id: 'help',        label: 'Hilfe',         Icon: HelpCircle,      color: 'var(--pe-text-sub)',    roles: ['admin', 'director'] },
 ];
 
 function parseJwt(token) {
@@ -2260,9 +2264,10 @@ function AdminDashboard({ tab }) {
       {/* Body: Sidebar + Content */}
       <div style={{ display: 'flex', minHeight: 'calc(100vh - 64px)' }}>
         {/* Sidebar (Desktop ≥1024px) */}
-        <div className="sidebar-desktop" style={{ width: '200px', flexShrink: 0, background: 'var(--pe-bg-card)', borderRight: '1px solid var(--pe-border)', padding: '16px 0', display: 'none' }}>
+        <div className="sidebar-desktop" style={{ width: '220px', flexShrink: 0, background: 'var(--pe-bg-card)', borderRight: '1px solid var(--pe-border)', padding: '16px 0', display: 'none' }}>
           {visibleTabs.map(t => (
-            <button key={t.id} onClick={() => selectTab(t.id)} style={{ width: '100%', padding: '14px 20px', textAlign: 'left', background: activeTab === t.id ? 'var(--pe-bg-elevated)' : 'transparent', color: activeTab === t.id ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)', border: 'none', borderLeft: activeTab === t.id ? '3px solid var(--pe-cyan-bright)' : '3px solid transparent', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}>
+            <button key={t.id} onClick={() => selectTab(t.id)} style={{ width: '100%', padding: '14px 20px', textAlign: 'left', background: activeTab === t.id ? 'var(--pe-bg-elevated)' : 'transparent', color: activeTab === t.id ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)', border: 'none', borderLeft: activeTab === t.id ? '3px solid var(--pe-cyan-bright)' : '3px solid transparent', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <t.Icon size={18} color={activeTab === t.id ? 'var(--pe-cyan-bright)' : t.color} strokeWidth={2} />
               {t.label}
             </button>
           ))}
@@ -2282,7 +2287,7 @@ function AdminDashboard({ tab }) {
                 onClick={() => selectTab(t.id)}
                 style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  gap: '12px', padding: '20px 12px', minHeight: '110px',
+                  gap: '10px', padding: '20px 12px', minHeight: '120px',
                   background: 'var(--pe-bg-card)',
                   border: '1px solid var(--pe-border)',
                   borderRadius: '16px',
@@ -2294,13 +2299,13 @@ function AdminDashboard({ tab }) {
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--pe-border)'; e.currentTarget.style.background = 'var(--pe-bg-card)'; }}
               >
                 <div style={{
-                  width: '52px', height: '52px', borderRadius: '50%',
-                  background: t.color + '22',
-                  border: `2px solid ${t.color}`,
+                  width: '56px', height: '56px', borderRadius: '14px',
+                  background: t.color + '1A',
+                  border: `1.5px solid ${t.color}44`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: t.color, fontWeight: 'bold', fontSize: t.abbr.length > 2 ? '11px' : '15px', flexShrink: 0,
+                  flexShrink: 0,
                 }}>
-                  {t.abbr}
+                  <t.Icon size={26} color={t.color} strokeWidth={1.75} />
                 </div>
                 <span style={{ color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', lineHeight: 1.3 }}>
                   {t.label}
@@ -2315,20 +2320,20 @@ function AdminDashboard({ tab }) {
             style={{ display: showMobileTiles ? 'none' : 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}
           >
             {/* Mobile Back-Button */}
-            <div className="mobile-back-bar" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 16px', background: 'var(--pe-bg-card)', borderBottom: '1px solid var(--pe-border)', flexShrink: 0 }}>
+            <div className="mobile-back-bar" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 16px', background: 'var(--pe-bg-card)', borderBottom: '1px solid var(--pe-border)', flexShrink: 0 }}>
               <button
                 onClick={() => setShowMobileTiles(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', borderRadius: '8px', padding: '8px 14px', color: 'var(--pe-text-sub)', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', minHeight: '40px' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', borderRadius: '10px', padding: '0 16px', color: 'var(--pe-text-sub)', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', minHeight: '48px' }}
               >
                 &#8592; Menü
               </button>
-              <span style={{ color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '15px' }}>
+              <span style={{ color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '16px' }}>
                 {visibleTabs.find(t => t.id === activeTab)?.label}
               </span>
             </div>
 
             {/* Content */}
-            <div style={{ flex: 1, padding: '24px', maxWidth: '1400px', overflowY: 'auto' }}>
+            <div style={{ flex: 1, padding: '16px', maxWidth: '1400px', overflowY: 'auto' }}>
               {activeTab === 'overview'    && <OverviewTab />}
               {activeTab === 'director'    && <TournamentDirectorTab />}
               {activeTab === 'tournaments' && <TournamentExtendedTab />}
