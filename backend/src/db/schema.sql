@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS tournaments (
   format TEXT NOT NULL,
   checkout TEXT NOT NULL,
   status TEXT DEFAULT 'open',
+  use_seed BOOLEAN DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -14,7 +14,7 @@ router.get('/', (req, res) => {
 
 // POST /api/tournaments (Admin)
 router.post('/', verifyToken, requireFields(['name', 'format', 'checkout']), (req, res) => {
-  const { name, date, start_time, format, checkout } = req.body;
+  const { name, date, start_time, format, checkout, use_seed } = req.body;
 
   if (!['501', '301'].includes(format)) {
     return res.status(400).json({ error: 'Format must be 501 or 301' });
@@ -28,9 +28,11 @@ router.post('/', verifyToken, requireFields(['name', 'format', 'checkout']), (re
     return res.status(400).json({ error: 'start_time must be in HH:MM format' });
   }
 
+  const useSeedValue = use_seed ? 1 : 0;
+
   const result = db.prepare(
-    'INSERT INTO tournaments (name, date, start_time, format, checkout) VALUES (?, ?, ?, ?, ?)'
-  ).run(name, date || null, start_time || null, format, checkout);
+    'INSERT INTO tournaments (name, date, start_time, format, checkout, use_seed) VALUES (?, ?, ?, ?, ?, ?)'
+  ).run(name, date || null, start_time || null, format, checkout, useSeedValue);
 
   const tournament = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(result.lastInsertRowid);
   auditLog(req, 'tournament', 'CREATE', `Turnier "${name}" angelegt`, tournament.id);
@@ -91,7 +93,7 @@ router.put('/:id', verifyToken, (req, res) => {
   const tournament = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(req.params.id);
   if (!tournament) return res.status(404).json({ error: 'Tournament not found' });
 
-  const allowed = ['prelim_format','prelim_legs','qf_format','qf_legs','sf_format','sf_legs','final_format','final_legs','board_count','name','date','start_time'];
+  const allowed = ['prelim_format','prelim_legs','qf_format','qf_legs','sf_format','sf_legs','final_format','final_legs','board_count','name','date','start_time','use_seed'];
   const updates = {};
   for (const key of allowed) {
     if (req.body[key] !== undefined) updates[key] = req.body[key];
@@ -270,6 +272,25 @@ router.post('/:id/draw-groups', requireAdminOrDirector, (req, res) => {
     // Gruppennamen: A, B, C, ...
     const groupNames = Array.from({ length: numGroups }, (_, i) => String.fromCharCode(65 + i));
 
+    // Determine draw order based on tournament.use_seed setting
+    let orderedPlayers;
+    if (tournament.use_seed) {
+      // Seed-aware draw: sort by seed (nulls last), then snake-draft across groups
+      orderedPlayers = [...players].sort((a, b) => {
+        if (a.seed == null && b.seed == null) return 0;
+        if (a.seed == null) return 1;
+        if (b.seed == null) return -1;
+        return a.seed - b.seed;
+      });
+    } else {
+      // Completely random draw: Fisher-Yates shuffle
+      orderedPlayers = [...players];
+      for (let i = orderedPlayers.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [orderedPlayers[i], orderedPlayers[j]] = [orderedPlayers[j], orderedPlayers[i]];
+      }
+    }
+
     const drawTransaction = db.transaction(() => {
       // Gruppen anlegen
       const groupIds = [];
@@ -280,24 +301,25 @@ router.post('/:id/draw-groups', requireAdminOrDirector, (req, res) => {
         groupIds.push(result.lastInsertRowid);
       }
 
-      // Serpentinen-Verteilung: 1->A, 2->B, ..., N->B, N+1->A (umgekehrt)
-      let direction = 1; // 1 = vorwaerts, -1 = rueckwaerts
+      // Snake-draft distribution: 1->A, 2->B, ..., N->N, N+1->N (reverse), ...
+      // Ensures top seeds (or random players) spread across different groups
+      let direction = 1; // 1 = forward, -1 = backward
       let groupIndex = 0;
-      for (const player of players) {
+      for (const player of orderedPlayers) {
         db.prepare(
           'INSERT INTO group_players (group_id, player_id) VALUES (?, ?)'
         ).run(groupIds[groupIndex], player.id);
 
-        // Naechste Gruppe
+        // Advance to next group (snake direction)
         if (direction === 1) {
           if (groupIndex >= numGroups - 1) {
-            direction = -1; // Umkehren
+            direction = -1;
           } else {
             groupIndex++;
           }
         } else {
           if (groupIndex <= 0) {
-            direction = 1; // Umkehren
+            direction = 1;
           } else {
             groupIndex--;
           }
