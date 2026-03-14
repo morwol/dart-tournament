@@ -1,0 +1,18 @@
+[Unit]
+Description=DartEvent GitHub Webhook Receiver
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/dartsturnier/backend
+ExecStart=/usr/bin/node /var/www/dartsturnier/backend/webhook.js
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dartevent-webhook
+EnvironmentFile=/var/www/dartsturnier/backend/.env
+
+[Install]
+WantedBy=multi-user.target
