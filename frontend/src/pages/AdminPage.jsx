@@ -1089,11 +1089,15 @@ function TournamentDirectorTab() {
               }}
             >
               {/* Board header */}
-              <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--pe-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: activeGame ? 'rgba(30,127,235,0.12)' : 'transparent' }}>
-                <span style={{ fontWeight: 'bold', color: 'var(--pe-text)', fontSize: '15px' }}>
+              <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--pe-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', background: activeGame ? 'rgba(30,127,235,0.12)' : 'transparent' }}>
+                <span style={{ fontWeight: 'bold', color: 'var(--pe-text)', fontSize: '15px', flex: 1, minWidth: 0 }}>
                   Board {board.number}{board.name ? ` — ${board.name}` : ''}{board.is_final ? ' ★' : ''}
                 </span>
-                <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '10px', fontWeight: 'bold', background: activeGame ? 'var(--pe-success)' : hasGames ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: activeGame ? '#000' : 'var(--pe-text)' }}>
+                <a href={`/referee/${board.number}`} target="_blank" rel="noopener noreferrer"
+                   style={{ fontSize: '11px', color: 'var(--pe-cyan-bright)', textDecoration: 'none', padding: '3px 8px', borderRadius: '6px', background: 'rgba(0,184,255,0.1)', border: '1px solid rgba(0,184,255,0.2)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  ↗ Referee
+                </a>
+                <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '10px', fontWeight: 'bold', background: activeGame ? 'var(--pe-success)' : hasGames ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: activeGame ? '#000' : 'var(--pe-text)', whiteSpace: 'nowrap', flexShrink: 0 }}>
                   {activeGame ? 'Aktiv' : hasGames ? `${boardGames.length} Spiele` : isDropTarget || (isTapTarget && !activeGame) ? 'Hier zuweisen' : 'Frei'}
                 </span>
               </div>
