@@ -918,16 +918,20 @@ function TournamentDirectorTab() {
   const [tapGameId, setTapGameId] = useState(null); // Mobile tap-to-assign selection
 
   const load = async () => {
-    const [b, t] = await Promise.all([
+    const [allBoards, t] = await Promise.all([
       api.get('/boards').catch(() => []),
       api.get('/tournaments').catch(() => []),
     ]);
-    setBoards(b);
-    const active = t.find(x => x.status === 'active') || t[0];
+    const active = t.find(x => x.status === 'active') || null;
     setActiveTournament(active);
     if (active) {
+      // Item 9: Only show boards belonging to the active tournament
+      const tournamentBoards = allBoards.filter(b => b.tournament_id === active.id || !b.tournament_id);
+      setBoards(tournamentBoards);
       const detail = await api.get(`/tournaments/${active.id}`).catch(() => null);
       if (detail?.games) setGames(detail.games.filter(g => ['pending','bulloff','active'].includes(g.status) && g.player1_name));
+    } else {
+      setBoards([]);
     }
   };
 
@@ -1018,7 +1022,15 @@ function TournamentDirectorTab() {
         )}
       </div>
 
+      {/* Item 9: No active tournament message */}
+      {!activeTournament && (
+        <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--pe-text-muted)', fontSize: '15px', borderRadius: '12px', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', marginBottom: '20px' }}>
+          Kein aktives Turnier
+        </div>
+      )}
+
       {/* Board grid — responsive: auto-fill wraps on mobile */}
+      {activeTournament && (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px', marginBottom: '20px' }}>
         {boards.map(board => {
           const boardGames = gamesByBoard[board.id] || [];
@@ -1108,8 +1120,10 @@ function TournamentDirectorTab() {
           );
         })}
       </div>
+      )}
 
       {/* Unassigned games — drag source + drop zone + tap-to-select */}
+      {activeTournament && (
       <div
         onDragOver={e => { e.preventDefault(); setDragOverBoard('unassigned'); }}
         onDragLeave={onDragLeave}
@@ -1151,6 +1165,7 @@ function TournamentDirectorTab() {
           )}
         </div>
       </div>
+      )}
 
     </div>
   );
@@ -1184,6 +1199,7 @@ function TournamentExtendedTab() {
   const [playerForm, setPlayerForm] = useState({ vorname: '', nickname: '', nachname: '', seed: '' });
   const [players, setPlayers] = useState([]);
   const [mockCount, setMockCount] = useState('8');
+  const [wizardError, setWizardError] = useState(''); // inline error for wizard steps
 
   const loadTournaments = () => {
     api.get('/tournaments').then((t) => {
@@ -1222,30 +1238,45 @@ function TournamentExtendedTab() {
     e.preventDefault();
     if (!createForm.name.trim()) return;
     setCreating(true);
+    setWizardError('');
     try {
       const t = await api.post('/tournaments', createForm);
       setNewTournament(t);
       setSelectedId(String(t.id));
       await loadTournaments();
       setWizardStep(2); // direkt zu Format
-    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+    } catch (err) { setWizardError(err.message || 'Turnier konnte nicht angelegt werden – bitte erneut versuchen.'); }
     finally { setCreating(false); }
   };
 
-  // --- Wizard Step 2: Format speichern ---
+  // --- Wizard Step 2: Format speichern + Boards auto-erstellen ---
   const handleSaveConfig = async () => {
     setSavingConfig(true);
+    setWizardError('');
     const tid = newTournament?.id || selectedId;
+    const boardCount = parseInt(config.board_count) || 1;
     try {
       await api.put(`/tournaments/${tid}`, {
         prelim_format: config.prelim_format, prelim_legs: parseInt(config.prelim_legs) || 1,
         qf_format:     config.qf_format,     qf_legs:    parseInt(config.qf_legs)    || 3,
         sf_format:     config.sf_format,     sf_legs:    parseInt(config.sf_legs)    || 3,
         final_format:  config.final_format,  final_legs: parseInt(config.final_legs) || 5,
-        board_count:   parseInt(config.board_count) || 1,
+        board_count:   boardCount,
       });
+      // Auto-create boards for this tournament if they don't exist yet
+      const existingBoards = await api.get('/boards').catch(() => []);
+      const tournamentBoards = existingBoards.filter(b => b.tournament_id === tid);
+      if (tournamentBoards.length < boardCount) {
+        const toCreate = boardCount - tournamentBoards.length;
+        const startNumber = existingBoards.length + 1;
+        const createPromises = Array.from({ length: toCreate }, (_, i) =>
+          api.post('/boards', { number: startNumber + i, tournament_id: tid }).catch(() => null)
+        );
+        await Promise.all(createPromises);
+        await loadTournaments();
+      }
       setWizardStep(3);
-    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+    } catch (err) { setWizardError(err.message || 'Konfiguration konnte nicht gespeichert werden – bitte erneut versuchen.'); }
     finally { setSavingConfig(false); }
   };
 
@@ -1254,6 +1285,7 @@ function TournamentExtendedTab() {
     e.preventDefault();
     if (!playerForm.vorname.trim() || !playerForm.nickname.trim() || !playerForm.nachname.trim()) return;
     const tid = newTournament?.id || selectedId;
+    setWizardError('');
     try {
       await api.post(`/tournaments/${tid}/players`, {
         vorname: playerForm.vorname.trim(),
@@ -1264,7 +1296,7 @@ function TournamentExtendedTab() {
       setPlayerForm({ vorname: '', nickname: '', nachname: '', seed: '' });
       const updated = await api.get(`/tournaments/${tid}/players`);
       setPlayers(updated);
-    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+    } catch (err) { setWizardError(err.message || 'Spieler konnte nicht hinzugefügt werden – bitte erneut versuchen.'); }
   };
 
   const deletePlayer = async (playerId) => {
@@ -1273,17 +1305,18 @@ function TournamentExtendedTab() {
     try {
       await api.del(`/tournaments/${tid}/players/${playerId}`);
       setPlayers(prev => prev.filter(p => p.id !== playerId));
-    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+    } catch (err) { setWizardError(err.message || 'Spieler konnte nicht gelöscht werden – bitte erneut versuchen.'); }
   };
 
   const handleMock = async () => {
     const tid = newTournament?.id || selectedId;
     if (!confirm(`${mockCount} Fake-Spieler erstellen?`)) return;
+    setWizardError('');
     try {
       await api.post(`/tournaments/${tid}/mock`, { player_count: parseInt(mockCount) });
       const updated = await api.get(`/tournaments/${tid}/players`);
       setPlayers(updated);
-    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+    } catch (err) { setWizardError(err.message || 'Simulation fehlgeschlagen – bitte erneut versuchen.'); }
   };
 
   // --- Wizard Step 4: Auslosung ---
@@ -1308,51 +1341,72 @@ function TournamentExtendedTab() {
 
   const drawGroups = async () => {
     const tid = newTournament?.id || selectedId;
+    const groupCount = parseInt(numGroups) || 2;
+    // Item 4: Inline validation — minimum 2 groups, at least 2 players per group
+    if (groupCount < 2) {
+      setWizardError('Mindestens 2 Gruppen erforderlich.');
+      return;
+    }
+    if (players.length < groupCount * 2) {
+      setWizardError(`Zu wenige Spieler: Für ${groupCount} Gruppen werden mindestens ${groupCount * 2} Spieler benötigt.`);
+      return;
+    }
+    setWizardError('');
     try {
       await api.post(`/tournaments/${tid}/draw-groups`, { numGroups });
-      await refreshWizardTour();
-    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+      const t = await refreshWizardTour();
+      // Item 6: Auto-assign boards to groups in sequence after draw
+      if (t?.group_draw_done) {
+        const groupData = await api.get(`/tournaments/${tid}/groups`).catch(() => null);
+        const drawnGroups = groupData?.groups || [];
+        const availableBoards = await api.get('/boards').catch(() => []);
+        const tournamentBoards = availableBoards.filter(b => b.tournament_id === tid || !b.tournament_id).sort((a, b) => a.number - b.number);
+        await Promise.all(
+          drawnGroups.map((g, i) => {
+            const board = tournamentBoards[i];
+            if (board) return api.put(`/tournaments/${tid}/groups/${g.id}/board`, { board_id: board.id }).catch(() => null);
+            return Promise.resolve();
+          })
+        );
+        const refreshed = await api.get(`/tournaments/${tid}/groups`).catch(() => null);
+        if (refreshed) setGroups(refreshed.groups || []);
+      }
+    } catch (err) { setWizardError(err.message || 'Auslosung fehlgeschlagen – bitte erneut versuchen.'); }
   };
 
   const generateGroupSchedule = async () => {
     const tid = newTournament?.id || selectedId;
     if (!tid) return;
+    setWizardError('');
     try {
-      const r = await api.post(`/tournaments/${tid}/generate-group-schedule`);
-      alert(`Spielplan erstellt! ${r.games_created} Partien auf Boards verteilt.`);
+      await api.post(`/tournaments/${tid}/generate-group-schedule`);
       await refreshWizardTour();
       await loadTournaments();
-    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+    } catch (err) { setWizardError(err.message || 'Spielplan konnte nicht generiert werden – bitte erneut versuchen.'); }
   };
 
   const startTournament = async () => {
     const tid = newTournament?.id || selectedId;
+    setWizardError('');
     try {
       await api.put(`/tournaments/${tid}/start`);
       await loadTournaments();
       setWizardStep(0);
       setNewTournament(null);
       setWizardTour(null);
-    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+    } catch (err) { setWizardError(err.message || 'Turnier konnte nicht gestartet werden – bitte erneut versuchen.'); }
   };
 
   const lockTournament = async () => {
     if (!confirm('Turnier wirklich abschließen?')) return;
     try { await api.put(`/tournaments/${selectedId}/lock`); loadTournaments(); }
-    catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+    catch (err) { setWizardError(err.message || 'Turnier konnte nicht abgeschlossen werden – bitte erneut versuchen.'); }
   };
 
   const deleteTournament = async (id) => {
     if (!confirm('Turnier und alle Daten löschen?')) return;
     try { await api.del(`/tournaments/${id}`); setSelectedId(''); loadTournaments(); }
-    catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
-  };
-
-  const handleWipe = async () => {
-    const confirmed = prompt('Zum Bestätigen "WIPE" eingeben:');
-    if (confirmed !== 'WIPE') return;
-    try { await api.post('/admin/wipe', {}); alert('Alle Turnierdaten gelöscht!'); setSelectedId(''); loadTournaments(); }
-    catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+    catch (err) { setWizardError(err.message || 'Turnier konnte nicht gelöscht werden – bitte erneut versuchen.'); }
   };
 
   const assignGroupToBoard = async (groupId, boardId) => {
@@ -1361,7 +1415,7 @@ function TournamentExtendedTab() {
       await api.put(`/tournaments/${tid}/groups/${groupId}/board`, { board_id: boardId || null });
       const data = await api.get(`/tournaments/${tid}/groups`);
       setGroups(data.groups || []);
-    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+    } catch (err) { setWizardError(err.message || 'Board-Zuordnung fehlgeschlagen – bitte erneut versuchen.'); }
   };
 
   const card = { background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', borderRadius: '12px', padding: '16px', marginBottom: '12px' };
@@ -1384,6 +1438,14 @@ function TournamentExtendedTab() {
             <div key={s} style={{ flex: 1, height: '4px', borderRadius: '2px', background: s <= wizardStep ? 'var(--pe-cyan-bright)' : 'var(--pe-border)' }} />
           ))}
         </div>
+
+        {/* Inline error display */}
+        {wizardError && (
+          <div style={{ marginBottom: '16px', padding: '12px 14px', borderRadius: '10px', background: 'rgba(255,69,96,0.1)', border: '1px solid var(--pe-danger)', color: 'var(--pe-danger)', fontSize: '13px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>{wizardError}</span>
+            <button onClick={() => setWizardError('')} style={{ background: 'none', border: 'none', color: 'var(--pe-danger)', cursor: 'pointer', fontSize: '16px', lineHeight: 1, padding: '0 4px' }}>✕</button>
+          </div>
+        )}
 
         {/* Step 1: Grunddaten */}
         {wizardStep === 1 && (
@@ -1445,7 +1507,11 @@ function TournamentExtendedTab() {
                   <input type="text" value={playerForm.nachname} onChange={e => setPlayerForm({...playerForm, nachname: e.target.value})} placeholder="Nachname *" required style={{ ...inputStyle, padding: '10px 12px' }} />
                 </div>
                 <div style={{ display: 'flex', gap: '6px' }}>
-                  <input type="number" value={playerForm.seed} onChange={e => setPlayerForm({...playerForm, seed: e.target.value})} placeholder="Seed" style={{ ...inputStyle, width: '70px', padding: '10px' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', borderRadius: '8px', padding: '4px 8px' }}>
+                    <button type="button" onClick={() => setPlayerForm({...playerForm, seed: String(Math.max(1, (parseInt(playerForm.seed) || 1) - 1))})} style={{ minHeight: '44px', minWidth: '36px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '6px', fontWeight: 'bold', fontSize: '18px', cursor: 'pointer', fontFamily: 'Verdana, Geneva, sans-serif' }}>−</button>
+                    <span style={{ minWidth: '32px', textAlign: 'center', color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '14px' }}>{playerForm.seed || '—'}</span>
+                    <button type="button" onClick={() => setPlayerForm({...playerForm, seed: String((parseInt(playerForm.seed) || 0) + 1)})} style={{ minHeight: '44px', minWidth: '36px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '6px', fontWeight: 'bold', fontSize: '18px', cursor: 'pointer', fontFamily: 'Verdana, Geneva, sans-serif' }}>+</button>
+                  </div>
                   <button type="submit" disabled={!playerForm.vorname.trim() || !playerForm.nickname.trim() || !playerForm.nachname.trim()} style={{ flex: 1, padding: '10px 16px', borderRadius: '8px', background: 'var(--pe-blue-deep)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px', opacity: (!playerForm.vorname.trim() || !playerForm.nickname.trim() || !playerForm.nachname.trim()) ? 0.5 : 1 }}>+ Spieler hinzufügen</button>
                 </div>
               </form>
@@ -1578,7 +1644,7 @@ function TournamentExtendedTab() {
                   </div>
 
                   {/* Option A: Gruppenphase */}
-                  <button onClick={drawGroups} style={{ padding: '16px', borderRadius: '12px', background: 'var(--pe-blue-deep)', color: '#fff', border: '2px solid var(--pe-blue-mid)', fontFamily: 'Verdana, Geneva, sans-serif', cursor: 'pointer', minHeight: '64px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <button onClick={drawGroups} style={{ padding: '16px', borderRadius: '12px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', boxShadow: '0 4px 14px rgba(0,184,255,0.3)', fontFamily: 'Verdana, Geneva, sans-serif', cursor: 'pointer', minHeight: '64px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '14px' }}>
                     <span style={{ fontSize: '28px', flexShrink: 0 }}>🏆</span>
                     <div>
                       <div style={{ fontWeight: 'bold', fontSize: '15px' }}>Mit Gruppenphase starten</div>
@@ -1616,6 +1682,14 @@ function TournamentExtendedTab() {
           + Neues Turnier
         </button>
       </div>
+
+      {/* Inline error display for list view */}
+      {wizardError && (
+        <div style={{ marginBottom: '16px', padding: '12px 14px', borderRadius: '10px', background: 'rgba(255,69,96,0.1)', border: '1px solid var(--pe-danger)', color: 'var(--pe-danger)', fontSize: '13px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>{wizardError}</span>
+          <button onClick={() => setWizardError('')} style={{ background: 'none', border: 'none', color: 'var(--pe-danger)', cursor: 'pointer', fontSize: '16px', lineHeight: 1, padding: '0 4px' }}>✕</button>
+        </div>
+      )}
 
       {/* Turnier-Liste */}
       {tournaments.length === 0 && (
@@ -1700,9 +1774,11 @@ function TournamentExtendedTab() {
                   </select>
                 </div>
               ))}
-              <button onClick={generateGroupSchedule} style={{ width: '100%', marginTop: '8px', padding: '12px', borderRadius: '10px', background: 'linear-gradient(135deg, #00E5A0, #1E7FEB)', color: '#000', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '44px', fontSize: '13px' }}>
-                Spielplan generieren
-              </button>
+              {selectedTournament.status === 'open' && !selectedTournament.group_draw_done && (
+                <button onClick={generateGroupSchedule} style={{ width: '100%', marginTop: '8px', padding: '12px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '44px', fontSize: '13px' }}>
+                  Spielplan generieren
+                </button>
+              )}
             </div>
           )}
 
@@ -1729,14 +1805,6 @@ function TournamentExtendedTab() {
         </div>
       )}
 
-      {/* Danger Zone */}
-      <div style={{ padding: '16px', borderRadius: '12px', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-danger)', marginTop: '24px' }}>
-        <h3 style={{ color: 'var(--pe-danger)', fontWeight: 'bold', fontSize: '13px', marginBottom: '8px' }}>DANGER ZONE</h3>
-        <p style={{ color: 'var(--pe-text-muted)', fontSize: '12px', marginBottom: '12px' }}>Löscht ALLE Turniere, Spieler, Spiele, Bestellungen. Boards, User und Produkte bleiben.</p>
-        <button onClick={handleWipe} style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'var(--pe-danger)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px' }}>
-          Datenbank zurücksetzen (WIPE)
-        </button>
-      </div>
     </div>
   );
 }
