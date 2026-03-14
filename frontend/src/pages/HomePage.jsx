@@ -444,7 +444,8 @@ const styles = {
     fontWeight: 'bold',
     padding: '4px 10px',
     borderRadius: 20,
-    border: '1px solid',
+    borderWidth: '1px',
+    borderStyle: 'solid',
     whiteSpace: 'nowrap',
   },
   statusBadgeSmall: {
@@ -452,7 +453,8 @@ const styles = {
     fontWeight: 'bold',
     padding: '3px 8px',
     borderRadius: 16,
-    border: '1px solid',
+    borderWidth: '1px',
+    borderStyle: 'solid',
     whiteSpace: 'nowrap',
   },
   tournamentStats: {
