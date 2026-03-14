@@ -1637,8 +1637,6 @@ function LogTab() {
   const [loadError, setLoadError] = useState('');
   const [filterCat, setFilterCat] = useState('');
   const [filterAction, setFilterAction] = useState('');
-  const [clearing, setClearing] = useState(false);
-
   const load = () => {
     setLoading(true);
     setLoadError('');
@@ -1653,14 +1651,6 @@ function LogTab() {
 
   useEffect(() => { load(); }, [filterCat, filterAction]);
   useEffect(() => { const i = setInterval(load, 15000); return () => clearInterval(i); }, [filterCat, filterAction]);
-
-  const handleClear = async () => {
-    if (!confirm('Gesamtes Audit-Log löschen?')) return;
-    setClearing(true);
-    try { await api.del('/admin/logs'); load(); }
-    catch (err) { alert(err.message || 'Löschen fehlgeschlagen'); }
-    finally { setClearing(false); }
-  };
 
   const categories = ['', 'tournament', 'player', 'game', 'config', 'user', 'board', 'auth', 'system'];
   const actions    = ['', 'CREATE', 'REGISTER', 'START', 'FINISH', 'UPDATE', 'DELETE', 'RESET', 'LOCK', 'WIPE', 'LOGIN', 'LOG_CLEAR'];
@@ -1697,8 +1687,8 @@ function LogTab() {
           <button onClick={load} style={{ ...btnSmall, padding: '6px 14px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-text-sub)', minHeight: '36px' }}>
             ↻ Aktualisieren
           </button>
-          <button onClick={handleClear} disabled={clearing} style={{ ...btnSmall, padding: '6px 14px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', minHeight: '36px', opacity: clearing ? 0.5 : 1 }}>
-            Log leeren
+          <button onClick={() => window.open('/api/admin/logs/export', '_blank')} style={{ ...btnSmall, padding: '6px 14px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-cyan-bright)', border: '1px solid var(--pe-cyan-bright)', minHeight: '36px' }}>
+            Export CSV
           </button>
         </div>
       </div>
