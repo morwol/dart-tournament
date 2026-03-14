@@ -35,5 +35,7 @@ body {
 
 @media (min-width: 1024px) {
   .sidebar-desktop { display: flex !important; flex-direction: column; }
-  .mobile-tabs { display: none !important; }
+  .mobile-tiles-grid { display: none !important; }
+  .mobile-back-bar { display: none !important; }
+  .content-area { display: flex !important; }
 }

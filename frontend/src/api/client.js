@@ -9,7 +9,7 @@ async function request(path, options = {}) {
   const token = getToken();
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(BASE + path, { ...options, headers });
-  if (res.status === 401) {
+  if (res.status === 401 && path !== '/auth/login') {
     // Token abgelaufen oder ungültig — Session beenden
     localStorage.removeItem('token');
     window.location.reload();
