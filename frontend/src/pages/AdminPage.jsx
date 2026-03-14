@@ -1165,7 +1165,7 @@ function TournamentExtendedTab() {
   const [numGroups, setNumGroups] = useState(4);
   const [creating, setCreating] = useState(false);
   const [newTournament, setNewTournament] = useState(null); // after step 1
-  const [createForm, setCreateForm] = useState({ name: '', date: '', format: '501', checkout: 'double_out' });
+  const [createForm, setCreateForm] = useState({ name: '', date: '', start_time: '', format: '501', checkout: 'double_out' });
   const [config, setConfig] = useState({
     prelim_format: '301_single_out', prelim_legs: '1',
     qf_format: '501_double_out',     qf_legs: '3',
@@ -1384,7 +1384,10 @@ function TournamentExtendedTab() {
             <p style={{ color: 'var(--pe-text-sub)', fontSize: '13px', marginBottom: '16px' }}>Gib dem Turnier einen Namen und optionales Datum.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <input type="text" value={createForm.name} onChange={e => setCreateForm({...createForm, name: e.target.value})} placeholder="Turniername *" required style={{ ...inputStyle, padding: '12px 14px' }} />
-              <input type="date" value={createForm.date} onChange={e => setCreateForm({...createForm, date: e.target.value})} style={{ ...inputStyle, padding: '12px 14px' }} />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input type="date" value={createForm.date} onChange={e => setCreateForm({...createForm, date: e.target.value})} style={{ ...inputStyle, flex: 1, padding: '12px 14px', cursor: 'pointer' }} />
+                <input type="time" value={createForm.start_time} onChange={e => setCreateForm({...createForm, start_time: e.target.value})} placeholder="Startzeit" title="Startzeit (für Spielplan)" style={{ ...inputStyle, width: '120px', padding: '12px 10px', cursor: 'pointer' }} />
+              </div>
             </div>
             <button type="submit" disabled={creating || !createForm.name.trim()} style={{ width: '100%', marginTop: '16px', padding: '14px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer', minHeight: '52px', opacity: creating ? 0.6 : 1 }}>
               {creating ? 'Wird angelegt...' : 'Turnier anlegen & weiter →'}
@@ -1602,7 +1605,7 @@ function TournamentExtendedTab() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px' }}>Turniere</h2>
-        <button onClick={() => { setWizardStep(1); setNewTournament(null); setCreateForm({ name: '', date: '', format: '501', checkout: 'double_out' }); }} style={{ padding: '10px 20px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px' }}>
+        <button onClick={() => { setWizardStep(1); setNewTournament(null); setCreateForm({ name: '', date: '', start_time: '', format: '501', checkout: 'double_out' }); }} style={{ padding: '10px 20px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px' }}>
           + Neues Turnier
         </button>
       </div>

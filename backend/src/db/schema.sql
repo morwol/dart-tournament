@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS tournaments (
   id INTEGER PRIMARY KEY,
   name TEXT NOT NULL,
   date DATE,
+  start_time TEXT,
   format TEXT NOT NULL,
   checkout TEXT NOT NULL,
   status TEXT DEFAULT 'open',

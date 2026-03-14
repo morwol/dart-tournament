@@ -14,7 +14,7 @@ router.get('/', (req, res) => {
 
 // POST /api/tournaments (Admin)
 router.post('/', verifyToken, requireFields(['name', 'format', 'checkout']), (req, res) => {
-  const { name, date, format, checkout } = req.body;
+  const { name, date, start_time, format, checkout } = req.body;
 
   if (!['501', '301'].includes(format)) {
     return res.status(400).json({ error: 'Format must be 501 or 301' });
@@ -23,9 +23,14 @@ router.post('/', verifyToken, requireFields(['name', 'format', 'checkout']), (re
     return res.status(400).json({ error: 'Checkout must be single_out or double_out' });
   }
 
+  // Validate start_time format HH:MM if provided
+  if (start_time && !/^\d{2}:\d{2}$/.test(start_time)) {
+    return res.status(400).json({ error: 'start_time must be in HH:MM format' });
+  }
+
   const result = db.prepare(
-    'INSERT INTO tournaments (name, date, format, checkout) VALUES (?, ?, ?, ?)'
-  ).run(name, date || null, format, checkout);
+    'INSERT INTO tournaments (name, date, start_time, format, checkout) VALUES (?, ?, ?, ?, ?)'
+  ).run(name, date || null, start_time || null, format, checkout);
 
   const tournament = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(result.lastInsertRowid);
   auditLog(req, 'tournament', 'CREATE', `Turnier "${name}" angelegt`, tournament.id);
@@ -439,6 +444,7 @@ router.post('/:id/generate-group-schedule', requireAdminOrDirector, (req, res) =
     // Delete any existing group-phase games (round = 0) for this tournament
     const existingGroupGames = db.prepare('SELECT id FROM games WHERE tournament_id = ? AND round = 0').all(req.params.id);
     for (const g of existingGroupGames) {
+      db.prepare('DELETE FROM schedule WHERE game_id = ?').run(g.id);
       db.prepare('DELETE FROM throws WHERE game_id = ?').run(g.id);
       db.prepare('DELETE FROM games WHERE id = ?').run(g.id);
     }
@@ -446,12 +452,37 @@ router.post('/:id/generate-group-schedule', requireAdminOrDirector, (req, res) =
     const startScore = parseInt(tournament.format) || 501;
     let totalCreated = 0;
 
+    // Calculate base datetime from tournament date + start_time
+    const gameDurationMinutes = parseInt(req.body.game_duration_minutes) || 20;
+    let baseDateTime = null;
+    if (tournament.date || tournament.start_time) {
+      const datePart = tournament.date || new Date().toISOString().substring(0, 10);
+      const timePart = tournament.start_time || '10:00';
+      const parsed = new Date(`${datePart}T${timePart}:00`);
+      if (!isNaN(parsed.getTime())) baseDateTime = parsed;
+    }
+
     const insertGames = db.transaction(() => {
+      const boardGameIndex = {};
       for (const [boardId, pairs] of Object.entries(boardGameList)) {
+        boardGameIndex[boardId] = 0;
         for (const [p1, p2] of pairs) {
-          db.prepare(
+          const gameResult = db.prepare(
             'INSERT INTO games (tournament_id, round, player1_id, player2_id, start_score, board_id, status) VALUES (?, 0, ?, ?, ?, ?, ?)'
           ).run(req.params.id, p1.id, p2.id, startScore, parseInt(boardId), 'pending');
+
+          const gameIdx = boardGameIndex[boardId]++;
+          let scheduledAt = null;
+          if (baseDateTime) {
+            const ms = gameIdx * gameDurationMinutes * 60 * 1000;
+            const gameTime = new Date(baseDateTime.getTime() + ms);
+            scheduledAt = gameTime.toISOString().replace('T', ' ').substring(0, 16);
+          }
+
+          db.prepare(
+            'INSERT INTO schedule (tournament_id, game_id, board_id, scheduled_at, status) VALUES (?, ?, ?, ?, ?)'
+          ).run(req.params.id, gameResult.lastInsertRowid, parseInt(boardId), scheduledAt, 'scheduled');
+
           totalCreated++;
         }
       }
