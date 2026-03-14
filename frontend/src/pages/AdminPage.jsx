@@ -211,9 +211,16 @@ function BoardsTab() {
           <div className="space-y-2">
             {schedule.map((s) => (
               <div key={s.id} className="p-3 rounded-lg flex justify-between items-center" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
-                <span className="text-sm" style={{ color: 'var(--pe-text)' }}>
-                  {s.player1_name || 'TBD'} vs {s.player2_name || 'TBD'} — Board {s.board_number || '?'}
-                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span className="text-sm" style={{ color: 'var(--pe-text)' }}>
+                    {s.player1_name || 'TBD'} vs {s.player2_name || 'TBD'} — Board {s.board_number || '?'}
+                  </span>
+                  {s.scheduled_at && (
+                    <span style={{ fontSize: '11px', color: 'var(--pe-cyan-bright)' }}>
+                      {s.scheduled_at.substring(11, 16)} Uhr
+                    </span>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <button onClick={() => handleActivate(s.id)} style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-success)', color: '#000' }}>Start</button>
                   <button onClick={() => handleSkip(s.id)} style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-warning)' }}>Skip</button>
@@ -1626,7 +1633,7 @@ function TournamentExtendedTab() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
                 <div style={{ color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '16px' }}>{t.name}</div>
-                {t.date && <div style={{ color: 'var(--pe-text-muted)', fontSize: '13px', marginTop: '2px' }}>{t.date}</div>}
+                {(t.date || t.start_time) && <div style={{ color: 'var(--pe-text-muted)', fontSize: '13px', marginTop: '2px' }}>{t.date || ''}{t.date && t.start_time ? ' ' : ''}{t.start_time ? `${t.start_time} Uhr` : ''}</div>}
               </div>
               <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', background: t.status === 'active' ? 'var(--pe-success)' : t.status === 'finished' ? 'var(--pe-border)' : 'var(--pe-blue-deep)', color: t.status === 'active' ? '#000' : '#fff' }}>
                 {t.status === 'open' ? 'Offen' : t.status === 'active' ? 'Aktiv' : 'Beendet'}
@@ -1655,6 +1662,27 @@ function TournamentExtendedTab() {
               {selectedTournament.status === 'open' ? 'Offen' : selectedTournament.status === 'active' ? 'Aktiv' : 'Beendet'}
             </span>
           </div>
+
+          {/* Start time editor — shown for open/active tournaments */}
+          {selectedTournament.status !== 'finished' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <label style={{ color: 'var(--pe-text-sub)', fontSize: '12px', whiteSpace: 'nowrap' }}>Startzeit:</label>
+              <input
+                type="time"
+                defaultValue={selectedTournament.start_time || ''}
+                key={selectedTournament.id}
+                onBlur={async (e) => {
+                  const val = e.target.value;
+                  try {
+                    await api.put(`/tournaments/${selectedId}`, { start_time: val });
+                    await loadTournaments();
+                  } catch (err) { alert(err.message || 'Startzeit konnte nicht gespeichert werden'); }
+                }}
+                style={{ background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '8px', padding: '6px 10px', fontFamily: 'Verdana, Geneva, sans-serif', fontSize: '13px', cursor: 'pointer', width: '120px' }}
+              />
+              <span style={{ color: 'var(--pe-text-muted)', fontSize: '11px' }}>(für Spielplan-Zeitslots)</span>
+            </div>
+          )}
 
           {/* Groups section — shown if group draw done or groups exist */}
           {(selectedTournament.group_draw_done || groups.length > 0) && groups.length > 0 && (

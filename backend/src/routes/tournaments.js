@@ -91,13 +91,20 @@ router.put('/:id', verifyToken, (req, res) => {
   const tournament = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(req.params.id);
   if (!tournament) return res.status(404).json({ error: 'Tournament not found' });
 
-  const allowed = ['prelim_format','prelim_legs','qf_format','qf_legs','sf_format','sf_legs','final_format','final_legs','board_count','name','date'];
+  const allowed = ['prelim_format','prelim_legs','qf_format','qf_legs','sf_format','sf_legs','final_format','final_legs','board_count','name','date','start_time'];
   const updates = {};
   for (const key of allowed) {
     if (req.body[key] !== undefined) updates[key] = req.body[key];
   }
 
   if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'No valid fields to update' });
+
+  // Validate start_time format HH:MM if provided as non-empty string
+  if (updates.start_time && !/^\d{2}:\d{2}$/.test(updates.start_time)) {
+    return res.status(400).json({ error: 'start_time must be in HH:MM format' });
+  }
+  // Allow clearing start_time by passing empty string → store as null
+  if (updates.start_time === '') updates.start_time = null;
 
   const setClauses = Object.keys(updates).map((k) => `${k} = ?`).join(', ');
   const values = [...Object.values(updates), req.params.id];
