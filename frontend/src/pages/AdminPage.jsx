@@ -1505,7 +1505,7 @@ function TournamentExtendedTab() {
                 <button
                   type="button"
                   onClick={() => setCreateForm({...createForm, use_seed: !createForm.use_seed})}
-                  style={{ padding: '6px 16px', borderRadius: '20px', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', minHeight: '36px', minWidth: '64px', background: createForm.use_seed ? 'var(--pe-success)' : 'var(--pe-bg-card)', color: createForm.use_seed ? '#000' : 'var(--pe-text-muted)', border: createForm.use_seed ? 'none' : '1px solid var(--pe-border)', transition: 'background 0.2s' }}
+                  style={{ padding: '6px 16px', borderRadius: '20px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', minHeight: '36px', minWidth: '64px', background: createForm.use_seed ? 'var(--pe-success)' : 'var(--pe-bg-card)', color: createForm.use_seed ? '#000' : 'var(--pe-text-muted)', border: createForm.use_seed ? 'none' : '1px solid var(--pe-border)', transition: 'background 0.2s' }}
                 >
                   {createForm.use_seed ? 'ON' : 'OFF'}
                 </button>
