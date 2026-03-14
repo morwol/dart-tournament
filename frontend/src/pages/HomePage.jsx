@@ -232,7 +232,7 @@ export default function HomePage() {
                     return (
                       <Link
                         key={board.id}
-                        to={`/board/${board.id}`}
+                        to={`/board/${board.number}`}
                         style={styles.boardCard}
                       >
                         <div style={styles.boardHeader}>
@@ -504,7 +504,9 @@ const styles = {
   tabButton: {
     padding: '0 18px',
     borderRadius: 10,
-    border: '1px solid var(--pe-border)',
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderColor: 'var(--pe-border)',
     background: 'var(--pe-bg-card)',
     color: 'var(--pe-text-sub)',
     fontFamily: 'Verdana, Geneva, sans-serif',

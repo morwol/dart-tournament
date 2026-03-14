@@ -97,6 +97,7 @@ router.get('/:id/next-game', (req, res) => {
     LEFT JOIN players p1 ON g.player1_id = p1.id
     LEFT JOIN players p2 ON g.player2_id = p2.id
     WHERE s.board_id = ? AND s.status = 'scheduled'
+      AND g.status NOT IN ('bulloff', 'active', 'finished')
     ORDER BY s.scheduled_at ASC, s.id ASC
     LIMIT 1
   `).get(id);
