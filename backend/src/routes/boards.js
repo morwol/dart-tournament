@@ -4,9 +4,15 @@ const router = express.Router();
 const { db } = require('../db/db');
 const { requireAdmin, requireAdminOrDirector, requireAny } = require('../middleware/auth');
 
-// NEU: Alle Scheiben auflisten
+// NEU: Alle Scheiben auflisten — optional gefiltert nach ?tournament_id=X
 router.get('/', (req, res) => {
-  const boards = db.prepare('SELECT * FROM boards ORDER BY number').all();
+  const { tournament_id } = req.query;
+  let boards;
+  if (tournament_id !== undefined && tournament_id !== '') {
+    boards = db.prepare('SELECT * FROM boards WHERE tournament_id = ? ORDER BY number').all(parseInt(tournament_id, 10));
+  } else {
+    boards = db.prepare('SELECT * FROM boards ORDER BY number').all();
+  }
   res.json(boards);
 });
 
@@ -18,7 +24,13 @@ router.post('/', requireAdmin, (req, res) => {
     return res.status(400).json({ error: 'Missing required field: number' });
   }
 
-  const existing = db.prepare('SELECT id FROM boards WHERE number = ?').get(number);
+  // Uniqueness check is scoped to the tournament (if tournament_id provided)
+  let existing;
+  if (tournament_id) {
+    existing = db.prepare('SELECT id FROM boards WHERE number = ? AND tournament_id = ?').get(number, tournament_id);
+  } else {
+    existing = db.prepare('SELECT id FROM boards WHERE number = ? AND tournament_id IS NULL').get(number);
+  }
   if (existing) {
     return res.status(409).json({ error: 'Diese Board-Nummer ist bereits vergeben' });
   }
