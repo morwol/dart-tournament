@@ -36,7 +36,9 @@ function useWindowWidth() {
 }
 
 export default function CurrentGameView() {
-  const { boardId } = useParams();
+  const { boardId: boardNumber } = useParams();
+  const [resolvedBoardId, setResolvedBoardId] = useState(null);
+  const [boardNotFound, setBoardNotFound] = useState(false);
   const [currentGame, setCurrentGame] = useState(null);
   const [gameData, setGameData] = useState(null);
   const [nextGame, setNextGame] = useState(null);
@@ -47,11 +49,19 @@ export default function CurrentGameView() {
   const isMobile = windowWidth < 640;
   const isTablet = windowWidth < 1024;
 
+  // Resolve board number → internal board ID
   useEffect(() => {
+    api.get(`/boards/by-number/${boardNumber}`)
+      .then(board => setResolvedBoardId(board.id))
+      .catch(() => setBoardNotFound(true));
+  }, [boardNumber]);
+
+  useEffect(() => {
+    if (!resolvedBoardId) return;
     let active = true;
     const fetchData = async () => {
       try {
-        const current = await api.get(`/boards/${boardId}/current-game`);
+        const current = await api.get(`/boards/${resolvedBoardId}/current-game`);
         if (!active) return;
         setCurrentGame(current);
         if (current && current.game_id) {
@@ -59,12 +69,12 @@ export default function CurrentGameView() {
           if (!active) return;
           setGameData(game);
           if (game.player1?.id) {
-            api.get(`/boards/${boardId}/player-stats/${game.player1.id}`)
+            api.get(`/boards/${resolvedBoardId}/player-stats/${game.player1.id}`)
               .then(s => { if (active) setPlayerStats(prev => ({ ...prev, p1: s })); })
               .catch(() => {});
           }
           if (game.player2?.id) {
-            api.get(`/boards/${boardId}/player-stats/${game.player2.id}`)
+            api.get(`/boards/${resolvedBoardId}/player-stats/${game.player2.id}`)
               .then(s => { if (active) setPlayerStats(prev => ({ ...prev, p2: s })); })
               .catch(() => {});
           }
@@ -72,7 +82,7 @@ export default function CurrentGameView() {
           setGameData(null);
           setPlayerStats({ p1: null, p2: null });
         }
-        const next = await api.get(`/boards/${boardId}/next-game`);
+        const next = await api.get(`/boards/${resolvedBoardId}/next-game`);
         if (!active) return;
         setNextGame(next);
       } catch {
@@ -84,7 +94,7 @@ export default function CurrentGameView() {
     fetchData();
     const interval = setInterval(fetchData, 2000);
     return () => { active = false; clearInterval(interval); };
-  }, [boardId]);
+  }, [resolvedBoardId]);
 
   const getRoundLabel = (round, totalRounds) => {
     if (!round) return '';
@@ -100,7 +110,17 @@ export default function CurrentGameView() {
   // Responsive scale factors
   const px = isMobile ? 0.55 : isTablet ? 0.75 : 1;
 
-  if (loading) {
+  if (boardNotFound) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--pe-bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'Verdana, Geneva, sans-serif', gap: 16, padding: 24 }}>
+        <img src="/logo.jpeg" alt="DartEvent" style={{ height: 56, borderRadius: 8, marginBottom: 8 }} />
+        <p style={{ color: 'var(--pe-danger)', fontWeight: 'bold', fontSize: 16 }}>Board {boardNumber} nicht gefunden</p>
+        <p style={{ color: 'var(--pe-text-muted)', fontSize: 13, textAlign: 'center' }}>Dieses Board existiert nicht oder gehört nicht zum aktiven Turnier.</p>
+      </div>
+    );
+  }
+
+  if (loading || !resolvedBoardId) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--pe-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Verdana, Geneva, sans-serif' }}>
         <p style={{ color: 'var(--pe-text-sub)' }}>Lade Board-Daten...</p>
@@ -121,7 +141,7 @@ export default function CurrentGameView() {
         <img src="/logo.jpeg" alt="DartEvent" style={{ height: isMobile ? 32 : 48, borderRadius: 8, flexShrink: 0 }} />
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
           <span style={{ fontSize: isMobile ? 18 : isTablet ? 22 : 28, fontWeight: 'bold', color: '#fff', textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
-            Board {currentGame?.board_number || boardId}
+            Board {boardNumber}
           </span>
           {gameData && (
             <span style={{ fontSize: isMobile ? 10 : 14, color: 'rgba(255,255,255,0.8)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: isMobile ? 1 : 2 }}>
