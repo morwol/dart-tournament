@@ -959,23 +959,37 @@ export default function RefereePage() {
 
   const onLogout = () => { localStorage.removeItem('token'); setToken(null); };
 
-  if (boardNotFound) {
+  if (boardNotFound || !resolvedBoardId) {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--pe-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', fontFamily: 'Verdana, Geneva, sans-serif' }}>
-        <div style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-danger)', borderRadius: '12px', padding: '32px', maxWidth: '400px', width: '100%', textAlign: 'center' }}>
-          <div style={{ color: 'var(--pe-danger)', fontWeight: 'bold', fontSize: '18px', marginBottom: '12px' }}>Board {boardNumber} nicht gefunden</div>
-          <div style={{ color: 'var(--pe-text-sub)', fontSize: '14px' }}>
-            Bitte prüfe ob ein Turnier aktiv ist und Board {boardNumber} existiert.
+      <div style={{ minHeight: '100vh', background: 'var(--pe-bg)', display: 'flex', flexDirection: 'column', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--pe-bg-card)', borderBottom: '1px solid var(--pe-border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img src="/logo.png" alt="Logo" style={{ height: '32px' }} onError={e => { e.target.style.display = 'none'; }} />
+            <span style={{ color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '15px' }}>Board {boardNumber}</span>
           </div>
+          <button onClick={onLogout} style={{ background: 'none', border: '1px solid var(--pe-border)', color: 'var(--pe-text-muted)', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', fontSize: '12px', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+            Abmelden
+          </button>
         </div>
-      </div>
-    );
-  }
-
-  if (!resolvedBoardId) {
-    return (
-      <div style={{ minHeight: '100vh', background: 'var(--pe-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Verdana, Geneva, sans-serif' }}>
-        <div style={{ color: 'var(--pe-text-sub)', fontSize: '16px' }}>Board wird geladen…</div>
+        {/* Content */}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+          {boardNotFound ? (
+            <div style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-danger)', borderRadius: '14px', padding: '32px 24px', maxWidth: '360px', width: '100%', textAlign: 'center' }}>
+              <div style={{ fontSize: '36px', marginBottom: '12px' }}>🎯</div>
+              <div style={{ color: 'var(--pe-danger)', fontWeight: 'bold', fontSize: '18px', marginBottom: '10px' }}>Board {boardNumber} nicht gefunden</div>
+              <div style={{ color: 'var(--pe-text-sub)', fontSize: '13px', marginBottom: '20px', lineHeight: '1.5' }}>
+                Kein aktives Turnier mit Board {boardNumber} gefunden.<br />Bitte den Turnierleiter kontaktieren.
+              </div>
+              <button onClick={() => { setBoardNotFound(false); api.get(`/boards/by-number/${boardNumber}`).then(b => setResolvedBoardId(b.id)).catch(() => setBoardNotFound(true)); }}
+                style={{ background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '8px', padding: '10px 20px', cursor: 'pointer', fontSize: '13px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold' }}>
+                ↻ Erneut versuchen
+              </button>
+            </div>
+          ) : (
+            <div style={{ color: 'var(--pe-text-muted)', fontSize: '15px' }}>Board wird geladen…</div>
+          )}
+        </div>
       </div>
     );
   }
