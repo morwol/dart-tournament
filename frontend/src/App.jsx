@@ -3,7 +3,6 @@ import { Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import TournamentPage from './pages/TournamentPage';
 import PlayerRegistrationPage from './pages/PlayerRegistrationPage';
-import GamePage from './pages/GamePage';
 import NFCScanPage from './pages/NFCScanPage';
 import OrderPage from './pages/OrderPage';
 import AdminPage from './pages/AdminPage';
@@ -82,7 +81,6 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/tournament/:id" element={<TournamentPage />} />
         <Route path="/tournament/:id/register" element={<PlayerRegistrationPage />} />
-        <Route path="/game/:id" element={<GamePage />} />
         <Route path="/nfc" element={<NFCScanPage />} />
         {/* NEU: NFC-Scan alternative Route */}
         <Route path="/nfc-scan" element={<NFCScanPage />} />

@@ -16,10 +16,9 @@ export default function Bracket({ games }) {
               Runde {round}
             </h3>
             {rounds[round].map((game) => (
-              <a
+              <div
                 key={game.id}
-                href={`/game/${game.id}`}
-                className="block rounded-lg overflow-hidden no-underline"
+                className="block rounded-lg overflow-hidden"
                 style={{ border: '1px solid var(--pe-border)' }}
               >
                 <PlayerSlot
@@ -33,7 +32,7 @@ export default function Bracket({ games }) {
                   isWinner={game.winner_id === game.player2_id}
                   finished={game.status === 'finished'}
                 />
-              </a>
+              </div>
             ))}
           </div>
         ))}
