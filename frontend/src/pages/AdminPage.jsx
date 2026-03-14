@@ -211,9 +211,16 @@ function BoardsTab() {
           <div className="space-y-2">
             {schedule.map((s) => (
               <div key={s.id} className="p-3 rounded-lg flex justify-between items-center" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
-                <span className="text-sm" style={{ color: 'var(--pe-text)' }}>
-                  {s.player1_name || 'TBD'} vs {s.player2_name || 'TBD'} — Board {s.board_number || '?'}
-                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span className="text-sm" style={{ color: 'var(--pe-text)' }}>
+                    {s.player1_name || 'TBD'} vs {s.player2_name || 'TBD'} — Board {s.board_number || '?'}
+                  </span>
+                  {s.scheduled_at && (
+                    <span style={{ fontSize: '11px', color: 'var(--pe-cyan-bright)' }}>
+                      {s.scheduled_at.substring(11, 16)} Uhr
+                    </span>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <button onClick={() => handleActivate(s.id)} style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-success)', color: '#000' }}>Start</button>
                   <button onClick={() => handleSkip(s.id)} style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-warning)' }}>Skip</button>
@@ -1165,7 +1172,7 @@ function TournamentExtendedTab() {
   const [numGroups, setNumGroups] = useState(4);
   const [creating, setCreating] = useState(false);
   const [newTournament, setNewTournament] = useState(null); // after step 1
-  const [createForm, setCreateForm] = useState({ name: '', date: '', format: '501', checkout: 'double_out' });
+  const [createForm, setCreateForm] = useState({ name: '', date: '', start_time: '', format: '501', checkout: 'double_out' });
   const [config, setConfig] = useState({
     prelim_format: '301_single_out', prelim_legs: '1',
     qf_format: '501_double_out',     qf_legs: '3',
@@ -1384,7 +1391,10 @@ function TournamentExtendedTab() {
             <p style={{ color: 'var(--pe-text-sub)', fontSize: '13px', marginBottom: '16px' }}>Gib dem Turnier einen Namen und optionales Datum.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <input type="text" value={createForm.name} onChange={e => setCreateForm({...createForm, name: e.target.value})} placeholder="Turniername *" required style={{ ...inputStyle, padding: '12px 14px' }} />
-              <input type="date" value={createForm.date} onChange={e => setCreateForm({...createForm, date: e.target.value})} style={{ ...inputStyle, padding: '12px 14px' }} />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input type="date" value={createForm.date} onChange={e => setCreateForm({...createForm, date: e.target.value})} style={{ ...inputStyle, flex: 1, padding: '12px 14px', cursor: 'pointer' }} />
+                <input type="time" value={createForm.start_time} onChange={e => setCreateForm({...createForm, start_time: e.target.value})} placeholder="Startzeit" title="Startzeit (für Spielplan)" style={{ ...inputStyle, width: '120px', padding: '12px 10px', cursor: 'pointer' }} />
+              </div>
             </div>
             <button type="submit" disabled={creating || !createForm.name.trim()} style={{ width: '100%', marginTop: '16px', padding: '14px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer', minHeight: '52px', opacity: creating ? 0.6 : 1 }}>
               {creating ? 'Wird angelegt...' : 'Turnier anlegen & weiter →'}
@@ -1602,7 +1612,7 @@ function TournamentExtendedTab() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px' }}>Turniere</h2>
-        <button onClick={() => { setWizardStep(1); setNewTournament(null); setCreateForm({ name: '', date: '', format: '501', checkout: 'double_out' }); }} style={{ padding: '10px 20px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px' }}>
+        <button onClick={() => { setWizardStep(1); setNewTournament(null); setCreateForm({ name: '', date: '', start_time: '', format: '501', checkout: 'double_out' }); }} style={{ padding: '10px 20px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px' }}>
           + Neues Turnier
         </button>
       </div>
@@ -1623,7 +1633,7 @@ function TournamentExtendedTab() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
                 <div style={{ color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '16px' }}>{t.name}</div>
-                {t.date && <div style={{ color: 'var(--pe-text-muted)', fontSize: '13px', marginTop: '2px' }}>{t.date}</div>}
+                {(t.date || t.start_time) && <div style={{ color: 'var(--pe-text-muted)', fontSize: '13px', marginTop: '2px' }}>{t.date || ''}{t.date && t.start_time ? ' ' : ''}{t.start_time ? `${t.start_time} Uhr` : ''}</div>}
               </div>
               <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', background: t.status === 'active' ? 'var(--pe-success)' : t.status === 'finished' ? 'var(--pe-border)' : 'var(--pe-blue-deep)', color: t.status === 'active' ? '#000' : '#fff' }}>
                 {t.status === 'open' ? 'Offen' : t.status === 'active' ? 'Aktiv' : 'Beendet'}
@@ -1652,6 +1662,27 @@ function TournamentExtendedTab() {
               {selectedTournament.status === 'open' ? 'Offen' : selectedTournament.status === 'active' ? 'Aktiv' : 'Beendet'}
             </span>
           </div>
+
+          {/* Start time editor — shown for open/active tournaments */}
+          {selectedTournament.status !== 'finished' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <label style={{ color: 'var(--pe-text-sub)', fontSize: '12px', whiteSpace: 'nowrap' }}>Startzeit:</label>
+              <input
+                type="time"
+                defaultValue={selectedTournament.start_time || ''}
+                key={selectedTournament.id}
+                onBlur={async (e) => {
+                  const val = e.target.value;
+                  try {
+                    await api.put(`/tournaments/${selectedId}`, { start_time: val });
+                    await loadTournaments();
+                  } catch (err) { alert(err.message || 'Startzeit konnte nicht gespeichert werden'); }
+                }}
+                style={{ background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '8px', padding: '6px 10px', fontFamily: 'Verdana, Geneva, sans-serif', fontSize: '13px', cursor: 'pointer', width: '120px' }}
+              />
+              <span style={{ color: 'var(--pe-text-muted)', fontSize: '11px' }}>(für Spielplan-Zeitslots)</span>
+            </div>
+          )}
 
           {/* Groups section — shown if group draw done or groups exist */}
           {(selectedTournament.group_draw_done || groups.length > 0) && groups.length > 0 && (
