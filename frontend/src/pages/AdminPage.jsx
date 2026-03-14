@@ -99,26 +99,40 @@ function OverviewTab() {
   );
 }
 
-// NEU: Tab "Boards" — Scheiben verwalten
+// NEU: Tab "Boards" — Scheiben verwalten (tournament-specific)
 function BoardsTab() {
+  const [tournaments, setTournaments] = useState([]);
+  const [selectedTournamentId, setSelectedTournamentId] = useState('');
   const [boards, setBoards] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ number: '', name: '' });
+  const [form, setForm] = useState({ name: '' });
   const [schedule, setSchedule] = useState([]);
 
+  // Load tournaments on mount, default to active or first
+  useEffect(() => {
+    api.get('/tournaments').then((ts) => {
+      setTournaments(ts);
+      const active = ts.find(t => t.status === 'active');
+      const defaultT = active || ts[0];
+      if (defaultT) setSelectedTournamentId(String(defaultT.id));
+    }).catch(() => {});
+  }, []);
+
   const loadBoards = () => {
-    api.get('/boards').then(setBoards).catch(() => {});
+    if (!selectedTournamentId) return;
+    api.get(`/boards?tournament_id=${selectedTournamentId}`).then(setBoards).catch(() => {});
     api.get('/schedule').then(data => setSchedule(Array.isArray(data) ? data : [])).catch(() => setSchedule([]));
   };
 
-  useEffect(() => { loadBoards(); }, []);
+  useEffect(() => { loadBoards(); }, [selectedTournamentId]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!form.number) return;
+    if (!selectedTournamentId) return;
+    const nextNumber = boards.length + 1;
     try {
-      await api.post('/boards', form);
-      setForm({ number: '', name: '' });
+      await api.post('/boards', { number: nextNumber, name: form.name, tournament_id: parseInt(selectedTournamentId, 10) });
+      setForm({ name: '' });
       setShowForm(false);
       loadBoards();
     } catch (err) {
@@ -144,18 +158,42 @@ function BoardsTab() {
     }
   };
 
+  const selectedTournament = tournaments.find(t => String(t.id) === selectedTournamentId);
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>Boards</h2>
-        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+        <button onClick={() => setShowForm(!showForm)} disabled={!selectedTournamentId} className="px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50" style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
           {showForm ? 'Abbrechen' : '+ Neu'}
         </button>
       </div>
 
-      {showForm && (
+      {/* Tournament selector */}
+      <select
+        value={selectedTournamentId}
+        onChange={(e) => setSelectedTournamentId(e.target.value)}
+        className="w-full p-3 rounded-lg outline-none mb-4"
+        style={inputStyle}
+      >
+        <option value="">-- Turnier auswählen --</option>
+        {tournaments.map(t => (
+          <option key={t.id} value={t.id}>{t.name} ({t.status})</option>
+        ))}
+      </select>
+
+      {selectedTournament && (
+        <p className="text-sm mb-4" style={{ color: 'var(--pe-text-sub)' }}>
+          Boards für: <strong style={{ color: 'var(--pe-text)' }}>{selectedTournament.name}</strong>
+          {' '}— {boards.length} Board{boards.length !== 1 ? 's' : ''} vorhanden
+        </p>
+      )}
+
+      {showForm && selectedTournamentId && (
         <form onSubmit={handleCreate} className="p-4 rounded-xl mb-6 space-y-3" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
-          <input type="number" value={form.number} onChange={(e) => setForm({ ...form, number: e.target.value })} placeholder="Board-Nummer" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          <p className="text-sm" style={{ color: 'var(--pe-text-muted)' }}>
+            Wird als Board {boards.length + 1} für &ldquo;{selectedTournament?.name}&rdquo; angelegt
+          </p>
           <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Name (optional)" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
           <button type="submit" className="w-full py-3 rounded-lg font-bold disabled:opacity-50" style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '48px', fontFamily: 'Verdana, Geneva, sans-serif' }}>
             Board erstellen
@@ -925,8 +963,8 @@ function TournamentDirectorTab() {
     const active = t.find(x => x.status === 'active') || null;
     setActiveTournament(active);
     if (active) {
-      // Item 9: Only show boards belonging to the active tournament
-      const tournamentBoards = allBoards.filter(b => b.tournament_id === active.id || !b.tournament_id);
+      // Only show boards belonging to the active tournament
+      const tournamentBoards = allBoards.filter(b => b.tournament_id === active.id);
       setBoards(tournamentBoards);
       const detail = await api.get(`/tournaments/${active.id}`).catch(() => null);
       if (detail?.games) setGames(detail.games.filter(g => ['pending','bulloff','active'].includes(g.status) && g.player1_name));
@@ -1264,11 +1302,11 @@ function TournamentExtendedTab() {
         board_count:   boardCount,
       });
       // Auto-create boards for this tournament if they don't exist yet
-      const existingBoards = await api.get('/boards').catch(() => []);
+      const existingBoards = await api.get(`/boards?tournament_id=${tid}`).catch(() => []);
       const tournamentBoards = existingBoards.filter(b => b.tournament_id === tid);
       if (tournamentBoards.length < boardCount) {
         const toCreate = boardCount - tournamentBoards.length;
-        const startNumber = existingBoards.length + 1;
+        const startNumber = tournamentBoards.length + 1;
         const createPromises = Array.from({ length: toCreate }, (_, i) =>
           api.post('/boards', { number: startNumber + i, tournament_id: tid }).catch(() => null)
         );
@@ -1359,8 +1397,8 @@ function TournamentExtendedTab() {
       if (t?.group_draw_done) {
         const groupData = await api.get(`/tournaments/${tid}/groups`).catch(() => null);
         const drawnGroups = groupData?.groups || [];
-        const availableBoards = await api.get('/boards').catch(() => []);
-        const tournamentBoards = availableBoards.filter(b => b.tournament_id === tid || !b.tournament_id).sort((a, b) => a.number - b.number);
+        const availableBoards = await api.get(`/boards?tournament_id=${tid}`).catch(() => []);
+        const tournamentBoards = availableBoards.filter(b => b.tournament_id === tid).sort((a, b) => a.number - b.number);
         await Promise.all(
           drawnGroups.map((g, i) => {
             const board = tournamentBoards[i];
