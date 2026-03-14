@@ -119,12 +119,19 @@ docs/kurze-beschreibung      # Nur Dokumentation
 7. git checkout dev && git pull origin dev  (dev aktuell halten)
 ```
 
+### Sprache — ENGLISCH PFLICHT
+Alles was auf GitHub landet wird auf **Englisch** verfasst — public repo, soll für alle nachvollziehbar sein:
+- Commit-Messages
+- PR-Titel und PR-Body
+- Branch-Namen
+- Code-Kommentare in neuen Dateien
+
 ### Commit-Messages
 ```
-feat: kurze Beschreibung      # neues Feature
-fix: kurze Beschreibung       # Bug-Fix
-docs: kurze Beschreibung      # Dokumentation
-refactor: kurze Beschreibung  # Umstrukturierung ohne Funktionsänderung
+feat: short description       # new feature
+fix: short description        # bug fix
+docs: short description       # documentation
+refactor: short description   # restructuring without behavior change
 ```
 
 ---
