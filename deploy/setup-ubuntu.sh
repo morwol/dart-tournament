@@ -123,27 +123,9 @@ echo -e "${GREEN}    ✓ Packages installed${NC}"
 
 echo -e "${GREEN}[2/10] Configuring firewall (ufw + iptables)...${NC}"
 
-# Oracle Cloud (and some other providers) inject a REJECT rule into iptables
-# that runs BEFORE ufw chains — blocking all traffic except SSH.
-# Detect and remove it so nginx can serve HTTP/HTTPS.
-if iptables -L INPUT -n | grep -q "reject-with icmp-host-prohibited"; then
-  # Find and delete the reject rule
-  REJECT_LINE=$(iptables -L INPUT -n --line-numbers | awk '/reject-with icmp-host-prohibited/{print $1; exit}')
-  if [ -n "$REJECT_LINE" ]; then
-    iptables -D INPUT "$REJECT_LINE"
-    echo "    Removed Oracle Cloud iptables REJECT rule (line $REJECT_LINE)"
-  fi
-fi
-
-# Ensure ports 80 + 443 are explicitly allowed at iptables level
-iptables -C INPUT -p tcp --dport 80 -j ACCEPT 2>/dev/null  || iptables -I INPUT 1 -p tcp --dport 80  -j ACCEPT
-iptables -C INPUT -p tcp --dport 443 -j ACCEPT 2>/dev/null || iptables -I INPUT 1 -p tcp --dport 443 -j ACCEPT
-
-# Persist iptables rules across reboots
-apt-get install -y -q iptables-persistent
-netfilter-persistent save
-
-# ufw on top
+# ufw manages iptables and persists rules across reboots on its own.
+# Oracle Cloud injects a REJECT rule — ufw --force reset flushes the entire
+# INPUT chain and rebuilds it cleanly, removing the Oracle rule in the process.
 ufw --force reset
 ufw default deny incoming
 ufw default allow outgoing
