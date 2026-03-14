@@ -88,6 +88,7 @@ function initialize() {
     "ALTER TABLE players ADD COLUMN walkon_file TEXT",
     "ALTER TABLE players ADD COLUMN walkon_start INTEGER DEFAULT 0",
     "ALTER TABLE players ADD COLUMN walkon_duration INTEGER DEFAULT 30",
+    "ALTER TABLE guests ADD COLUMN active BOOLEAN DEFAULT 1",
   ];
 
   for (const stmt of alterStatements) {
