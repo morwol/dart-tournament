@@ -215,6 +215,7 @@ router.delete('/:id', requireAdmin, (req, res) => {
   const deleteTx = db.transaction(() => {
     const games = db.prepare('SELECT id FROM games WHERE tournament_id = ?').all(req.params.id);
     for (const game of games) {
+      db.prepare('DELETE FROM schedule WHERE game_id = ?').run(game.id);
       db.prepare('DELETE FROM throws WHERE game_id = ?').run(game.id);
     }
     db.prepare('DELETE FROM games WHERE tournament_id = ?').run(req.params.id);
