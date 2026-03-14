@@ -108,6 +108,8 @@ export default function GastronomyPage() {
 
   const [allGuests, setAllGuests] = useState([]);
 
+  const isBlocked = guest != null && (guest.active === 0 || guest.active === false);
+
   // NEU: Kassen-Ansicht State
   const [guestOrders, setGuestOrders] = useState([]);
   const [registerLoading, setRegisterLoading] = useState(false);
@@ -360,26 +362,24 @@ export default function GastronomyPage() {
                 <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {allGuests
                     .filter((g) => !guestSearch || g.name?.toLowerCase().includes(guestSearch.toLowerCase()))
-                    .map((g) => (
-                      {(() => {
-                        const gBlocked = g.active === 0 || g.active === false;
-                        return (
-                          <button
-                            key={g.id}
-                            onClick={() => { setGuest(g); setCart([]); setOrderSuccess(false); }}
-                            style={{ padding: '12px 16px', borderRadius: '8px', background: 'var(--pe-bg-card)', border: `1px solid ${gBlocked ? 'var(--pe-danger)' : 'var(--pe-border)'}`, color: 'var(--pe-text)', textAlign: 'left', fontFamily: 'Verdana, Geneva, sans-serif', cursor: 'pointer', minHeight: '52px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                          >
-                            <span style={{ fontWeight: 'bold' }}>{g.name || 'Gast'}</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              {gBlocked && (
-                                <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--pe-danger)', border: '1px solid var(--pe-danger)', borderRadius: '20px', padding: '2px 8px' }}>Gesperrt</span>
-                              )}
-                              <span style={{ color: 'var(--pe-text-muted)', fontSize: '12px' }}>#{g.id}</span>
-                            </div>
-                          </button>
-                        );
-                      })()}
-                    ))
+                    .map((g) => {
+                      const gBlocked = g.active === 0 || g.active === false;
+                      return (
+                        <button
+                          key={g.id}
+                          onClick={() => { setGuest(g); setCart([]); setOrderSuccess(false); }}
+                          style={{ padding: '12px 16px', borderRadius: '8px', background: 'var(--pe-bg-card)', border: `1px solid ${gBlocked ? 'var(--pe-danger)' : 'var(--pe-border)'}`, color: 'var(--pe-text)', textAlign: 'left', fontFamily: 'Verdana, Geneva, sans-serif', cursor: 'pointer', minHeight: '52px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                        >
+                          <span style={{ fontWeight: 'bold' }}>{g.name || 'Gast'}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {gBlocked && (
+                              <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--pe-danger)', border: '1px solid var(--pe-danger)', borderRadius: '20px', padding: '2px 8px' }}>Gesperrt</span>
+                            )}
+                            <span style={{ color: 'var(--pe-text-muted)', fontSize: '12px' }}>#{g.id}</span>
+                          </div>
+                        </button>
+                      );
+                    })
                   }
                   {allGuests.length === 0 && (
                     <p style={{ color: 'var(--pe-text-muted)', textAlign: 'center', padding: '16px', fontSize: '13px' }}>Noch keine Gäste. Mit "+ Neu" ersten Gast anlegen.</p>
@@ -394,10 +394,8 @@ export default function GastronomyPage() {
               {/* NEU: Linke Seite — Gast-Info + offene Bestellungen + Produkte */}
               <div className="flex-1">
                 {/* Gast-Header */}
-                {(() => {
-                  const isBlocked = guest.active === 0 || guest.active === false;
-                  return (
-                    <div className="mb-4 p-3 rounded-xl" style={{ background: 'var(--pe-bg-card)', border: `1px solid ${isBlocked ? 'var(--pe-danger)' : 'var(--pe-border)'}` }}>
+                {/* Gast-Header */}
+                <div className="mb-4 p-3 rounded-xl" style={{ background: 'var(--pe-bg-card)', border: `1px solid ${isBlocked ? 'var(--pe-danger)' : 'var(--pe-border)'}` }}>
                       {/* Zeile 1: Name + Badge + Schließen */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '10px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
@@ -453,9 +451,7 @@ export default function GastronomyPage() {
                           Armband gesperrt — keine Bestellungen möglich
                         </p>
                       )}
-                    </div>
-                  );
-                })()}
+                </div>
 
                 {/* Bereits offene Bestellungen dieses Gastes */}
                 {guestOpenOrders && guestOpenOrders.items?.length > 0 && (
@@ -508,30 +504,20 @@ export default function GastronomyPage() {
                 </div>
 
                 {/* Produkt-Buttons */}
-                {(() => {
-                  const isBlocked = guest.active === 0 || guest.active === false;
-                  return (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3" style={{ opacity: isBlocked ? 0.4 : 1, pointerEvents: isBlocked ? 'none' : undefined }}>
-                      {filteredProducts.map((product) => (
-                        <button
-                          key={product.id}
-                          onClick={() => addToCart(product)}
-                          disabled={isBlocked}
-                          className="flex flex-col items-center justify-center p-3"
-                          style={{
-                            ...btnStyle,
-                            minHeight: '80px',
-                            background: 'var(--pe-bg-card)',
-                            color: 'var(--pe-text)',
-                          }}
-                        >
-                          <span className="text-sm font-bold mb-1">{product.name}</span>
-                          <span className="text-xs" style={{ color: 'var(--pe-cyan-bright)' }}>{parseFloat(product.price).toFixed(2)} €</span>
-                        </button>
-                      ))}
-                    </div>
-                  );
-                })()}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3" style={{ opacity: isBlocked ? 0.4 : 1, pointerEvents: isBlocked ? 'none' : undefined }}>
+                  {filteredProducts.map((product) => (
+                    <button
+                      key={product.id}
+                      onClick={() => addToCart(product)}
+                      disabled={isBlocked}
+                      className="flex flex-col items-center justify-center p-3"
+                      style={{ ...btnStyle, minHeight: '80px', background: 'var(--pe-bg-card)', color: 'var(--pe-text)' }}
+                    >
+                      <span className="text-sm font-bold mb-1">{product.name}</span>
+                      <span className="text-xs" style={{ color: 'var(--pe-cyan-bright)' }}>{parseFloat(product.price).toFixed(2)} €</span>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* NEU: Rechte Seite — Warenkorb (nur Bestellen, kein Abrechnen) */}
@@ -572,19 +558,14 @@ export default function GastronomyPage() {
                     </div>
                   )}
 
-                  {(() => {
-                    const isBlocked = guest && (guest.active === 0 || guest.active === false);
-                    return (
-                      <button
-                        onClick={submitOrder}
-                        disabled={cart.length === 0 || submitting || isBlocked}
-                        className="w-full py-4 rounded-xl font-bold text-lg disabled:opacity-50"
-                        style={{ background: isBlocked ? 'var(--pe-bg-elevated)' : 'var(--pe-gradient)', color: isBlocked ? 'var(--pe-danger)' : 'var(--pe-text)', minHeight: '64px', fontFamily: 'Verdana, Geneva, sans-serif', border: isBlocked ? '1px solid var(--pe-danger)' : 'none', cursor: isBlocked ? 'not-allowed' : 'pointer' }}
-                      >
-                        {isBlocked ? 'Armband gesperrt' : submitting ? 'Wird gespeichert...' : 'Bestellen'}
-                      </button>
-                    );
-                  })()}
+                  <button
+                    onClick={submitOrder}
+                    disabled={cart.length === 0 || submitting || isBlocked}
+                    className="w-full py-4 rounded-xl font-bold text-lg disabled:opacity-50"
+                    style={{ background: isBlocked ? 'var(--pe-bg-elevated)' : 'var(--pe-gradient)', color: isBlocked ? 'var(--pe-danger)' : 'var(--pe-text)', minHeight: '64px', fontFamily: 'Verdana, Geneva, sans-serif', border: isBlocked ? '1px solid var(--pe-danger)' : 'none', cursor: isBlocked ? 'not-allowed' : 'pointer' }}
+                  >
+                    {isBlocked ? 'Armband gesperrt' : submitting ? 'Wird gespeichert...' : 'Bestellen'}
+                  </button>
 
                   {orderSuccess && cart.length === 0 && (
                     <p className="text-center mt-3 text-sm font-bold" style={{ color: 'var(--pe-success)' }}>✓ Bestellung gespeichert!</p>
