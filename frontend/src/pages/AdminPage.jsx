@@ -1225,7 +1225,7 @@ function TournamentExtendedTab() {
   const [numGroups, setNumGroups] = useState(4);
   const [creating, setCreating] = useState(false);
   const [newTournament, setNewTournament] = useState(null); // after step 1
-  const [createForm, setCreateForm] = useState({ name: '', date: '', start_time: '', format: '501', checkout: 'double_out' });
+  const [createForm, setCreateForm] = useState({ name: '', date: '', start_time: '', format: '501', checkout: 'double_out', use_seed: false });
   const [config, setConfig] = useState({
     prelim_format: '301_single_out', prelim_legs: '1',
     qf_format: '501_double_out',     qf_legs: '3',
@@ -1499,6 +1499,27 @@ function TournamentExtendedTab() {
                 <input type="time" value={createForm.start_time} onChange={e => setCreateForm({...createForm, start_time: e.target.value})} placeholder="Startzeit" title="Startzeit (für Spielplan)" style={{ ...inputStyle, width: '120px', padding: '12px 10px', cursor: 'pointer' }} />
               </div>
             </div>
+            {/* Seeding toggle */}
+            <div style={{ marginTop: '12px', padding: '12px 14px', borderRadius: '10px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: createForm.use_seed ? '8px' : '0' }}>
+                <span style={{ color: 'var(--pe-text-sub)', fontSize: '13px', fontWeight: 'bold', fontFamily: 'Verdana, Geneva, sans-serif' }}>Seeding verwenden?</span>
+                <button
+                  type="button"
+                  onClick={() => setCreateForm({...createForm, use_seed: !createForm.use_seed})}
+                  style={{ padding: '6px 16px', borderRadius: '20px', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', minHeight: '36px', minWidth: '64px', background: createForm.use_seed ? 'var(--pe-success)' : 'var(--pe-bg-card)', color: createForm.use_seed ? '#000' : 'var(--pe-text-muted)', border: createForm.use_seed ? 'none' : '1px solid var(--pe-border)', transition: 'background 0.2s' }}
+                >
+                  {createForm.use_seed ? 'ON' : 'OFF'}
+                </button>
+              </div>
+              {createForm.use_seed
+                ? <p style={{ color: 'var(--pe-success)', fontSize: '11px', margin: '0', lineHeight: '1.4' }}>Spieler können eine Setzposition erhalten. Top-Gesetzte kommen in verschiedene Gruppen.</p>
+                : null
+              }
+              {!createForm.use_seed
+                ? <p style={{ color: 'var(--pe-text-muted)', fontSize: '11px', margin: '0', lineHeight: '1.4' }}>Auslosung komplett zufällig.</p>
+                : null
+              }
+            </div>
             <button type="submit" disabled={creating || !createForm.name.trim()} style={{ width: '100%', marginTop: '16px', padding: '14px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer', minHeight: '52px', opacity: creating ? 0.6 : 1 }}>
               {creating ? 'Wird angelegt...' : 'Turnier anlegen & weiter →'}
             </button>
@@ -1548,11 +1569,13 @@ function TournamentExtendedTab() {
                   <input type="text" value={playerForm.nachname} onChange={e => setPlayerForm({...playerForm, nachname: e.target.value})} placeholder="Nachname *" required style={{ ...inputStyle, padding: '10px 12px' }} />
                 </div>
                 <div style={{ display: 'flex', gap: '6px' }}>
+                  {(newTournament?.use_seed || createForm.use_seed) && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', borderRadius: '8px', padding: '4px 8px' }}>
                     <button type="button" onClick={() => setPlayerForm({...playerForm, seed: String(Math.max(1, (parseInt(playerForm.seed) || 1) - 1))})} style={{ minHeight: '44px', minWidth: '36px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '6px', fontWeight: 'bold', fontSize: '18px', cursor: 'pointer', fontFamily: 'Verdana, Geneva, sans-serif' }}>−</button>
                     <span style={{ minWidth: '32px', textAlign: 'center', color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '14px' }}>{playerForm.seed || '—'}</span>
                     <button type="button" onClick={() => setPlayerForm({...playerForm, seed: String((parseInt(playerForm.seed) || 0) + 1)})} style={{ minHeight: '44px', minWidth: '36px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '6px', fontWeight: 'bold', fontSize: '18px', cursor: 'pointer', fontFamily: 'Verdana, Geneva, sans-serif' }}>+</button>
                   </div>
+                )}
                   <button type="submit" disabled={!playerForm.vorname.trim() || !playerForm.nickname.trim() || !playerForm.nachname.trim()} style={{ flex: 1, padding: '10px 16px', borderRadius: '8px', background: 'var(--pe-blue-deep)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px', opacity: (!playerForm.vorname.trim() || !playerForm.nickname.trim() || !playerForm.nachname.trim()) ? 0.5 : 1 }}>+ Spieler hinzufügen</button>
                 </div>
               </form>
@@ -1573,7 +1596,7 @@ function TournamentExtendedTab() {
                 <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: '8px', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
                   <span style={{ color: 'var(--pe-text)', fontWeight: 'bold' }}>{p.name}</span>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    {p.seed && <span style={{ color: 'var(--pe-text-muted)', fontSize: '12px' }}>#{p.seed}</span>}
+                    {(newTournament?.use_seed || createForm.use_seed) && p.seed && <span style={{ color: 'var(--pe-text-muted)', fontSize: '12px' }}>#{p.seed}</span>}
                     <button onClick={() => deletePlayer(p.id)} style={{ ...btnSmall, padding: '4px 10px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', minHeight: '30px' }}>✕</button>
                   </div>
                 </div>
@@ -1761,7 +1784,7 @@ function TournamentExtendedTab() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px' }}>Turniere</h2>
-        <button onClick={() => { setWizardStep(1); setNewTournament(null); setCreateForm({ name: '', date: '', start_time: '', format: '501', checkout: 'double_out' }); }} style={{ padding: '10px 20px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px' }}>
+        <button onClick={() => { setWizardStep(1); setNewTournament(null); setCreateForm({ name: '', date: '', start_time: '', format: '501', checkout: 'double_out', use_seed: false }); }} style={{ padding: '10px 20px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px' }}>
           + Neues Turnier
         </button>
       </div>
@@ -1815,6 +1838,11 @@ function TournamentExtendedTab() {
             <span style={{ padding: '4px 10px', borderRadius: '8px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', color: 'var(--pe-text-sub)', fontSize: '12px' }}>
               {selectedTournament.checkout === 'double_out' ? 'Double Out' : 'Single Out'}
             </span>
+            {selectedTournament.use_seed ? (
+              <span style={{ padding: '4px 10px', borderRadius: '8px', background: 'rgba(0,229,160,0.12)', border: '1px solid var(--pe-success)', color: 'var(--pe-success)', fontSize: '12px', fontWeight: 'bold' }}>
+                Seeding
+              </span>
+            ) : null}
             <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', background: selectedTournament.status === 'active' ? 'var(--pe-success)' : selectedTournament.status === 'finished' ? 'var(--pe-border)' : 'var(--pe-blue-deep)', color: selectedTournament.status === 'active' ? '#000' : '#fff' }}>
               {selectedTournament.status === 'open' ? 'Offen' : selectedTournament.status === 'active' ? 'Aktiv' : 'Beendet'}
             </span>
