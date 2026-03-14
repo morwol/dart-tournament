@@ -224,14 +224,24 @@ function BoardsTab() {
 }
 
 // NEU: Tab "Spieler" — Anlegen, Walk-On Song, Statistiken
+// Walk-On Status Badge
+function WalkonBadge({ status }) {
+  if (!status) return <span style={{ fontSize: '11px', color: 'var(--pe-text-muted)', marginLeft: '6px' }}>♪</span>;
+  if (status === 'ready') return <span style={{ fontSize: '11px', color: 'var(--pe-success)', marginLeft: '6px' }} title="Bereit">✓</span>;
+  if (status === 'error') return <span style={{ fontSize: '11px', color: 'var(--pe-danger)', marginLeft: '6px' }} title="Fehler">✗</span>;
+  if (status === 'pending' || status === 'downloading') return <span style={{ fontSize: '11px', color: 'var(--pe-warning)', marginLeft: '6px' }} title="Wird geladen">⏳</span>;
+  return <span style={{ fontSize: '11px', color: 'var(--pe-text-muted)', marginLeft: '6px' }}>♪</span>;
+}
+
 function PlayersTab() {
   const [tournaments, setTournaments] = useState([]);
   const [selectedTournament, setSelectedTournament] = useState('');
   const [tournamentStatus, setTournamentStatus] = useState('open');
   const [players, setPlayers] = useState([]);
+  const [walkonStatuses, setWalkonStatuses] = useState({}); // { [playerId]: status string }
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ vorname: '', nickname: '', nachname: '', walk_on_song: '' });
-  const [editingPlayer, setEditingPlayer] = useState(null); // { id, vorname, nickname, nachname }
+  const [form, setForm] = useState({ vorname: '', nickname: '', nachname: '', walk_on_song: '', walkon_start: 0, walkon_duration: 30 });
+  const [editingPlayer, setEditingPlayer] = useState(null);
 
   useEffect(() => {
     api.get('/tournaments').then((t) => {
@@ -255,14 +265,38 @@ function PlayersTab() {
   const loadPlayers = async () => {
     const updated = await api.get(`/tournaments/${selectedTournament}/players`);
     setPlayers(updated);
+    // Load walkon statuses for players that have a walkon_url
+    const statuses = {};
+    await Promise.all(
+      updated.filter(p => p.walkon_url || p.walkon_youtube).map(async (p) => {
+        try {
+          const s = await api.get(`/walkon/${p.id}/status`);
+          statuses[p.id] = s.status;
+        } catch { statuses[p.id] = null; }
+      })
+    );
+    setWalkonStatuses(statuses);
   };
+
 
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!form.vorname.trim() || !form.nickname.trim() || !form.nachname.trim() || !selectedTournament) return;
     try {
-      await api.post(`/tournaments/${selectedTournament}/players`, form);
-      setForm({ vorname: '', nickname: '', nachname: '', walk_on_song: '' });
+      const res = await api.post(`/tournaments/${selectedTournament}/players`, form);
+      const newPlayerId = res.id || res.player_id || res.player?.id;
+      if (form.walk_on_song && newPlayerId) {
+        try {
+          await api.post(`/walkon/${newPlayerId}`, {
+            url: form.walk_on_song,
+            start: Number(form.walkon_start) || 0,
+            duration: Number(form.walkon_duration) || 30,
+          });
+        } catch (err) {
+          console.warn('Walk-On Job konnte nicht gestartet werden:', err.message);
+        }
+      }
+      setForm({ vorname: '', nickname: '', nachname: '', walk_on_song: '', walkon_start: 0, walkon_duration: 30 });
       setShowForm(false);
       await loadPlayers();
     } catch (err) {
@@ -275,6 +309,22 @@ function PlayersTab() {
     if (!editingPlayer) return;
     try {
       await api.put(`/tournaments/${selectedTournament}/players/${editingPlayer.id}`, editingPlayer);
+      // Handle walkon: POST if URL set, DELETE if URL cleared
+      if (editingPlayer.walk_on_song) {
+        try {
+          await api.post(`/walkon/${editingPlayer.id}`, {
+            url: editingPlayer.walk_on_song,
+            start: Number(editingPlayer.walkon_start) || 0,
+            duration: Number(editingPlayer.walkon_duration) || 30,
+          });
+        } catch (err) {
+          console.warn('Walk-On Job konnte nicht gestartet werden:', err.message);
+        }
+      } else {
+        try {
+          await api.del(`/walkon/${editingPlayer.id}`);
+        } catch { /* ignore if no walkon exists */ }
+      }
       setEditingPlayer(null);
       await loadPlayers();
     } catch (err) {
@@ -309,6 +359,26 @@ function PlayersTab() {
           <input type="text" value={form.nickname} onChange={(e) => setForm({ ...form, nickname: e.target.value })} placeholder="Nickname *" required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
           <input type="text" value={form.nachname} onChange={(e) => setForm({ ...form, nachname: e.target.value })} placeholder="Nachname *" required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
           <input type="url" value={form.walk_on_song} onChange={(e) => setForm({ ...form, walk_on_song: e.target.value })} placeholder="Walk-On Song URL (optional)" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          {form.walk_on_song && (
+            <div className="flex gap-2">
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: '11px', color: 'var(--pe-text-muted)', display: 'block', marginBottom: '4px' }}>Startzeit (Sek.)</label>
+                <input
+                  type="number" min="0" value={form.walkon_start}
+                  onChange={(e) => setForm({ ...form, walkon_start: e.target.value })}
+                  required className="w-full p-3 rounded-lg outline-none" style={inputStyle}
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: '11px', color: 'var(--pe-text-muted)', display: 'block', marginBottom: '4px' }}>Länge (Sek.)</label>
+                <input
+                  type="number" min="5" max="120" value={form.walkon_duration}
+                  onChange={(e) => setForm({ ...form, walkon_duration: e.target.value })}
+                  required className="w-full p-3 rounded-lg outline-none" style={inputStyle}
+                />
+              </div>
+            </div>
+          )}
           {form.vorname && form.nickname && form.nachname && (
             <p style={{ fontSize: '12px', color: 'var(--pe-text-muted)' }}>
               Angezeigt als: <strong style={{ color: 'var(--pe-text)' }}>{form.vorname.trim()} &ldquo;{form.nickname.trim()}&rdquo; {form.nachname.trim()}</strong>
@@ -326,6 +396,27 @@ function PlayersTab() {
           <input type="text" value={editingPlayer.vorname} onChange={(e) => setEditingPlayer({ ...editingPlayer, vorname: e.target.value })} placeholder="Vorname *" required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
           <input type="text" value={editingPlayer.nickname} onChange={(e) => setEditingPlayer({ ...editingPlayer, nickname: e.target.value })} placeholder="Nickname *" required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
           <input type="text" value={editingPlayer.nachname} onChange={(e) => setEditingPlayer({ ...editingPlayer, nachname: e.target.value })} placeholder="Nachname *" required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          <input type="url" value={editingPlayer.walk_on_song || ''} onChange={(e) => setEditingPlayer({ ...editingPlayer, walk_on_song: e.target.value })} placeholder="Walk-On Song URL (optional)" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+          {editingPlayer.walk_on_song && (
+            <div className="flex gap-2">
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: '11px', color: 'var(--pe-text-muted)', display: 'block', marginBottom: '4px' }}>Startzeit (Sek.)</label>
+                <input
+                  type="number" min="0" value={editingPlayer.walkon_start ?? 0}
+                  onChange={(e) => setEditingPlayer({ ...editingPlayer, walkon_start: e.target.value })}
+                  required className="w-full p-3 rounded-lg outline-none" style={inputStyle}
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: '11px', color: 'var(--pe-text-muted)', display: 'block', marginBottom: '4px' }}>Länge (Sek.)</label>
+                <input
+                  type="number" min="5" max="120" value={editingPlayer.walkon_duration ?? 30}
+                  onChange={(e) => setEditingPlayer({ ...editingPlayer, walkon_duration: e.target.value })}
+                  required className="w-full p-3 rounded-lg outline-none" style={inputStyle}
+                />
+              </div>
+            </div>
+          )}
           {editingPlayer.vorname && editingPlayer.nickname && editingPlayer.nachname && (
             <p style={{ fontSize: '12px', color: 'var(--pe-text-muted)' }}>
               Angezeigt als: <strong style={{ color: 'var(--pe-text)' }}>{editingPlayer.vorname.trim()} &ldquo;{editingPlayer.nickname.trim()}&rdquo; {editingPlayer.nachname.trim()}</strong>
@@ -343,12 +434,22 @@ function PlayersTab() {
           <div key={p.id} className="p-3 rounded-lg flex justify-between items-center" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
             <div>
               <span className="font-bold" style={{ color: 'var(--pe-text)' }}>{p.name}</span>
-              {p.walkon_youtube && <span className="ml-2 text-xs" style={{ color: 'var(--pe-text-muted)' }}>♪</span>}
+              {(p.walkon_url || p.walkon_youtube) && (
+                <WalkonBadge status={walkonStatuses[p.id]} />
+              )}
               <span className="ml-3 text-xs" style={{ color: 'var(--pe-text-muted)' }}>Seed: {p.seed || '—'}</span>
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => setEditingPlayer({ id: p.id, vorname: p.vorname || '', nickname: p.nickname || '', nachname: p.nachname || '' })}
+                onClick={() => setEditingPlayer({
+                  id: p.id,
+                  vorname: p.vorname || '',
+                  nickname: p.nickname || '',
+                  nachname: p.nachname || '',
+                  walk_on_song: p.walkon_url || p.walkon_youtube || '',
+                  walkon_start: p.walkon_start ?? 0,
+                  walkon_duration: p.walkon_duration ?? 30,
+                })}
                 style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-cyan-bright)', minHeight: '36px' }}
               >
                 Bearbeiten

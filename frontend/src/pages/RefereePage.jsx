@@ -310,6 +310,59 @@ function LastThrows({ throws = [], isTablet }) {
   );
 }
 
+// ── Walk-On Play Button ─────────────────────────────────────────────────────
+function WalkonPlayButton({ playerId }) {
+  const [audio, setAudio] = useState(null);
+  const [playing, setPlaying] = useState(false);
+  const [available, setAvailable] = useState(null); // null=loading, true/false
+
+  useEffect(() => {
+    api.get(`/walkon/${playerId}/status`)
+      .then(s => setAvailable(s.job?.status === 'ready' || !!s.walkon_file))
+      .catch(() => setAvailable(false));
+  }, [playerId]);
+
+  if (!available) return null;
+
+  const handlePlay = () => {
+    if (playing && audio) {
+      audio.pause();
+      audio.currentTime = 0;
+      setAudio(null);
+      setPlaying(false);
+      return;
+    }
+    const a = new Audio(`/api/walkon/${playerId}/audio`);
+    a.onended = () => { setPlaying(false); setAudio(null); };
+    a.onerror = () => { setPlaying(false); setAudio(null); };
+    a.play().catch(() => { setPlaying(false); setAudio(null); });
+    setAudio(a);
+    setPlaying(true);
+  };
+
+  return (
+    <button
+      onClick={handlePlay}
+      style={{
+        fontFamily: 'Verdana, Geneva, sans-serif',
+        fontSize: '11px',
+        fontWeight: 'bold',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        border: `1px solid ${playing ? 'var(--pe-warning)' : 'var(--pe-success)'}`,
+        background: playing ? 'rgba(255,176,32,0.15)' : 'rgba(0,229,160,0.12)',
+        color: playing ? 'var(--pe-warning)' : 'var(--pe-success)',
+        padding: '4px 10px',
+        minHeight: '44px',
+        marginTop: '6px',
+        width: '100%',
+      }}
+    >
+      {playing ? '◼ Stop' : '▶ Walk-On'}
+    </button>
+  );
+}
+
 // ── Scoreboard ─────────────────────────────────────────────────────────────
 function Scoreboard({ player1, player2, currentThrowerId, bullWinnerId, game, isTablet }) {
   return (
@@ -331,6 +384,7 @@ function Scoreboard({ player1, player2, currentThrowerId, bullWinnerId, game, is
               {isBullWinner && <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '6px', background: 'var(--pe-warning)', color: '#000', fontWeight: 'bold' }}>Bull</span>}
               {isActive && <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '6px', background: 'var(--pe-success)', color: '#000', fontWeight: 'bold' }}>▶</span>}
             </div>
+            <WalkonPlayButton playerId={p.id} />
             <div style={{ fontSize: isTablet ? '58px' : '46px', fontWeight: 'bold', color: 'var(--pe-text)', lineHeight: 1, margin: '4px 0' }}>{p.remaining}</div>
             {p.checkout_suggestions?.length > 0 && (
               <div style={{ fontSize: '11px', color: 'var(--pe-success)', marginBottom: '2px' }}>→ {p.checkout_suggestions[0]}</div>
