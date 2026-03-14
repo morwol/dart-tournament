@@ -462,6 +462,59 @@ function GameQueue({ boardId, currentGameId, canSwitch, onSelect, onSkip, isTabl
   );
 }
 
+// ── Next Game Preview ──────────────────────────────────────────────────────
+function NextGamePreview({ boardId, currentGameId, isTablet }) {
+  const [nextGame, setNextGame] = useState(null);
+
+  const load = useCallback(async () => {
+    try {
+      const data = await api.get(`/boards/${boardId}/next-game`);
+      // Only show if it's not the current active game
+      if (data && data.game_id !== currentGameId) {
+        setNextGame(data);
+      } else {
+        setNextGame(null);
+      }
+    } catch {
+      setNextGame(null);
+    }
+  }, [boardId, currentGameId]);
+
+  useEffect(() => {
+    load();
+    const iv = setInterval(load, 5000);
+    return () => clearInterval(iv);
+  }, [load]);
+
+  if (!nextGame) return null;
+
+  return (
+    <div style={{
+      background: 'var(--pe-bg-card)',
+      border: '1px solid var(--pe-border)',
+      borderRadius: '12px',
+      padding: isTablet ? '14px' : '12px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+        <span style={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--pe-warning)' }}>
+          Nächstes Spiel
+        </span>
+      </div>
+      <div style={{ background: 'var(--pe-bg-elevated)', borderRadius: '8px', padding: '10px 12px', border: '1px solid var(--pe-border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <span style={{ fontSize: isTablet ? '15px' : '14px', fontWeight: 'bold', color: 'var(--pe-text)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {nextGame.player1_name || 'TBD'}
+          </span>
+          <span style={{ fontSize: '11px', color: 'var(--pe-text-muted)', flexShrink: 0 }}>vs</span>
+          <span style={{ fontSize: isTablet ? '15px' : '14px', fontWeight: 'bold', color: 'var(--pe-text)', flex: 1, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {nextGame.player2_name || 'TBD'}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Game Info Bar ──────────────────────────────────────────────────────────
 function GameInfoBar({ game, isTablet }) {
   const tiles = [
@@ -567,6 +620,11 @@ function TabletLayout({ boardId, token, onLogout, selectedGameId, setSelectedGam
 
               {game.status === 'active' && (
                 <RoundThrows throws={current_round_throws} prevThrow={getPrevRoundLastThrow(liveData)} onUndo={undoThrow} disabled={submitting} isTablet={true} />
+              )}
+
+              {/* Nächstes Spiel Preview */}
+              {(game.status === 'active' || game.status === 'bulloff') && (
+                <NextGamePreview boardId={boardId} currentGameId={game.id} isTablet={true} />
               )}
 
               {/* Skip / Nächste Partie */}
@@ -774,6 +832,11 @@ function PhoneLayout({ boardId, token, onLogout, selectedGameId, setSelectedGame
             })}>
             Runde abschließen ({current_round_throws.length}/3)
           </button>
+
+          {/* Nächstes Spiel Preview */}
+          <div style={{ marginTop: '12px' }}>
+            <NextGamePreview boardId={boardId} currentGameId={game.id} isTablet={false} />
+          </div>
         </>
       )}
     </div>

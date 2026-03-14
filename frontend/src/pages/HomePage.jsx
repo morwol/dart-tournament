@@ -277,12 +277,18 @@ export default function HomePage() {
                   <div key={idx} style={styles.groupCard}>
                     <h3 style={styles.groupName}>{group.name || `Gruppe ${idx + 1}`}</h3>
                     <table style={styles.groupTable}>
+                      <colgroup>
+                        <col style={{ width: '55%' }} />
+                        <col style={{ width: '12%' }} />
+                        <col style={{ width: '12%' }} />
+                        <col style={{ width: '21%' }} />
+                      </colgroup>
                       <thead>
                         <tr>
                           <th style={styles.groupTh}>Spieler</th>
-                          <th style={styles.groupTh}>S</th>
-                          <th style={styles.groupTh}>N</th>
-                          <th style={styles.groupTh}>Pkt</th>
+                          <th style={{ ...styles.groupTh, textAlign: 'center' }}>S</th>
+                          <th style={{ ...styles.groupTh, textAlign: 'center' }}>N</th>
+                          <th style={{ ...styles.groupTh, textAlign: 'center' }}>Pkt</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -610,6 +616,7 @@ const styles = {
   },
   groupTable: {
     width: '100%',
+    tableLayout: 'fixed',
     borderCollapse: 'collapse',
   },
   groupTh: {
@@ -625,6 +632,9 @@ const styles = {
     color: 'var(--pe-text)',
     padding: '6px 8px',
     borderBottom: '1px solid var(--pe-border)',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
   otherTournaments: {
     marginTop: 24,
