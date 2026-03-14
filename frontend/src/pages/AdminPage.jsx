@@ -106,7 +106,6 @@ function BoardsTab() {
   const [boards, setBoards] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '' });
-  const [schedule, setSchedule] = useState([]);
 
   // Load tournaments on mount, default to active or first
   useEffect(() => {
@@ -121,7 +120,6 @@ function BoardsTab() {
   const loadBoards = () => {
     if (!selectedTournamentId) return;
     api.get(`/boards?tournament_id=${selectedTournamentId}`).then(setBoards).catch(() => {});
-    api.get('/schedule').then(data => setSchedule(Array.isArray(data) ? data : [])).catch(() => setSchedule([]));
   };
 
   useEffect(() => { loadBoards(); }, [selectedTournamentId]);
@@ -134,24 +132,6 @@ function BoardsTab() {
       await api.post('/boards', { number: nextNumber, name: form.name, tournament_id: parseInt(selectedTournamentId, 10) });
       setForm({ name: '' });
       setShowForm(false);
-      loadBoards();
-    } catch (err) {
-      alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen');
-    }
-  };
-
-  const handleSkip = async (scheduleId) => {
-    try {
-      await api.put(`/schedule/${scheduleId}/skip`);
-      loadBoards();
-    } catch (err) {
-      alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen');
-    }
-  };
-
-  const handleActivate = async (scheduleId) => {
-    try {
-      await api.put(`/schedule/${scheduleId}/activate`);
       loadBoards();
     } catch (err) {
       alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen');
@@ -243,26 +223,6 @@ function BoardsTab() {
         ))}
       </div>
 
-      {schedule.length > 0 && (
-        <div className="mt-6">
-          <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--pe-text-sub)' }}>SPIELPLAN</h3>
-          <div className="space-y-2">
-            {schedule.map((s) => (
-              <div key={s.id} className="p-3 rounded-lg flex justify-between items-center" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span className="text-sm" style={{ color: 'var(--pe-text)' }}>
-                    {s.player1_name || 'TBD'} vs {s.player2_name || 'TBD'} — Board {s.board_number || '?'}
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => handleActivate(s.id)} style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-success)', color: '#000' }}>Start</button>
-                  <button onClick={() => handleSkip(s.id)} style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-warning)' }}>Skip</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -1089,11 +1049,15 @@ function TournamentDirectorTab() {
               }}
             >
               {/* Board header */}
-              <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--pe-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: activeGame ? 'rgba(30,127,235,0.12)' : 'transparent' }}>
-                <span style={{ fontWeight: 'bold', color: 'var(--pe-text)', fontSize: '15px' }}>
+              <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--pe-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', background: activeGame ? 'rgba(30,127,235,0.12)' : 'transparent' }}>
+                <span style={{ fontWeight: 'bold', color: 'var(--pe-text)', fontSize: '15px', flex: 1, minWidth: 0 }}>
                   Board {board.number}{board.name ? ` — ${board.name}` : ''}{board.is_final ? ' ★' : ''}
                 </span>
-                <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '10px', fontWeight: 'bold', background: activeGame ? 'var(--pe-success)' : hasGames ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: activeGame ? '#000' : 'var(--pe-text)' }}>
+                <a href={`/referee/${board.number}`} target="_blank" rel="noopener noreferrer"
+                   style={{ fontSize: '11px', color: 'var(--pe-cyan-bright)', textDecoration: 'none', padding: '3px 8px', borderRadius: '6px', background: 'rgba(0,184,255,0.1)', border: '1px solid rgba(0,184,255,0.2)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  ↗ Referee
+                </a>
+                <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '10px', fontWeight: 'bold', background: activeGame ? 'var(--pe-success)' : hasGames ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: activeGame ? '#000' : 'var(--pe-text)', whiteSpace: 'nowrap', flexShrink: 0 }}>
                   {activeGame ? 'Aktiv' : hasGames ? `${boardGames.length} Spiele` : isDropTarget || (isTapTarget && !activeGame) ? 'Hier zuweisen' : 'Frei'}
                 </span>
               </div>

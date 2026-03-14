@@ -48,6 +48,20 @@ router.post('/', requireAdmin, (req, res) => {
   });
 });
 
+// Resolve a board by its display number for the currently active tournament
+router.get('/by-number/:number', (req, res) => {
+  const number = parseInt(req.params.number, 10);
+  if (isNaN(number)) return res.status(400).json({ error: 'Invalid board number' });
+
+  const activeTournament = db.prepare("SELECT id FROM tournaments WHERE status = 'active' LIMIT 1").get();
+  if (!activeTournament) return res.status(404).json({ error: 'No active tournament' });
+
+  const board = db.prepare('SELECT * FROM boards WHERE number = ? AND tournament_id = ?').get(number, activeTournament.id);
+  if (!board) return res.status(404).json({ error: 'Board not found' });
+
+  res.json(board);
+});
+
 // Aktuelles Spiel auf einer Scheibe — nur laufende Partien (bulloff oder active)
 router.get('/:id/current-game', (req, res) => {
   const board = db.prepare('SELECT * FROM boards WHERE id = ?').get(req.params.id);

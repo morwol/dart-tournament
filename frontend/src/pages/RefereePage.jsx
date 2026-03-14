@@ -553,7 +553,7 @@ function getPrevRoundLastThrow(liveData) {
 // ══════════════════════════════════════════════════════════════════════════
 // ── TABLET LAYOUT ─────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════
-function TabletLayout({ boardId, token, onLogout, selectedGameId, setSelectedGameId, liveData, fetchLive, modifier, setModifier, submitting, throwSegment, undoThrow }) {
+function TabletLayout({ boardId, boardNumber, token, onLogout, selectedGameId, setSelectedGameId, liveData, fetchLive, modifier, setModifier, submitting, throwSegment, undoThrow }) {
   const { game, player1, player2, current_round_throws = [] } = liveData || {};
   const currentThrowerId = game?.current_turn || game?.bull_winner_id;
 
@@ -582,7 +582,7 @@ function TabletLayout({ boardId, token, onLogout, selectedGameId, setSelectedGam
         {/* Header */}
         <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--pe-border)', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           <img src="/logo.jpeg" alt="" style={{ height: '32px' }} />
-          <span style={{ fontWeight: 'bold', color: 'var(--pe-cyan-bright)', fontSize: '14px', flex: 1 }}>Board {boardId}</span>
+          <span style={{ fontWeight: 'bold', color: 'var(--pe-cyan-bright)', fontSize: '14px', flex: 1 }}>Board {boardNumber}</span>
           <Link to="/" style={{ color: 'var(--pe-text-muted)', textDecoration: 'none', fontSize: '18px', lineHeight: 1 }}>←</Link>
           <button onClick={onLogout} style={btn({ padding: '4px 10px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', fontSize: '12px', minHeight: '30px' })}>
             Abmelden
@@ -738,7 +738,7 @@ function TabletLayout({ boardId, token, onLogout, selectedGameId, setSelectedGam
 // ══════════════════════════════════════════════════════════════════════════
 // ── PHONE LAYOUT ──────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════
-function PhoneLayout({ boardId, token, onLogout, selectedGameId, setSelectedGameId, liveData, fetchLive, modifier, setModifier, submitting, throwSegment, undoThrow }) {
+function PhoneLayout({ boardId, boardNumber, token, onLogout, selectedGameId, setSelectedGameId, liveData, fetchLive, modifier, setModifier, submitting, throwSegment, undoThrow }) {
   const { game, player1, player2, current_round_throws = [] } = liveData || {};
   const currentThrowerId = game?.current_turn || game?.bull_winner_id;
 
@@ -751,7 +751,7 @@ function PhoneLayout({ boardId, token, onLogout, selectedGameId, setSelectedGame
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
         <Link to="/" style={{ color: 'var(--pe-text-muted)', textDecoration: 'none', fontSize: '20px' }}>←</Link>
         <img src="/logo.jpeg" alt="" style={{ height: '32px' }} />
-        <span style={{ color: 'var(--pe-text-muted)', fontSize: '13px', fontWeight: 'bold', marginLeft: 'auto' }}>Board {boardId}</span>
+        <span style={{ color: 'var(--pe-text-muted)', fontSize: '13px', fontWeight: 'bold', marginLeft: 'auto' }}>Board {boardNumber}</span>
         {selectedGameId && game && game.status !== 'active' && (
           <button onClick={goToPicker} style={btn({ padding: '5px 10px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-warning)', fontSize: '11px', minHeight: '30px', borderColor: 'var(--pe-warning)' })}>
             Andere Partie
@@ -876,8 +876,10 @@ function PhoneLayout({ boardId, token, onLogout, selectedGameId, setSelectedGame
 // ── MAIN PAGE ─────────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════
 export default function RefereePage() {
-  const { boardId } = useParams();
+  const { boardId: boardNumber } = useParams();
   const [token, setToken] = useState(localStorage.getItem('token'));
+  const [resolvedBoardId, setResolvedBoardId] = useState(null);
+  const [boardNotFound, setBoardNotFound] = useState(false);
   const [selectedGameId, setSelectedGameId] = useState(null);
   const [liveData, setLiveData] = useState(null);
   const [modifier, setModifier] = useState('Single');
@@ -886,11 +888,21 @@ export default function RefereePage() {
 
   if (!token) return <RefereeLogin onLogin={setToken} />;
 
+  // Resolve board number → internal board ID for the active tournament
   useEffect(() => {
-    api.get(`/boards/${boardId}/current-game`).then(data => {
+    setResolvedBoardId(null);
+    setBoardNotFound(false);
+    api.get(`/boards/by-number/${boardNumber}`)
+      .then(board => setResolvedBoardId(board.id))
+      .catch(() => setBoardNotFound(true));
+  }, [boardNumber]);
+
+  useEffect(() => {
+    if (!resolvedBoardId) return;
+    api.get(`/boards/${resolvedBoardId}/current-game`).then(data => {
       if (data?.game_id) setSelectedGameId(data.game_id);
     }).catch(() => {});
-  }, [boardId]);
+  }, [resolvedBoardId]);
 
   const fetchLive = useCallback(async () => {
     if (!selectedGameId) return;
@@ -947,8 +959,29 @@ export default function RefereePage() {
 
   const onLogout = () => { localStorage.removeItem('token'); setToken(null); };
 
+  if (boardNotFound) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--pe-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+        <div style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-danger)', borderRadius: '12px', padding: '32px', maxWidth: '400px', width: '100%', textAlign: 'center' }}>
+          <div style={{ color: 'var(--pe-danger)', fontWeight: 'bold', fontSize: '18px', marginBottom: '12px' }}>Board {boardNumber} nicht gefunden</div>
+          <div style={{ color: 'var(--pe-text-sub)', fontSize: '14px' }}>
+            Bitte prüfe ob ein Turnier aktiv ist und Board {boardNumber} existiert.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!resolvedBoardId) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--pe-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+        <div style={{ color: 'var(--pe-text-sub)', fontSize: '16px' }}>Board wird geladen…</div>
+      </div>
+    );
+  }
+
   const shared = {
-    boardId, token, onLogout,
+    boardId: resolvedBoardId, boardNumber, token, onLogout,
     selectedGameId, setSelectedGameId,
     liveData, fetchLive,
     modifier, setModifier,
