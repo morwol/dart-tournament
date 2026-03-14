@@ -1282,6 +1282,7 @@ function TournamentExtendedTab() {
   // --- Wizard Step 4: Auslosung ---
   // Aktueller Turnierstatus (wird nach jeder Aktion aktualisiert)
   const [wizardTour, setWizardTour] = useState(null); // aktuelles Turnier-Objekt mit status/group_draw_done
+  const [drawError, setDrawError] = useState('');
 
   const refreshWizardTour = async () => {
     const tid = newTournament?.id || selectedId;
@@ -1301,10 +1302,15 @@ function TournamentExtendedTab() {
 
   const drawGroups = async () => {
     const tid = newTournament?.id || selectedId;
+    setDrawError('');
+    if (numGroups > players.length) {
+      setDrawError(`Zu wenige Spieler für ${numGroups} Gruppen (${players.length} Spieler angemeldet).`);
+      return;
+    }
     try {
       await api.post(`/tournaments/${tid}/draw-groups`, { numGroups });
       await refreshWizardTour();
-    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+    } catch (err) { setDrawError(err.message || 'Auslosung fehlgeschlagen – bitte erneut versuchen.'); }
   };
 
   const generateGroupSchedule = async () => {
@@ -1384,7 +1390,7 @@ function TournamentExtendedTab() {
             <p style={{ color: 'var(--pe-text-sub)', fontSize: '13px', marginBottom: '16px' }}>Gib dem Turnier einen Namen und optionales Datum.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <input type="text" value={createForm.name} onChange={e => setCreateForm({...createForm, name: e.target.value})} placeholder="Turniername *" required style={{ ...inputStyle, padding: '12px 14px' }} />
-              <input type="date" value={createForm.date} onChange={e => setCreateForm({...createForm, date: e.target.value})} style={{ ...inputStyle, padding: '12px 14px' }} />
+              <input type="date" value={createForm.date} onChange={e => setCreateForm({...createForm, date: e.target.value})} style={{ ...inputStyle, padding: '12px 14px', cursor: 'pointer' }} />
             </div>
             <button type="submit" disabled={creating || !createForm.name.trim()} style={{ width: '100%', marginTop: '16px', padding: '14px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer', minHeight: '52px', opacity: creating ? 0.6 : 1 }}>
               {creating ? 'Wird angelegt...' : 'Turnier anlegen & weiter →'}
@@ -1435,7 +1441,11 @@ function TournamentExtendedTab() {
                   <input type="text" value={playerForm.nachname} onChange={e => setPlayerForm({...playerForm, nachname: e.target.value})} placeholder="Nachname *" required style={{ ...inputStyle, padding: '10px 12px' }} />
                 </div>
                 <div style={{ display: 'flex', gap: '6px' }}>
-                  <input type="number" value={playerForm.seed} onChange={e => setPlayerForm({...playerForm, seed: e.target.value})} placeholder="Seed" style={{ ...inputStyle, width: '70px', padding: '10px' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid var(--pe-border)', borderRadius: '8px', background: 'var(--pe-bg-card)', overflow: 'hidden', flexShrink: 0 }}>
+                    <button type="button" onClick={() => setPlayerForm({...playerForm, seed: Math.max(0, (parseInt(playerForm.seed)||0) - 1) || ''})} style={{ padding: '0 12px', minHeight: '48px', background: 'transparent', border: 'none', color: 'var(--pe-text-sub)', fontFamily: 'Verdana, Geneva, sans-serif', fontSize: '18px', cursor: 'pointer', lineHeight: 1 }}>−</button>
+                    <span style={{ minWidth: '32px', textAlign: 'center', color: playerForm.seed ? 'var(--pe-text)' : 'var(--pe-text-muted)', fontSize: '14px', fontWeight: 'bold', userSelect: 'none' }}>{playerForm.seed || '—'}</span>
+                    <button type="button" onClick={() => setPlayerForm({...playerForm, seed: (parseInt(playerForm.seed)||0) + 1})} style={{ padding: '0 12px', minHeight: '48px', background: 'transparent', border: 'none', color: 'var(--pe-text-sub)', fontFamily: 'Verdana, Geneva, sans-serif', fontSize: '18px', cursor: 'pointer', lineHeight: 1 }}>+</button>
+                  </div>
                   <button type="submit" disabled={!playerForm.vorname.trim() || !playerForm.nickname.trim() || !playerForm.nachname.trim()} style={{ flex: 1, padding: '10px 16px', borderRadius: '8px', background: 'var(--pe-blue-deep)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px', opacity: (!playerForm.vorname.trim() || !playerForm.nickname.trim() || !playerForm.nachname.trim()) ? 0.5 : 1 }}>+ Spieler hinzufügen</button>
                 </div>
               </form>
@@ -1567,12 +1577,18 @@ function TournamentExtendedTab() {
                     </select>
                   </div>
 
+                  {drawError && (
+                    <div style={{ padding: '10px 14px', borderRadius: '8px', background: 'rgba(255,69,96,0.1)', border: '1px solid var(--pe-danger)', color: 'var(--pe-danger)', fontSize: '13px' }}>
+                      {drawError}
+                    </div>
+                  )}
+
                   {/* Option A: Gruppenphase */}
-                  <button onClick={drawGroups} style={{ padding: '16px', borderRadius: '12px', background: 'var(--pe-blue-deep)', color: '#fff', border: '2px solid var(--pe-blue-mid)', fontFamily: 'Verdana, Geneva, sans-serif', cursor: 'pointer', minHeight: '64px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <button onClick={drawGroups} style={{ padding: '16px', borderRadius: '12px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', cursor: 'pointer', minHeight: '64px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '14px', boxShadow: '0 4px 16px rgba(0,184,255,0.25)' }}>
                     <span style={{ fontSize: '28px', flexShrink: 0 }}>🏆</span>
                     <div>
                       <div style={{ fontWeight: 'bold', fontSize: '15px' }}>Mit Gruppenphase starten</div>
-                      <div style={{ fontSize: '12px', opacity: 0.8, marginTop: '3px' }}>Automatische Gruppenauslosung → Round-Robin → KO-Runde</div>
+                      <div style={{ fontSize: '12px', opacity: 0.85, marginTop: '3px' }}>Automatische Gruppenauslosung → Round-Robin → KO-Runde</div>
                       <div style={{ fontSize: '11px', color: 'var(--pe-cyan-light)', marginTop: '2px' }}>Empfohlen ab 8 Spielern</div>
                     </div>
                   </button>
@@ -1669,9 +1685,11 @@ function TournamentExtendedTab() {
                   </select>
                 </div>
               ))}
-              <button onClick={generateGroupSchedule} style={{ width: '100%', marginTop: '8px', padding: '12px', borderRadius: '10px', background: 'linear-gradient(135deg, #00E5A0, #1E7FEB)', color: '#000', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '44px', fontSize: '13px' }}>
-                Spielplan generieren
-              </button>
+              {selectedTournament.status !== 'active' && (
+                <button onClick={generateGroupSchedule} style={{ width: '100%', marginTop: '8px', padding: '12px', borderRadius: '10px', background: 'linear-gradient(135deg, #00E5A0, #1E7FEB)', color: '#000', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '44px', fontSize: '13px' }}>
+                  Spielplan generieren
+                </button>
+              )}
             </div>
           )}
 
@@ -1698,14 +1716,6 @@ function TournamentExtendedTab() {
         </div>
       )}
 
-      {/* Danger Zone */}
-      <div style={{ padding: '16px', borderRadius: '12px', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-danger)', marginTop: '24px' }}>
-        <h3 style={{ color: 'var(--pe-danger)', fontWeight: 'bold', fontSize: '13px', marginBottom: '8px' }}>DANGER ZONE</h3>
-        <p style={{ color: 'var(--pe-text-muted)', fontSize: '12px', marginBottom: '12px' }}>Löscht ALLE Turniere, Spieler, Spiele, Bestellungen. Boards, User und Produkte bleiben.</p>
-        <button onClick={handleWipe} style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'var(--pe-danger)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px' }}>
-          Datenbank zurücksetzen (WIPE)
-        </button>
-      </div>
     </div>
   );
 }
