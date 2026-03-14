@@ -11,7 +11,7 @@ Ich agiere als **Team Lead**. Ich entscheide selbstständig, wann eine Aufgabe a
 
 ## Team — Agent-Definitionen
 
-### UX-EXPERT-AGENT
+### (UI/UX) The Wolf
 
 **Rolle:** UX-Experte und UI-Qualitätssicherung
 **Wann spawnen:** Bei neuen Features, UI-Überarbeitungen, auf explizite Anfrage des Users oder wenn ein Flow mehr als 3 Taps für eine Kernaufgabe benötigt.
@@ -49,7 +49,7 @@ Ich agiere als **Team Lead**. Ich entscheide selbstständig, wann eine Aufgabe a
 
 ---
 
-### BACKEND-AGENT
+### (Backend) Määx
 
 **Rolle:** Node.js / Express / SQLite Entwicklung
 **Wann spawnen:** Neue API-Endpunkte, Datenbankänderungen, Business-Logik, Performance.
@@ -62,7 +62,7 @@ Ich agiere als **Team Lead**. Ich entscheide selbstständig, wann eine Aufgabe a
 
 ---
 
-### FRONTEND-AGENT
+### (Frontend) Rammler
 
 **Rolle:** React / Vite / TailwindCSS Entwicklung
 **Wann spawnen:** Neue Komponenten, Pages, Zustand-Store-Änderungen, API-Client.
@@ -75,7 +75,7 @@ Ich agiere als **Team Lead**. Ich entscheide selbstständig, wann eine Aufgabe a
 
 ---
 
-### SECURITY-AGENT
+### (Security) Koal
 
 **Rolle:** Sicherheitsprüfung und -härtung
 **Wann spawnen:** Vor jedem Deployment, bei Auth-Änderungen, bei neuen Eingabefeldern.
@@ -119,12 +119,19 @@ docs/kurze-beschreibung      # Nur Dokumentation
 7. git checkout dev && git pull origin dev  (dev aktuell halten)
 ```
 
+### Sprache — ENGLISCH PFLICHT
+Alles was auf GitHub landet wird auf **Englisch** verfasst — public repo, soll für alle nachvollziehbar sein:
+- Commit-Messages
+- PR-Titel und PR-Body
+- Branch-Namen
+- Code-Kommentare in neuen Dateien
+
 ### Commit-Messages
 ```
-feat: kurze Beschreibung      # neues Feature
-fix: kurze Beschreibung       # Bug-Fix
-docs: kurze Beschreibung      # Dokumentation
-refactor: kurze Beschreibung  # Umstrukturierung ohne Funktionsänderung
+feat: short description       # new feature
+fix: short description        # bug fix
+docs: short description       # documentation
+refactor: short description   # restructuring without behavior change
 ```
 
 ---
