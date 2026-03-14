@@ -40,9 +40,9 @@ export default function HomePage() {
         const tournamentDetail = await api.get(`/tournaments/${active.id}`);
         setPlayers(tournamentDetail.players || []);
 
-        // NEU: Boards laden und aktuelle Spiele pro Board
+        // NEU: Boards laden und aktuelle Spiele pro Board (gefiltert nach aktivem Turnier)
         try {
-          const boardList = await api.get('/boards');
+          const boardList = await api.get(`/boards?tournament_id=${active.id}`);
           setBoards(boardList);
 
           const gameMap = {};

@@ -783,6 +783,10 @@ router.put('/:id/assign-board', requireAuth, (req, res) => {
   if (board_id) {
     const board = db.prepare('SELECT * FROM boards WHERE id = ?').get(board_id);
     if (!board) return res.status(404).json({ error: 'Scheibe nicht gefunden' });
+    // Ensure board belongs to the same tournament as the game
+    if (board.tournament_id !== null && game.tournament_id !== null && board.tournament_id !== game.tournament_id) {
+      return res.status(400).json({ error: 'Scheibe gehört nicht zum Turnier des Spiels' });
+    }
   }
   db.prepare('UPDATE games SET board_id = ? WHERE id = ?').run(board_id || null, req.params.id);
   res.json({ success: true, game_id: req.params.id, board_id: board_id || null });
