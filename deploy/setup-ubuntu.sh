@@ -6,8 +6,10 @@ set -e
 # Installs and configures everything from scratch:
 #   nginx, Node.js, SSL, systemd service, firewall
 #
-# Run as root:
-#   sudo bash setup-ubuntu.sh
+# One-liner on a fresh Ubuntu server (run as root):
+#   apt-get install -y curl git && \
+#   git clone https://github.com/morwol/dart-tournament.git /tmp/dartsturnier-setup && \
+#   sudo bash /tmp/dartsturnier-setup/deploy/setup-ubuntu.sh
 #
 # Works for both production (main) and dev (dev) servers.
 # ============================================================
@@ -96,6 +98,7 @@ read -p "Continue? [Enter to confirm / Ctrl+C to abort] " _
 echo ""
 echo -e "${GREEN}[1/10] Installing system packages...${NC}"
 apt update -q
+DEBIAN_FRONTEND=noninteractive apt upgrade -y -q
 apt install -y curl git nginx ufw openssl
 
 # Node.js 20 LTS via NodeSource
