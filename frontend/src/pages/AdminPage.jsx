@@ -1240,10 +1240,15 @@ function TournamentExtendedTab() {
       setTournaments(t);
       if (t.length > 0 && !selectedId) setSelectedId(String(t[0].id));
     }).catch(() => {});
-    api.get('/boards').then(setBoards).catch(() => {});
+  };
+
+  const loadBoards = (tid) => {
+    if (!tid) return;
+    api.get(`/boards?tournament_id=${tid}`).then(setBoards).catch(() => {});
   };
 
   useEffect(() => { loadTournaments(); }, []);
+  useEffect(() => { loadBoards(selectedId); }, [selectedId]);
 
   useEffect(() => {
     if (!selectedId || tournaments.length === 0) return;
@@ -1309,6 +1314,7 @@ function TournamentExtendedTab() {
         );
         await Promise.all(createPromises);
         await loadTournaments();
+        loadBoards(tid);
       }
       setWizardStep(3);
     } catch (err) { setWizardError(err.message || 'Konfiguration konnte nicht gespeichert werden – bitte erneut versuchen.'); }
