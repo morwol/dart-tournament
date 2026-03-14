@@ -740,7 +740,7 @@ function GastroAdminTab() {
                     </span>
                   </td>
                   <td style={{ ...tdStyle, textAlign: 'center' }}>
-                    <button onClick={() => toggleAvailable(p)} style={{ ...btnSmall, background: p.available ? 'var(--pe-success)' : 'var(--pe-bg-card)', color: p.available ? '#000' : 'var(--pe-text-muted)', padding: '3px 10px', border: `1px solid ${p.available ? 'var(--pe-success)' : 'var(--pe-border)'}` }}>
+                    <button onClick={() => toggleAvailable(p)} style={{ ...btnSmall, background: p.available ? 'var(--pe-success)' : 'var(--pe-bg-card)', color: p.available ? '#000' : 'var(--pe-text-muted)', padding: '3px 10px', border: `1px solid ${p.available ? 'var(--pe-success)' : 'var(--pe-border)'}`, minWidth: '68px' }}>
                       {p.available ? 'Aktiv' : 'Inaktiv'}
                     </button>
                   </td>
