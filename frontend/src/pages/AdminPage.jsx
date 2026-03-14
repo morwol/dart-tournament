@@ -959,7 +959,8 @@ function TournamentDirectorTab() {
     setActiveTournament(active);
     if (active) {
       // Only show boards belonging to the active tournament
-      const tournamentBoards = allBoards.filter(b => b.tournament_id === active.id);
+      // Use loose equality to handle potential type mismatch between SQLite INTEGER and JS number
+      const tournamentBoards = allBoards.filter(b => b.tournament_id == active.id);
       setBoards(tournamentBoards);
       const detail = await api.get(`/tournaments/${active.id}`).catch(() => null);
       if (detail?.games) setGames(detail.games.filter(g => ['pending','bulloff','active'].includes(g.status) && g.player1_name));
