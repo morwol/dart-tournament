@@ -809,7 +809,36 @@ function PhoneLayout({ boardId, token, onLogout, selectedGameId, setSelectedGame
             <Scoreboard player1={player1} player2={player2} currentThrowerId={currentThrowerId} bullWinnerId={game.bull_winner_id} game={game} isTablet={false} />
           </div>
 
-          <div style={{ marginBottom: '10px' }}>
+          {/* ── Permanent status bar — bull winner + active player ── */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            height: '44px',
+            minHeight: '44px',
+            flexShrink: 0,
+            background: 'var(--pe-bg-elevated)',
+            border: '1px solid var(--pe-border)',
+            borderRadius: '10px',
+            padding: '0 12px',
+            marginBottom: '10px',
+            fontFamily: 'Verdana, Geneva, sans-serif',
+            boxSizing: 'border-box',
+          }}>
+            <span style={{ fontSize: '12px', color: game.bull_winner_id ? 'var(--pe-warning)' : 'var(--pe-text-muted)', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '45%' }}>
+              🎯 {game.bull_winner_id
+                ? (game.bull_winner_id === player1.id ? player1.name : player2.name)
+                : <span style={{ color: 'var(--pe-text-muted)', fontWeight: 'normal' }}>—</span>}
+            </span>
+            <span style={{ fontSize: '12px', color: currentThrowerId ? 'var(--pe-success)' : 'var(--pe-text-muted)', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '45%', textAlign: 'right' }}>
+              {currentThrowerId
+                ? <>▶ {currentThrowerId === player1.id ? player1.name : player2.name}</>
+                : <span style={{ color: 'var(--pe-text-muted)', fontWeight: 'normal' }}>▶ —</span>}
+            </span>
+          </div>
+
+          {/* ── Round throws — fixed min-height so DartPad never jumps ── */}
+          <div style={{ minHeight: '120px', marginBottom: '10px' }}>
             <RoundThrows throws={current_round_throws} prevThrow={getPrevRoundLastThrow(liveData)} onUndo={undoThrow} disabled={submitting} isTablet={false} />
           </div>
 
