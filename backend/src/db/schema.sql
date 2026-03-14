@@ -105,10 +105,12 @@ CREATE TABLE IF NOT EXISTS users (
 -- NEU: Dartscheiben
 CREATE TABLE IF NOT EXISTS boards (
   id INTEGER PRIMARY KEY,
-  number INTEGER UNIQUE NOT NULL,
+  number INTEGER NOT NULL,
   name TEXT,
   active BOOLEAN DEFAULT 1,
-  tournament_id INTEGER REFERENCES tournaments(id)
+  is_final BOOLEAN DEFAULT 0,
+  tournament_id INTEGER REFERENCES tournaments(id),
+  UNIQUE(number, tournament_id)
 );
 
 -- NEU: Spielplan / Scheduling

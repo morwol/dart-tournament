@@ -100,6 +100,30 @@ function initialize() {
     }
   }
 
+  // Migrate boards table: replace global UNIQUE(number) with UNIQUE(number, tournament_id)
+  try {
+    const hasOldConstraint = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='boards'").get();
+    if (hasOldConstraint && /number INTEGER UNIQUE/i.test(hasOldConstraint.sql)) {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS boards_new (
+          id INTEGER PRIMARY KEY,
+          number INTEGER NOT NULL,
+          name TEXT,
+          active BOOLEAN DEFAULT 1,
+          is_final BOOLEAN DEFAULT 0,
+          tournament_id INTEGER REFERENCES tournaments(id),
+          UNIQUE(number, tournament_id)
+        );
+        INSERT OR IGNORE INTO boards_new (id, number, name, active, is_final, tournament_id)
+          SELECT id, number, name, active, COALESCE(is_final, 0), tournament_id FROM boards;
+        DROP TABLE boards;
+        ALTER TABLE boards_new RENAME TO boards;
+      `);
+    }
+  } catch (e) {
+    // Migration already done or not needed
+  }
+
   // Walk-On Jobs Tabelle anlegen
   db.exec(`
     CREATE TABLE IF NOT EXISTS walkon_jobs (
