@@ -14,7 +14,7 @@ router.get('/', (req, res) => {
 
 // POST /api/tournaments (Admin)
 router.post('/', verifyToken, requireFields(['name', 'format', 'checkout']), (req, res) => {
-  const { name, date, start_time, format, checkout, use_seed } = req.body;
+  const { name, date, format, checkout, use_seed } = req.body;
 
   if (!['501', '301'].includes(format)) {
     return res.status(400).json({ error: 'Format must be 501 or 301' });
@@ -23,16 +23,11 @@ router.post('/', verifyToken, requireFields(['name', 'format', 'checkout']), (re
     return res.status(400).json({ error: 'Checkout must be single_out or double_out' });
   }
 
-  // Validate start_time format HH:MM if provided
-  if (start_time && !/^\d{2}:\d{2}$/.test(start_time)) {
-    return res.status(400).json({ error: 'start_time must be in HH:MM format' });
-  }
-
   const useSeedValue = use_seed ? 1 : 0;
 
   const result = db.prepare(
-    'INSERT INTO tournaments (name, date, start_time, format, checkout, use_seed) VALUES (?, ?, ?, ?, ?, ?)'
-  ).run(name, date || null, start_time || null, format, checkout, useSeedValue);
+    'INSERT INTO tournaments (name, date, format, checkout, use_seed) VALUES (?, ?, ?, ?, ?)'
+  ).run(name, date || null, format, checkout, useSeedValue);
 
   const tournament = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(result.lastInsertRowid);
   auditLog(req, 'tournament', 'CREATE', `Turnier "${name}" angelegt`, tournament.id);
@@ -93,20 +88,13 @@ router.put('/:id', verifyToken, (req, res) => {
   const tournament = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(req.params.id);
   if (!tournament) return res.status(404).json({ error: 'Tournament not found' });
 
-  const allowed = ['prelim_format','prelim_legs','qf_format','qf_legs','sf_format','sf_legs','final_format','final_legs','board_count','name','date','start_time','use_seed'];
+  const allowed = ['prelim_format','prelim_legs','qf_format','qf_legs','sf_format','sf_legs','final_format','final_legs','board_count','name','date','use_seed'];
   const updates = {};
   for (const key of allowed) {
     if (req.body[key] !== undefined) updates[key] = req.body[key];
   }
 
   if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'No valid fields to update' });
-
-  // Validate start_time format HH:MM if provided as non-empty string
-  if (updates.start_time && !/^\d{2}:\d{2}$/.test(updates.start_time)) {
-    return res.status(400).json({ error: 'start_time must be in HH:MM format' });
-  }
-  // Allow clearing start_time by passing empty string → store as null
-  if (updates.start_time === '') updates.start_time = null;
 
   const setClauses = Object.keys(updates).map((k) => `${k} = ?`).join(', ');
   const values = [...Object.values(updates), req.params.id];
@@ -489,36 +477,16 @@ router.post('/:id/generate-group-schedule', requireAdminOrDirector, (req, res) =
     const startScore = parseInt(tournament.format) || 501;
     let totalCreated = 0;
 
-    // Calculate base datetime from tournament date + start_time
-    const gameDurationMinutes = parseInt(req.body.game_duration_minutes) || 20;
-    let baseDateTime = null;
-    if (tournament.date || tournament.start_time) {
-      const datePart = tournament.date || new Date().toISOString().substring(0, 10);
-      const timePart = tournament.start_time || '10:00';
-      const parsed = new Date(`${datePart}T${timePart}:00`);
-      if (!isNaN(parsed.getTime())) baseDateTime = parsed;
-    }
-
     const insertGames = db.transaction(() => {
-      const boardGameIndex = {};
       for (const [boardId, pairs] of Object.entries(boardGameList)) {
-        boardGameIndex[boardId] = 0;
         for (const [p1, p2] of pairs) {
           const gameResult = db.prepare(
             'INSERT INTO games (tournament_id, round, player1_id, player2_id, start_score, board_id, status) VALUES (?, 0, ?, ?, ?, ?, ?)'
           ).run(req.params.id, p1.id, p2.id, startScore, parseInt(boardId), 'pending');
 
-          const gameIdx = boardGameIndex[boardId]++;
-          let scheduledAt = null;
-          if (baseDateTime) {
-            const ms = gameIdx * gameDurationMinutes * 60 * 1000;
-            const gameTime = new Date(baseDateTime.getTime() + ms);
-            scheduledAt = gameTime.toISOString().replace('T', ' ').substring(0, 16);
-          }
-
           db.prepare(
             'INSERT INTO schedule (tournament_id, game_id, board_id, scheduled_at, status) VALUES (?, ?, ?, ?, ?)'
-          ).run(req.params.id, gameResult.lastInsertRowid, parseInt(boardId), scheduledAt, 'scheduled');
+          ).run(req.params.id, gameResult.lastInsertRowid, parseInt(boardId), null, 'scheduled');
 
           totalCreated++;
         }
