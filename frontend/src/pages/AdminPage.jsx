@@ -106,7 +106,6 @@ function BoardsTab() {
   const [boards, setBoards] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '' });
-  const [schedule, setSchedule] = useState([]);
 
   // Load tournaments on mount, default to active or first
   useEffect(() => {
@@ -121,7 +120,6 @@ function BoardsTab() {
   const loadBoards = () => {
     if (!selectedTournamentId) return;
     api.get(`/boards?tournament_id=${selectedTournamentId}`).then(setBoards).catch(() => {});
-    api.get('/schedule').then(data => setSchedule(Array.isArray(data) ? data : [])).catch(() => setSchedule([]));
   };
 
   useEffect(() => { loadBoards(); }, [selectedTournamentId]);
@@ -134,24 +132,6 @@ function BoardsTab() {
       await api.post('/boards', { number: nextNumber, name: form.name, tournament_id: parseInt(selectedTournamentId, 10) });
       setForm({ name: '' });
       setShowForm(false);
-      loadBoards();
-    } catch (err) {
-      alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen');
-    }
-  };
-
-  const handleSkip = async (scheduleId) => {
-    try {
-      await api.put(`/schedule/${scheduleId}/skip`);
-      loadBoards();
-    } catch (err) {
-      alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen');
-    }
-  };
-
-  const handleActivate = async (scheduleId) => {
-    try {
-      await api.put(`/schedule/${scheduleId}/activate`);
       loadBoards();
     } catch (err) {
       alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen');
@@ -243,26 +223,6 @@ function BoardsTab() {
         ))}
       </div>
 
-      {schedule.length > 0 && (
-        <div className="mt-6">
-          <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--pe-text-sub)' }}>SPIELPLAN</h3>
-          <div className="space-y-2">
-            {schedule.map((s) => (
-              <div key={s.id} className="p-3 rounded-lg flex justify-between items-center" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span className="text-sm" style={{ color: 'var(--pe-text)' }}>
-                    {s.player1_name || 'TBD'} vs {s.player2_name || 'TBD'} — Board {s.board_number || '?'}
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => handleActivate(s.id)} style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-success)', color: '#000' }}>Start</button>
-                  <button onClick={() => handleSkip(s.id)} style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-warning)' }}>Skip</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
