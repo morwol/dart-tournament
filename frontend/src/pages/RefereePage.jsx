@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/client';
+import { useToastStore } from '../store/toasts';
 
 const NUMBERS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];
 const MOD = { Single: 'S', Double: 'D', Triple: 'T' };
@@ -83,6 +84,7 @@ function RefereeLogin({ onLogin }) {
 
 // ── Bulloff Panel ──────────────────────────────────────────────────────────
 function BulloffPanel({ gameId, player1, player2, onDone, isTablet }) {
+  const { addToast } = useToastStore();
   const [p1score, setP1score] = useState(null);
   const [p2score, setP2score] = useState(null);
   const [missWinner, setMissWinner] = useState(null);
@@ -101,7 +103,7 @@ function BulloffPanel({ gameId, player1, player2, onDone, isTablet }) {
       const res = await api.post(`/games/${gameId}/bulloff`, body);
       if (res.status === 'bulloff') reset('Gleichstand — erneut werfen!');
       else onDone();
-    } catch (err) { alert(err.message || 'Fehler'); }
+    } catch (err) { addToast({ type: 'error', message: err.message || 'Fehler' }); }
     finally { setSaving(false); }
   };
 
@@ -400,6 +402,7 @@ function Scoreboard({ player1, player2, currentThrowerId, bullWinnerId, game, is
 
 // ── Game Queue ──────────────────────────────────────────────────────────────
 function GameQueue({ boardId, currentGameId, canSwitch, onSelect, onSkip, isTablet }) {
+  const { addToast } = useToastStore();
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -418,7 +421,7 @@ function GameQueue({ boardId, currentGameId, canSwitch, onSelect, onSkip, isTabl
     try {
       await api.post(`/games/${gameId}/skip`);
       await load();
-    } catch (err) { alert(err.message || 'Fehler beim Überspringen'); }
+    } catch (err) { addToast({ type: 'error', message: err.message || 'Fehler beim Überspringen' }); }
   };
 
   if (loading) return <p style={{ color: 'var(--pe-text-muted)', fontSize: '12px' }}>Lade...</p>;
@@ -554,6 +557,7 @@ function getPrevRoundLastThrow(liveData) {
 // ── TABLET LAYOUT ─────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════
 function TabletLayout({ boardId, boardNumber, token, onLogout, selectedGameId, setSelectedGameId, liveData, fetchLive, modifier, setModifier, submitting, throwSegment, undoThrow }) {
+  const { addToast } = useToastStore();
   const { game, player1, player2, current_round_throws = [] } = liveData || {};
   const currentThrowerId = game?.current_turn || game?.bull_winner_id;
 
@@ -570,7 +574,7 @@ function TabletLayout({ boardId, boardNumber, token, onLogout, selectedGameId, s
     try {
       await api.post(`/games/${game.id}/reset`);
       setSelectedGameId(null);
-    } catch (err) { alert(err.message || 'Fehler'); }
+    } catch (err) { addToast({ type: 'error', message: err.message || 'Fehler' }); }
   };
 
   return (
@@ -876,6 +880,7 @@ function PhoneLayout({ boardId, boardNumber, token, onLogout, selectedGameId, se
 // ── MAIN PAGE ─────────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════
 export default function RefereePage() {
+  const { addToast } = useToastStore();
   const { boardId: boardNumber } = useParams();
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [resolvedBoardId, setResolvedBoardId] = useState(null);
@@ -943,7 +948,7 @@ export default function RefereePage() {
       await api.post(`/games/${game.id}/throw-segment`, { segment, player_id: throwerId });
       await fetchLive();
       setModifier('Single');
-    } catch (err) { alert(err.message || 'Fehler'); }
+    } catch (err) { addToast({ type: 'error', message: err.message || 'Fehler' }); }
     finally { setSubmitting(false); }
   };
 
@@ -953,7 +958,7 @@ export default function RefereePage() {
     try {
       await api.del(`/games/${liveData.game.id}/throw/${throwId}`);
       await fetchLive();
-    } catch (err) { alert(err.message || 'Fehler'); }
+    } catch (err) { addToast({ type: 'error', message: err.message || 'Fehler' }); }
     finally { setSubmitting(false); }
   };
 

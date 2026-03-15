@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../api/client';
 import NFCScanner from '../components/nfc/NFCScanner';
 import BackButton from '../components/BackButton';
+import { useToastStore } from '../store/toasts';
 
 // NEU: Gastronomy Login (nur gastronomy + admin)
 function GastronomyLogin({ onLogin }) {
@@ -87,6 +88,7 @@ const btnStyle = {
 };
 
 export default function GastronomyPage() {
+  const { addToast } = useToastStore();
   const [token, setToken] = useState(localStorage.getItem('token'));
 
   // NEU: Kassen-Ansicht Toggle (oben: "Bestellung" | "Kasse")
@@ -141,7 +143,7 @@ export default function GastronomyPage() {
       setCart([]);
       setOrderSuccess(false);
     } catch (err) {
-      alert(err.message || 'Gast nicht gefunden');
+      addToast({ type: 'error', message: err.message || 'Gast nicht gefunden' });
     } finally {
       setScanning(false);
     }
@@ -188,7 +190,7 @@ export default function GastronomyPage() {
       setGuestOpenOrders(updated);
       setTimeout(() => setOrderSuccess(false), 2000);
     } catch (err) {
-      alert(err.message || 'Bestellung fehlgeschlagen – bitte erneut versuchen');
+      addToast({ type: 'error', message: err.message || 'Bestellung fehlgeschlagen – bitte erneut versuchen' });
     } finally {
       setSubmitting(false);
     }
@@ -222,7 +224,7 @@ export default function GastronomyPage() {
         setCart([]);
       }
     } catch (err) {
-      alert(err.message || 'Abrechnung fehlgeschlagen – bitte erneut versuchen');
+      addToast({ type: 'error', message: err.message || 'Abrechnung fehlgeschlagen – bitte erneut versuchen' });
     } finally {
       setSubmitting(false);
     }
@@ -241,7 +243,7 @@ export default function GastronomyPage() {
       // Also update allGuests list
       setAllGuests((prev) => prev.map((g) => g.id === guest.id ? { ...g, ...updated } : g));
     } catch (err) {
-      alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen');
+      addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' });
     } finally {
       setLockLoading(false);
     }
@@ -352,7 +354,7 @@ export default function GastronomyPage() {
                     onClick={() => {
                       api.post('/nfc/create-manual', { name: guestSearch.trim() || 'Neuer Gast' })
                         .then((g) => { setGuest(g); setCart([]); setGuestSearch(''); setAllGuests(prev => [...prev, g]); })
-                        .catch((err) => alert(err.message || 'Gast konnte nicht angelegt werden'));
+                        .catch((err) => addToast({ type: 'error', message: err.message || 'Gast konnte nicht angelegt werden' }));
                     }}
                     style={{ padding: '10px 14px', borderRadius: '8px', background: 'var(--pe-blue-mid)', color: 'var(--pe-text)', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px', whiteSpace: 'nowrap' }}
                   >
