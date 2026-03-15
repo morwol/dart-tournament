@@ -10,6 +10,7 @@ import AdminPage from './pages/AdminPage';
 import CurrentGameView from './pages/CurrentGameView';
 import AppShell from './components/AppShell';
 import { parseJwt } from './lib/parseJwt';
+import Toaster from './components/Toaster';
 
 // NEU: Lazy imports für Seiten die von frontend-referee-admin erstellt werden
 const RefereePage = lazy(() => import('./pages/RefereePage'));
@@ -70,27 +71,30 @@ function ThemeLoader() {
 
 export default function App() {
   return (
-    <Suspense fallback={<LazyFallback />}>
-      <ThemeLoader />
-      <Routes>
-        {/* ── Shell routes: persistent TopBar + RoleTabs ── */}
-        <Route element={<AppShell />}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/tournament/:id" element={<TournamentPage />} />
-          <Route path="/tournament/:id/register" element={<PlayerRegistrationPage />} />
-          <Route path="/referee/:boardId" element={<RefereePage />} />
-          <Route path="/gastronomy" element={<GastronomyPage />} />
-        </Route>
+    <>
+      <Toaster />
+      <Suspense fallback={<LazyFallback />}>
+        <ThemeLoader />
+        <Routes>
+          {/* ── Shell routes: persistent TopBar + RoleTabs ── */}
+          <Route element={<AppShell />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/tournament/:id" element={<TournamentPage />} />
+            <Route path="/tournament/:id/register" element={<PlayerRegistrationPage />} />
+            <Route path="/referee/:boardId" element={<RefereePage />} />
+            <Route path="/gastronomy" element={<GastronomyPage />} />
+          </Route>
 
-        {/* ── Standalone routes: no shell ── */}
-        <Route path="/admin/users" element={<ProtectedRoute element={<AdminPage tab="users" />} roles={['admin', 'director']} />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="/board/:boardId" element={<CurrentGameView />} />
-        <Route path="/nfc" element={<NFCScanPage />} />
-        <Route path="/nfc-scan" element={<NFCScanPage />} />
-        <Route path="/orders/:uid" element={<OrderPage />} />
-        <Route path="/cancel/:token" element={<CancelRegistrationPage />} />
-      </Routes>
-    </Suspense>
+          {/* ── Standalone routes: no shell ── */}
+          <Route path="/admin/users" element={<ProtectedRoute element={<AdminPage tab="users" />} roles={['admin', 'director']} />} />
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/board/:boardId" element={<CurrentGameView />} />
+          <Route path="/nfc" element={<NFCScanPage />} />
+          <Route path="/nfc-scan" element={<NFCScanPage />} />
+          <Route path="/orders/:uid" element={<OrderPage />} />
+          <Route path="/cancel/:token" element={<CancelRegistrationPage />} />
+        </Routes>
+      </Suspense>
+    </>
   );
 }
