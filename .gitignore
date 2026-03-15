@@ -50,3 +50,4 @@ coverage/
 
 # Optional: Lockfiles behalten für reproduzierbare Builds
 # package-lock.json und yarn.lock werden NICHT ignoriert
+.superpowers/
