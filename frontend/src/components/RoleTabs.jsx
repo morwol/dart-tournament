@@ -60,6 +60,7 @@ export default function RoleTabs() {
 
   return (
     <nav
+      aria-label="Hauptnavigation"
       className="pe-scrollbar-hide"
       style={{
         display: 'flex',
@@ -77,8 +78,9 @@ export default function RoleTabs() {
         const active = isActive(tab.path);
         return (
           <button
-            key={tab.label}
+            key={tab.path}
             onClick={() => navigate(tab.path)}
+            aria-current={active ? 'page' : undefined}
             style={{
               minHeight: '64px',
               padding: '0 14px',

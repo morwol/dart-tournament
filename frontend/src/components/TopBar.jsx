@@ -104,6 +104,7 @@ export default function TopBar({ isSubPage = false, title = '', onBack }) {
         {role && (
           <button
             onClick={handleLogout}
+            aria-label="Abmelden"
             title="Abmelden"
             style={{
               padding: '16px 8px',
