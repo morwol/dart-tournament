@@ -18,9 +18,22 @@
 
 ### Modified files
 
-**`frontend/src/App.jsx`** — Add `<Toaster />` outside `<Suspense>` so it is always mounted even during lazy route loading. Place it as a direct sibling of `<Suspense>`, wrapped in a React Fragment.
+**`frontend/src/App.jsx`** — Add `<Toaster />` outside `<Suspense>` so it is always mounted even during lazy route loading. The current `App()` return has `<Suspense>` as its single root element. This must be changed: wrap both `<Toaster />` and `<Suspense>` in a React Fragment `<>...</>` so they are siblings.
 
-**6 callsite files** — Replace every `alert(msg)` with `addToast({ type: 'error', message: msg })` (or `'success'` where appropriate). See Callsites section.
+**6 callsite files** — Replace every `alert(...)` with `addToast({ type, message })`. **Preserve the `err.message || 'Fallback'` pattern** — do not reduce to just the fallback string. For example:
+```js
+// Before:
+alert(err.message || 'Fehler beim Starten');
+// After:
+addToast({ type: 'error', message: err.message || 'Fehler beim Starten' });
+```
+The two success toasts in AdminPage (lines 827, 841) are literal strings with no `err.message` — replace them directly:
+```js
+// Before:
+alert('Test-Mail gesendet!');
+// After:
+addToast({ type: 'success', message: 'Test-Mail gesendet!' });
+```
 
 ---
 
@@ -78,9 +91,11 @@ Each rendered toast manages its own dismiss lifecycle locally:
 2. After auto-dismiss timeout (4 000ms for error, 3 000ms for success/warning): apply CSS class `toast-exit` (fade out, 150ms)
 3. After 150ms: call `removeToast(id)` to remove from store
 
-Manual dismiss (clicking `✕`): immediately apply `toast-exit`, wait 150ms, then call `removeToast(id)`.
+Manual dismiss (clicking `✕`): immediately apply `toast-exit`, **cancel the auto-dismiss timer** (`clearTimeout`), wait 150ms, then call `removeToast(id)`. Cancelling the timer prevents a double-trigger of the exit animation if the user dismisses within the auto-dismiss window.
 
-This means `Toaster.jsx` must use `useState` to track which toasts are in the exit phase locally, so they remain rendered during the 150ms fade-out even though they may still be in the store array.
+Each toast component must store its auto-dismiss timer ref (via `useRef`) so it can be cleared on manual dismiss.
+
+`Toaster.jsx` must use `useState` to track which toast ids are in the exit phase (`Set<id>`), so they remain rendered during the 150ms fade-out. When a toast id enters the exit set, it renders with `toast-exit` class; after 150ms the component calls `removeToast(id)` and removes it from the exit set.
 
 ### CSS classes (in `index.css`)
 
