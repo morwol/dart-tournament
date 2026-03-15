@@ -8,6 +8,7 @@ import OrderPage from './pages/OrderPage';
 import AdminPage from './pages/AdminPage';
 // NEU: Board-Ansicht importieren
 import CurrentGameView from './pages/CurrentGameView';
+import AppShell from './components/AppShell';
 import { parseJwt } from './lib/parseJwt';
 
 // NEU: Lazy imports für Seiten die von frontend-referee-admin erstellt werden
@@ -72,25 +73,23 @@ export default function App() {
     <Suspense fallback={<LazyFallback />}>
       <ThemeLoader />
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/tournament/:id" element={<TournamentPage />} />
-        <Route path="/tournament/:id/register" element={<PlayerRegistrationPage />} />
+        {/* ── Shell routes: persistent TopBar + RoleTabs ── */}
+        <Route element={<AppShell />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/tournament/:id" element={<TournamentPage />} />
+          <Route path="/tournament/:id/register" element={<PlayerRegistrationPage />} />
+          <Route path="/referee/:boardId" element={<RefereePage />} />
+          <Route path="/gastronomy" element={<GastronomyPage />} />
+        </Route>
+
+        {/* ── Standalone routes: no shell ── */}
+        <Route path="/admin/users" element={<AdminPage tab="users" />} />
+        <Route path="/admin" element={<AdminPage />} />
+        <Route path="/board/:boardId" element={<CurrentGameView />} />
         <Route path="/nfc" element={<NFCScanPage />} />
-        {/* NEU: NFC-Scan alternative Route */}
         <Route path="/nfc-scan" element={<NFCScanPage />} />
         <Route path="/orders/:uid" element={<OrderPage />} />
-        {/* NEU: Board-Ansicht für Beamer/TV (öffentlich) */}
-        <Route path="/board/:boardId" element={<CurrentGameView />} />
-        {/* Admin Users Tab — AdminPage hat eigenen Login */}
-        <Route path="/admin/users" element={<AdminPage tab="users" />} />
-        {/* NEU: Referee-Seite (eigener Login auf der Seite) */}
-        <Route path="/referee/:boardId" element={<RefereePage />} />
-        {/* NEU: Gastronomy Routen (eigener Login auf der Seite) */}
-        <Route path="/gastronomy" element={<GastronomyPage />} />
-        {/* Spieler-Abmeldung via Token-Link */}
         <Route path="/cancel/:token" element={<CancelRegistrationPage />} />
-        {/* Admin — AdminPage hat eigenen Login */}
-        <Route path="/admin" element={<AdminPage />} />
       </Routes>
     </Suspense>
   );
