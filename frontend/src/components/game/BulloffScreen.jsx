@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { api } from '../../api/client';
+import { useToastStore } from '../../store/toasts';
 
 export default function BulloffScreen({ game, onComplete }) {
+  const { addToast } = useToastStore();
   const [submitting, setSubmitting] = useState(false);
 
   const handleBulloff = async (playerId, score) => {
@@ -10,7 +12,7 @@ export default function BulloffScreen({ game, onComplete }) {
       await api.post(`/games/${game.id}/bulloff`, { player_id: playerId, score });
       onComplete();
     } catch (err) {
-      alert(err.message || 'Fehler beim Ausbullen');
+      addToast({ type: 'error', message: err.message || 'Fehler beim Ausbullen' });
     } finally {
       setSubmitting(false);
     }

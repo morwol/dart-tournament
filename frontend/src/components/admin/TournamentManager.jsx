@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
+import { useToastStore } from '../../store/toasts';
 
 export default function TournamentManager() {
+  const { addToast } = useToastStore();
   const [tournaments, setTournaments] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', date: '', format: '501', checkout: 'double_out' });
@@ -23,7 +25,7 @@ export default function TournamentManager() {
       setShowForm(false);
       loadTournaments();
     } catch (err) {
-      alert(err.message || 'Fehler');
+      addToast({ type: 'error', message: err.message || 'Fehler' });
     } finally {
       setSubmitting(false);
     }
@@ -34,7 +36,7 @@ export default function TournamentManager() {
       await api.put(`/tournaments/${id}/start`);
       loadTournaments();
     } catch (err) {
-      alert(err.message || 'Fehler beim Starten');
+      addToast({ type: 'error', message: err.message || 'Fehler beim Starten' });
     }
   };
 

@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { api } from '../../api/client';
+import { useToastStore } from '../../store/toasts';
 
 const numpadKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', 'OK'];
 
 export default function ThrowInput({ game, onThrow }) {
+  const { addToast } = useToastStore();
   const [value, setValue] = useState('');
   const [isDouble, setIsDouble] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -38,7 +40,7 @@ export default function ThrowInput({ game, onThrow }) {
       setIsDouble(false);
       onThrow();
     } catch (err) {
-      alert(err.message || 'Fehler beim Eintragen');
+      addToast({ type: 'error', message: err.message || 'Fehler beim Eintragen' });
     } finally {
       setSubmitting(false);
     }
