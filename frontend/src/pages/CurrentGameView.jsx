@@ -140,7 +140,7 @@ export default function CurrentGameView() {
       <div style={{ background: 'var(--pe-gradient)', padding: hPad, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <img src="/logo.jpeg" alt="DartEvent" style={{ height: isMobile ? 32 : 48, borderRadius: 8, flexShrink: 0 }} />
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          <span style={{ fontSize: isMobile ? 18 : isTablet ? 22 : 28, fontWeight: 'bold', color: '#fff', textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+          <span style={{ fontSize: isMobile ? 18 : isTablet ? 22 : 28, fontWeight: 'bold', color: 'var(--pe-text)', textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
             Board {boardNumber}
           </span>
           {gameData && (

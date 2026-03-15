@@ -404,7 +404,7 @@ const styles = {
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: 'var(--pe-text)',
     margin: 0,
     textShadow: '0 2px 8px rgba(0,0,0,0.3)',
     lineHeight: 1.2,
