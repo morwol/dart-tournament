@@ -17,7 +17,7 @@ export default function BackButton({ to = '/', label = 'Zurück' }) {
         fontFamily: 'Verdana, Geneva, sans-serif',
         fontWeight: 'bold',
         fontSize: '13px',
-        minHeight: '38px',
+        minHeight: '64px',
         transition: 'border-color 0.15s, color 0.15s',
         flexShrink: 0,
       }}
