@@ -34,14 +34,28 @@ const TABS = {
 export default function RoleTabs() {
   const { role } = useStore();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
 
   const tabs = TABS[role] ?? TABS.public;
 
-  const isActive = (path) => {
-    const base = path.split('?')[0];
-    if (base === '/') return pathname === '/';
-    return pathname.startsWith(base);
+  const isActive = (tabPath) => {
+    const [tabBase, tabQuery] = tabPath.split('?');
+    if (tabBase === '/') return pathname === '/' && !search;
+
+    // If this tab has a query string (e.g. ?tab=boards), also match the query
+    if (tabQuery) {
+      return pathname.startsWith(tabBase) && search === '?' + tabQuery;
+    }
+
+    // For tabs without query string, only mark active if no conflicting tab with
+    // the same base path and a query string would match instead
+    const hasQueryVariant = tabs.some(t => {
+      const [b, q] = t.path.split('?');
+      return q && b === tabBase && search === '?' + q;
+    });
+    if (hasQueryVariant) return false;
+
+    return pathname.startsWith(tabBase);
   };
 
   return (
