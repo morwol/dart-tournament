@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store';
 import { api } from '../api/client';
+import { useToastStore } from '../store/toasts';
 import AdminLogin from '../components/admin/AdminLogin';
 import TournamentManager from '../components/admin/TournamentManager';
 import {
@@ -101,6 +102,7 @@ function OverviewTab() {
 
 // NEU: Tab "Boards" — Scheiben verwalten (tournament-specific)
 function BoardsTab() {
+  const { addToast } = useToastStore();
   const [tournaments, setTournaments] = useState([]);
   const [selectedTournamentId, setSelectedTournamentId] = useState('');
   const [boards, setBoards] = useState([]);
@@ -134,7 +136,7 @@ function BoardsTab() {
       setShowForm(false);
       loadBoards();
     } catch (err) {
-      alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen');
+      addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' });
     }
   };
 
@@ -201,7 +203,7 @@ function BoardsTab() {
                   try {
                     await api.put(`/boards/${b.id}/final`, { is_final: !b.is_final });
                     loadBoards();
-                  } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+                  } catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
                 }}
                 title={!b.is_final && boards.some(x => x.is_final && x.id !== b.id) ? 'Es kann nur ein Final-Board geben' : ''}
                 style={{ ...btnSmall, padding: '4px 12px', background: b.is_final ? 'var(--pe-warning)' : 'var(--pe-bg-elevated)', color: b.is_final ? '#000' : 'var(--pe-text-sub)', minHeight: '36px', flex: 1, opacity: (!b.is_final && boards.some(x => x.is_final && x.id !== b.id)) ? 0.4 : 1, cursor: (!b.is_final && boards.some(x => x.is_final && x.id !== b.id)) ? 'not-allowed' : 'pointer' }}
@@ -212,7 +214,7 @@ function BoardsTab() {
                 onClick={async () => {
                   if (!confirm(`Board ${b.number} löschen?`)) return;
                   try { await api.del(`/boards/${b.id}`); loadBoards(); }
-                  catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+                  catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
                 }}
                 style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', minHeight: '36px' }}
               >
@@ -238,6 +240,7 @@ function WalkonBadge({ status }) {
 }
 
 function PlayersTab() {
+  const { addToast } = useToastStore();
   const [tournaments, setTournaments] = useState([]);
   const [selectedTournament, setSelectedTournament] = useState('');
   const [tournamentStatus, setTournamentStatus] = useState('open');
@@ -304,7 +307,7 @@ function PlayersTab() {
       setShowForm(false);
       await loadPlayers();
     } catch (err) {
-      alert(err.message || 'Spieler konnte nicht angelegt werden');
+      addToast({ type: 'error', message: err.message || 'Spieler konnte nicht angelegt werden' });
     }
   };
 
@@ -332,7 +335,7 @@ function PlayersTab() {
       setEditingPlayer(null);
       await loadPlayers();
     } catch (err) {
-      alert(err.message || 'Spieler konnte nicht gespeichert werden');
+      addToast({ type: 'error', message: err.message || 'Spieler konnte nicht gespeichert werden' });
     }
   };
 
@@ -463,7 +466,7 @@ function PlayersTab() {
                 onClick={async () => {
                   if (!confirm(`${p.name} löschen?`)) return;
                   try { await api.del(`/tournaments/${selectedTournament}/players/${p.id}`); await loadPlayers(); }
-                  catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+                  catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
                 }}
                 style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: isActive ? 'var(--pe-text-muted)' : 'var(--pe-danger)', minHeight: '36px', cursor: isActive ? 'not-allowed' : 'pointer', opacity: isActive ? 0.4 : 1 }}
               >
@@ -482,6 +485,7 @@ function PlayersTab() {
 const ROLE_LABELS = { admin: 'Admin', director: 'Turnierleitung', referee: 'Schiedsrichter', gastronomy: 'Gastronomie' };
 
 function UsersTab() {
+  const { addToast } = useToastStore();
   const [users, setUsers] = useState([]);
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState({ username: '', password: '', role: 'director', email: '', vorname: '', nickname: '', nachname: '' });
@@ -499,7 +503,7 @@ function UsersTab() {
       setCreateForm({ username: '', password: '', role: 'director', email: '', vorname: '', nickname: '', nachname: '' });
       setShowCreate(false);
       loadUsers();
-    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen'); }
+    } catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen' }); }
   };
 
   const startEdit = (u) => {
@@ -514,13 +518,13 @@ function UsersTab() {
       await api.put(`/users/${userId}`, payload);
       setEditId(null);
       loadUsers();
-    } catch (err) { alert(err.message || 'Speichern fehlgeschlagen'); }
+    } catch (err) { addToast({ type: 'error', message: err.message || 'Speichern fehlgeschlagen' }); }
   };
 
   const handleDelete = async (userId) => {
     if (!confirm('User wirklich deaktivieren?')) return;
     try { await api.del(`/users/${userId}`); loadUsers(); }
-    catch (err) { alert(err.message || 'Aktion fehlgeschlagen'); }
+    catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen' }); }
   };
 
   const canSubmit = createForm.username.trim() && createForm.password && createForm.vorname.trim() && createForm.nickname.trim() && createForm.nachname.trim();
@@ -627,6 +631,7 @@ function UsersTab() {
 
 // NEU: Tab "Gastronomie (Admin)" — Produkt-Verwaltung + Umsatz + Tagesabrechnung
 function GastroAdminTab() {
+  const { addToast } = useToastStore();
   const [products, setProducts] = useState([]);
   const [dashboard, setDashboard] = useState(null);
   const [summary, setSummary] = useState(null);
@@ -649,14 +654,14 @@ function GastroAdminTab() {
       setForm({ name: '', category: 'drink', price: '', sort_order: '0' });
       setShowForm(false);
       loadData();
-    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+    } catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
   };
 
   const toggleAvailable = async (product) => {
     try {
       await api.put(`/products/${product.id}`, { available: !product.available });
       loadData();
-    } catch (err) { alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen'); }
+    } catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
   };
 
   const handleDeleteProduct = async (product) => {
@@ -664,7 +669,7 @@ function GastroAdminTab() {
     try {
       await api.del(`/products/${product.id}`);
       loadData();
-    } catch (err) { alert(err.message || 'Löschen fehlgeschlagen'); }
+    } catch (err) { addToast({ type: 'error', message: err.message || 'Löschen fehlgeschlagen' }); }
   };
 
   const totals = dashboard?.totals || {};
@@ -795,6 +800,7 @@ function GastroAdminTab() {
 
 // NEU: Tab "Mailing" — Post-Event
 function MailingTab() {
+  const { addToast } = useToastStore();
   const [templates, setTemplates] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', subject: '', body_html: '' });
@@ -815,7 +821,7 @@ function MailingTab() {
       const updated = await api.get('/mail/templates');
       setTemplates(updated);
     } catch (err) {
-      alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen');
+      addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' });
     }
   };
 
@@ -824,10 +830,10 @@ function MailingTab() {
     setSending(true);
     try {
       await api.post('/mail/send-test', { email: testEmail });
-      alert('Test-Mail gesendet!');
+      addToast({ type: 'success', message: 'Test-Mail gesendet!' });
       setTestEmail('');
     } catch (err) {
-      alert(err.message || 'Fehler beim Senden');
+      addToast({ type: 'error', message: err.message || 'Fehler beim Senden' });
     } finally {
       setSending(false);
     }
@@ -838,9 +844,9 @@ function MailingTab() {
     setSending(true);
     try {
       await api.post('/mail/send-event-summary');
-      alert('Event-Zusammenfassung gesendet!');
+      addToast({ type: 'success', message: 'Event-Zusammenfassung gesendet!' });
     } catch (err) {
-      alert(err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen');
+      addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' });
     } finally {
       setSending(false);
     }
@@ -1986,6 +1992,7 @@ function LogTab() {
 
 // Tab "Einstellungen" — Theming + App-Daten (nur Admin)
 function SettingsTab() {
+  const { addToast } = useToastStore();
   const PRESETS = [
     { name: 'P Entertainment', color_primary: '#1A4FD6', color_mid: '#1E7FEB', color_accent: '#00B8FF', color_accent_light: '#5DD5FF', color_bg: '#090E1A', color_bg_card: '#101829', color_success: '#00E5A0', color_warning: '#FFB020', color_danger: '#FF4560' },
     { name: 'Lila Nacht',      color_primary: '#7B2FBF', color_mid: '#9B3FD6', color_accent: '#C850FF', color_accent_light: '#D87AFF', color_bg: '#0D0A1A', color_bg_card: '#160E28', color_success: '#00E5A0', color_warning: '#FFB020', color_danger: '#FF4560' },
@@ -2055,7 +2062,7 @@ function SettingsTab() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
-      alert(err.message || 'Speichern fehlgeschlagen');
+      addToast({ type: 'error', message: err.message || 'Speichern fehlgeschlagen' });
     } finally {
       setSaving(false);
     }
@@ -2069,7 +2076,7 @@ function SettingsTab() {
       setCfg(next);
       applyLive(next);
     } catch (err) {
-      alert(err.message || 'Reset fehlgeschlagen');
+      addToast({ type: 'error', message: err.message || 'Reset fehlgeschlagen' });
     }
   };
 
