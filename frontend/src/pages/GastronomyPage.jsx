@@ -43,7 +43,7 @@ function GastronomyLogin({ onLogin }) {
           <input type="text" value={form.username} onChange={e => setForm({...form, username: e.target.value})} placeholder="Benutzername" style={inp} />
           <input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="Passwort" style={inp} />
           {error && <p style={{ color: 'var(--pe-danger)', fontSize: '14px', textAlign: 'center' }}>{error}</p>}
-          <button type="submit" disabled={loading || !form.username || !form.password} style={{ background: 'var(--pe-gradient)', color: '#fff', border: 'none', borderRadius: '12px', padding: '16px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer', minHeight: '64px', opacity: loading ? 0.6 : 1 }}>
+          <button type="submit" disabled={loading || !form.username || !form.password} style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', border: 'none', borderRadius: '12px', padding: '16px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer', minHeight: '64px', opacity: loading ? 0.6 : 1 }}>
             {loading ? 'Anmelden...' : 'Anmelden'}
           </button>
         </form>
@@ -354,7 +354,7 @@ export default function GastronomyPage() {
                         .then((g) => { setGuest(g); setCart([]); setGuestSearch(''); setAllGuests(prev => [...prev, g]); })
                         .catch((err) => alert(err.message || 'Gast konnte nicht angelegt werden'));
                     }}
-                    style={{ padding: '10px 14px', borderRadius: '8px', background: 'var(--pe-blue-mid)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px', whiteSpace: 'nowrap' }}
+                    style={{ padding: '10px 14px', borderRadius: '8px', background: 'var(--pe-blue-mid)', color: 'var(--pe-text)', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px', whiteSpace: 'nowrap' }}
                   >
                     + Neu
                   </button>
@@ -493,7 +493,7 @@ export default function GastronomyPage() {
                       style={{
                         ...btnStyle,
                         padding: '8px 16px',
-                        minHeight: '48px',
+                        minHeight: '64px',
                         background: productFilter === cat.id ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)',
                         color: productFilter === cat.id ? 'var(--pe-text)' : 'var(--pe-text-sub)',
                       }}

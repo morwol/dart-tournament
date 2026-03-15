@@ -39,3 +39,49 @@ body {
   .mobile-back-bar { display: none !important; }
   .content-area { display: flex !important; }
 }
+
+/* ─── PE Interactive Utilities ─────────────────────────────── */
+
+/* Hover: interactive cards (tournament, player, board cards) */
+.pe-card-interactive {
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+  cursor: pointer;
+}
+.pe-card-interactive:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 4px 20px rgba(0, 184, 255, 0.12);
+}
+.pe-card-interactive:active {
+  transform: scale(0.98);
+}
+
+/* Hover: buttons */
+.pe-btn {
+  transition: border-color 150ms ease, color 150ms ease,
+              background 150ms ease, transform 150ms ease;
+}
+.pe-btn:hover {
+  border-color: var(--pe-cyan-bright);
+  color: var(--pe-cyan-bright);
+}
+.pe-btn:active {
+  transform: scale(0.97);
+}
+
+/* Page entry animation (applied to shell page root divs) */
+.pe-page-enter {
+  animation: pe-fade-in 200ms ease forwards;
+}
+@keyframes pe-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Hide scrollbar utility (for RoleTabs) */
+.pe-scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.pe-scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

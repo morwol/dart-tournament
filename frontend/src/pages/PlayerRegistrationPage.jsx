@@ -75,10 +75,6 @@ export default function PlayerRegistrationPage() {
 
     return (
       <div style={{ minHeight: '100vh', padding: '20px', maxWidth: '480px', margin: '0 auto', fontFamily: 'Verdana, Geneva, sans-serif', boxSizing: 'border-box' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
-          <Link to="/" style={{ color: 'var(--pe-text-muted)', textDecoration: 'none', fontSize: '22px' }}>←</Link>
-          <img src="/logo.jpeg" alt="DartEvent" style={{ height: '38px' }} />
-        </div>
 
         {/* Erfolgs-Card */}
         <div style={{ background: 'var(--pe-bg-card)', border: '2px solid var(--pe-success)', borderRadius: '16px', padding: '24px', marginBottom: '16px', textAlign: 'center' }}>
@@ -121,7 +117,7 @@ export default function PlayerRegistrationPage() {
 
         <Link
           to="/"
-          style={{ display: 'block', textAlign: 'center', padding: '16px', borderRadius: '12px', background: 'var(--pe-gradient)', color: '#fff', textDecoration: 'none', fontWeight: 'bold', fontSize: '16px', minHeight: '56px', lineHeight: '24px' }}
+          style={{ display: 'block', textAlign: 'center', padding: '16px', borderRadius: '12px', background: 'var(--pe-gradient)', color: 'var(--pe-text)', textDecoration: 'none', fontWeight: 'bold', fontSize: '16px', minHeight: '56px', lineHeight: '24px' }}
         >
           Zur Turnier-Übersicht
         </Link>
@@ -133,11 +129,6 @@ export default function PlayerRegistrationPage() {
   return (
     <div style={{ minHeight: '100vh', padding: '20px', maxWidth: '480px', margin: '0 auto', fontFamily: 'Verdana, Geneva, sans-serif', boxSizing: 'border-box' }}>
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <Link to={`/tournament/${id}`} style={{ color: 'var(--pe-text-muted)', textDecoration: 'none', fontSize: '22px' }}>←</Link>
-        <img src="/logo.jpeg" alt="DartEvent" style={{ height: '38px' }} />
-      </div>
 
       {/* Turnier-Info */}
       {tournament && (
@@ -203,7 +194,7 @@ export default function PlayerRegistrationPage() {
           disabled={submitting || !canSubmit || (tournament && tournament.status !== 'open')}
           style={{
             background: canSubmit ? 'var(--pe-gradient)' : 'var(--pe-bg-elevated)',
-            color: '#fff',
+            color: 'var(--pe-text)',
             border: 'none',
             borderRadius: '12px',
             fontSize: '16px',
