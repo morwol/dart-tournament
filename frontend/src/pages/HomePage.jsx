@@ -112,7 +112,7 @@ export default function HomePage() {
         ) : (
           <>
             {/* NEU: Aktuelles Turnier Card */}
-            <div style={styles.tournamentCard}>
+            <div className="pe-card-interactive" style={styles.tournamentCard}>
               <div style={styles.tournamentHeader}>
                 <div>
                   <h2 style={styles.tournamentName}>{activeTournament.name}</h2>
@@ -177,7 +177,7 @@ export default function HomePage() {
                     placeholder="Spieler suchen..."
                     value={playerSearch}
                     onChange={e => setPlayerSearch(e.target.value)}
-                    style={{ width: '100%', boxSizing: 'border-box', marginBottom: 10, padding: '12px 14px', borderRadius: 10, border: '1px solid var(--pe-border)', background: 'var(--pe-bg-card)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif', fontSize: 14, outline: 'none' }}
+                    style={{ width: '100%', boxSizing: 'border-box', marginBottom: 10, padding: '12px 14px', borderRadius: 10, border: '1px solid var(--pe-border)', background: 'var(--pe-bg-card)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif', fontSize: 14, outline: 'none', minHeight: '64px' }}
                   />
                 )}
               <div style={styles.playerGrid}>
@@ -193,7 +193,7 @@ export default function HomePage() {
                   players.filter(p => p.name.toLowerCase().includes(playerSearch.toLowerCase())).map((player) => {
                     const stats = getPlayerStats(player);
                     return (
-                      <div key={player.id} style={styles.playerCard}>
+                      <div key={player.id} className="pe-card-interactive" style={styles.playerCard}>
                         <div style={styles.playerName}>{player.name}</div>
                         <div style={styles.playerStatsRow}>
                           <div style={styles.playerStat}>
@@ -233,6 +233,7 @@ export default function HomePage() {
                       <Link
                         key={board.id}
                         to={`/board/${board.number}`}
+                        className="pe-card-interactive"
                         style={styles.boardCard}
                       >
                         <div style={styles.boardHeader}>
@@ -274,7 +275,7 @@ export default function HomePage() {
             {activeTab === 'groups' && groups && (
               <div style={styles.groupsList}>
                 {(Array.isArray(groups) ? groups : []).map((group, idx) => (
-                  <div key={idx} style={styles.groupCard}>
+                  <div key={idx} className="pe-card-interactive" style={styles.groupCard}>
                     <h3 style={styles.groupName}>{group.name || `Gruppe ${idx + 1}`}</h3>
                     <table style={styles.groupTable}>
                       <colgroup>
@@ -330,6 +331,7 @@ export default function HomePage() {
                     <Link
                       key={t.id}
                       to={`/tournament/${t.id}`}
+                      className="pe-card-interactive"
                       style={styles.otherTournamentCard}
                     >
                       <div>
@@ -357,10 +359,10 @@ export default function HomePage() {
 
       {/* NEU: Floating Action Buttons */}
       <div style={styles.fab}>
-        <Link to="/nfc" style={styles.fabButton} title="NFC Scan">
+        <Link to="/nfc" className="pe-btn" style={styles.fabButton} title="NFC Scan">
           NFC
         </Link>
-        <Link to="/admin" style={styles.fabButton} title="Admin">
+        <Link to="/admin" className="pe-btn" style={styles.fabButton} title="Admin">
           &#9881;
         </Link>
       </div>
@@ -388,7 +390,7 @@ function FetchBracket({ tournamentId }) {
 // NEU: Styles
 const styles = {
   header: {
-    background: 'linear-gradient(135deg, #5DD5FF, #1E7FEB, #1A4FD6)',
+    background: 'var(--pe-gradient)',
     padding: '20px 16px',
     display: 'flex',
     alignItems: 'center',
