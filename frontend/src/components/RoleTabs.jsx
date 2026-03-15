@@ -5,11 +5,11 @@ import { useStore } from '../store';
 const TABS = {
   public:     [
     { label: 'Home',    path: '/' },
-    { label: 'Turnier', path: '/tournament' },
+    { label: 'Turnier', path: '/' },
   ],
   referee:    [
     { label: 'Boards',  path: '/referee' },
-    { label: 'Turnier', path: '/tournament' },
+    { label: 'Turnier', path: '/' },
   ],
   gastronomy: [
     { label: 'Bestellungen', path: '/gastronomy' },
@@ -17,15 +17,13 @@ const TABS = {
     { label: 'NFC',          path: '/nfc-scan' },
   ],
   admin: [
-    { label: 'Home',    path: '/' },
-    { label: 'Turnier', path: '/tournament' },
-    { label: 'Boards',  path: '/admin?tab=boards' },
-    { label: 'Gastro',  path: '/gastronomy' },
-    { label: 'Admin',   path: '/admin' },
+    { label: 'Home',   path: '/' },
+    { label: 'Boards', path: '/admin?tab=boards' },
+    { label: 'Gastro', path: '/gastronomy' },
+    { label: 'Admin',  path: '/admin' },
   ],
   director: [
     { label: 'Home',    path: '/' },
-    { label: 'Turnier', path: '/tournament' },
     { label: 'Boards',  path: '/admin?tab=boards' },
     { label: 'Spieler', path: '/admin?tab=players' },
   ],
