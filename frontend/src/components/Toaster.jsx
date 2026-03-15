@@ -136,8 +136,6 @@ function Toast({ toast, onDismiss }) {
 export default function Toaster() {
   const { toasts, removeToast } = useToastStore();
 
-  if (toasts.length === 0) return null;
-
   return (
     <div
       style={{
