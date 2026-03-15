@@ -68,16 +68,11 @@ export default function TopBar({ isSubPage = false, title = '', onBack }) {
         </button>
       ) : (
         /* Root: logo */
-        <span style={{
-          fontSize: '14px',
-          fontWeight: 'bold',
-          background: 'var(--pe-gradient)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          flexShrink: 0,
-        }}>
-          DartEvent
-        </span>
+        <img
+          src="/logo.png"
+          alt="DartEvent"
+          style={{ height: '32px', flexShrink: 0, objectFit: 'contain' }}
+        />
       )}
 
       {/* Center: page title (sub-page) or spacer (root) */}
@@ -109,9 +104,10 @@ export default function TopBar({ isSubPage = false, title = '', onBack }) {
             onClick={handleLogout}
             title="Abmelden"
             style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
+              padding: '16px 8px',
+              minWidth: '40px',
+              minHeight: '48px',
+              borderRadius: '50px',
               background: 'var(--pe-gradient)',
               border: 'none',
               cursor: 'pointer',
@@ -120,7 +116,7 @@ export default function TopBar({ isSubPage = false, title = '', onBack }) {
               justifyContent: 'center',
               fontSize: '11px',
               fontWeight: 'bold',
-              color: 'white',
+              color: 'var(--pe-text)',
               fontFamily: 'Verdana, Geneva, sans-serif',
               transition: 'opacity 150ms ease',
             }}
