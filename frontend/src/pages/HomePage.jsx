@@ -98,11 +98,6 @@ export default function HomePage() {
 
   return (
     <div style={{ minHeight: '100vh', fontFamily: 'Verdana, Geneva, sans-serif' }}>
-      {/* NEU: Header */}
-      <div style={styles.header}>
-        <img src="/logo.jpeg" alt="DartEvent" style={styles.logo} />
-        <h1 style={styles.title}>DartEvent Manager</h1>
-      </div>
 
       <div style={styles.content}>
         {loading ? (
@@ -357,15 +352,6 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* NEU: Floating Action Buttons */}
-      <div style={styles.fab}>
-        <Link to="/nfc" className="pe-btn" style={styles.fabButton} title="NFC Scan">
-          NFC
-        </Link>
-        <Link to="/admin" className="pe-btn" style={styles.fabButton} title="Admin">
-          &#9881;
-        </Link>
-      </div>
     </div>
   );
 }
