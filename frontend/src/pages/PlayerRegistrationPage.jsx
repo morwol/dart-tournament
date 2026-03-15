@@ -117,7 +117,7 @@ export default function PlayerRegistrationPage() {
 
         <Link
           to="/"
-          style={{ display: 'block', textAlign: 'center', padding: '16px', borderRadius: '12px', background: 'var(--pe-gradient)', color: '#fff', textDecoration: 'none', fontWeight: 'bold', fontSize: '16px', minHeight: '56px', lineHeight: '24px' }}
+          style={{ display: 'block', textAlign: 'center', padding: '16px', borderRadius: '12px', background: 'var(--pe-gradient)', color: 'var(--pe-text)', textDecoration: 'none', fontWeight: 'bold', fontSize: '16px', minHeight: '56px', lineHeight: '24px' }}
         >
           Zur Turnier-Übersicht
         </Link>
@@ -194,7 +194,7 @@ export default function PlayerRegistrationPage() {
           disabled={submitting || !canSubmit || (tournament && tournament.status !== 'open')}
           style={{
             background: canSubmit ? 'var(--pe-gradient)' : 'var(--pe-bg-elevated)',
-            color: '#fff',
+            color: 'var(--pe-text)',
             border: 'none',
             borderRadius: '12px',
             fontSize: '16px',
