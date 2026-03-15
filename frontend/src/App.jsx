@@ -8,18 +8,12 @@ import OrderPage from './pages/OrderPage';
 import AdminPage from './pages/AdminPage';
 // NEU: Board-Ansicht importieren
 import CurrentGameView from './pages/CurrentGameView';
+import { parseJwt } from './lib/parseJwt';
 
 // NEU: Lazy imports für Seiten die von frontend-referee-admin erstellt werden
 const RefereePage = lazy(() => import('./pages/RefereePage'));
 const GastronomyPage = lazy(() => import('./pages/GastronomyPage'));
 const CancelRegistrationPage = lazy(() => import('./pages/CancelRegistrationPage'));
-
-// NEU: JWT Payload dekodieren (ohne Verifikation — Verifikation passiert im Backend)
-function parseJwt(token) {
-  try {
-    return JSON.parse(atob(token.split('.')[1]));
-  } catch { return null; }
-}
 
 // NEU: Protected Route mit Rollenprüfung
 function ProtectedRoute({ element, roles }) {
