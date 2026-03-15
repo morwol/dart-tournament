@@ -436,7 +436,21 @@ Add import and `const { addToast } = useToastStore();` inside the component, the
 
 - [ ] **Step 2: Apply changes to RefereePage.jsx**
 
-Add import and `const { addToast } = useToastStore();` inside the component, then replace all 5 `alert()` calls.
+Add import at top of file:
+```js
+import { useToastStore } from '../store/toasts';
+```
+
+**IMPORTANT:** RefereePage.jsx contains multiple top-level sub-component functions. Add `const { addToast } = useToastStore();` individually inside each function that has an `alert()` call:
+
+| Function | Defined at line | alert() calls at lines |
+|----------|-----------------|----------------------|
+| `BulloffPanel` | ~85 | 104 |
+| `GameQueue` | ~402 | 421 |
+| `TabletLayout` | ~556 | 573 |
+| `RefereePage` | ~878 | 946, 956 |
+
+Then replace all 5 `alert()` calls per the table above.
 
 - [ ] **Step 3: Verify no alert() remains in these files**
 
