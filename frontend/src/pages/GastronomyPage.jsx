@@ -120,19 +120,19 @@ export default function GastronomyPage() {
   // Erfolgsmeldung nach Abrechnung
   const [settledIds, setSettledIds] = useState(new Set());
 
-  if (!token) return <GastronomyLogin onLogin={setToken} />;
-
   // NEU: Produkte + Gäste laden
   useEffect(() => {
+    if (!token) return;
     api.get('/products').then(setProducts).catch(() => {});
     api.get('/nfc/guests').then(setAllGuests).catch(() => {});
-  }, []);
+  }, [token]);
 
   // NEU: Offene Bestellungen des ausgewählten Gastes laden
   useEffect(() => {
+    if (!token) return;
     if (!guest) { setGuestOpenOrders(null); return; }
     api.get(`/orders/guest/${guest.id}`).then(setGuestOpenOrders).catch(() => setGuestOpenOrders(null));
-  }, [guest]);
+  }, [token, guest]);
 
   // NEU: NFC-Scan Handler
   const handleNFCScan = async (uid) => {
@@ -264,11 +264,14 @@ export default function GastronomyPage() {
 
   // NEU: Auto-Refresh Kassen-Ansicht alle 10 Sekunden
   useEffect(() => {
+    if (!token) return;
     if (view !== 'register') return;
     loadRegister();
     const interval = setInterval(loadRegister, 10000);
     return () => clearInterval(interval);
-  }, [view, loadRegister]);
+  }, [token, view, loadRegister]);
+
+  if (!token) return <GastronomyLogin onLogin={setToken} />;
 
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const filteredProducts = productFilter === 'all'
