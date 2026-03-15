@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import TournamentPage from './pages/TournamentPage';
 import PlayerRegistrationPage from './pages/PlayerRegistrationPage';
@@ -19,9 +19,9 @@ const CancelRegistrationPage = lazy(() => import('./pages/CancelRegistrationPage
 // NEU: Protected Route mit Rollenprüfung
 function ProtectedRoute({ element, roles }) {
   const token = localStorage.getItem('token');
-  if (!token) return null;
+  if (!token) return <Navigate to="/" replace />;
   const payload = parseJwt(token);
-  if (!payload || (roles && !roles.includes(payload.role))) return null;
+  if (!payload || (roles && !roles.includes(payload.role))) return <Navigate to="/" replace />;
   return element;
 }
 
@@ -83,7 +83,7 @@ export default function App() {
         </Route>
 
         {/* ── Standalone routes: no shell ── */}
-        <Route path="/admin/users" element={<AdminPage tab="users" />} />
+        <Route path="/admin/users" element={<ProtectedRoute element={<AdminPage tab="users" />} roles={['admin', 'director']} />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/board/:boardId" element={<CurrentGameView />} />
         <Route path="/nfc" element={<NFCScanPage />} />
