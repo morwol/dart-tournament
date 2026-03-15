@@ -57,6 +57,8 @@ export default function TopBar({ isSubPage = false, title = '', onBack }) {
             color: 'var(--pe-text-sub)',
             fontSize: '22px',
             flexShrink: 0,
+            alignSelf: 'stretch',
+            width: '64px',
             transition: 'color 150ms ease',
             borderRadius: '8px',
             margin: '0 0 0 -12px',
@@ -105,8 +107,8 @@ export default function TopBar({ isSubPage = false, title = '', onBack }) {
             title="Abmelden"
             style={{
               padding: '16px 8px',
-              minWidth: '40px',
-              minHeight: '48px',
+              minWidth: '64px',
+              minHeight: '64px',
               borderRadius: '50px',
               background: 'var(--pe-gradient)',
               border: 'none',

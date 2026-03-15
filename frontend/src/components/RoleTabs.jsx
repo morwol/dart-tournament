@@ -90,7 +90,7 @@ export default function RoleTabs() {
               fontWeight: active ? 'bold' : 'normal',
               color: active ? 'var(--pe-cyan-bright)' : 'var(--pe-text-muted)',
               whiteSpace: 'nowrap',
-              transition: 'color 150ms ease, border-color 150ms ease',
+              transition: 'color 200ms ease, border-color 200ms ease',
               fontFamily: 'Verdana, Geneva, sans-serif',
             }}
             onMouseEnter={e => { if (!active) e.currentTarget.style.color = 'var(--pe-text-sub)'; }}
