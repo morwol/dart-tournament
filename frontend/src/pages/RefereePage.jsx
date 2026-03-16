@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useToastStore } from '../store/toasts';
 import { useStore } from '../store';
@@ -28,6 +28,87 @@ function useTabletLandscape() {
     return () => window.removeEventListener('resize', h);
   }, []);
   return is;
+}
+
+// Emergency logout — fixed ⚙ button, visible in full-screen scoring view (no AppShell)
+function EmergencyLogout() {
+  const { logout } = useStore();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
+  }, [open]);
+
+  const handleLogout = () => {
+    setOpen(false);
+    logout();
+    navigate('/referee');
+  };
+
+  return (
+    <div ref={ref} style={{ position: 'fixed', top: '12px', right: '12px', zIndex: 200 }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        aria-label="Menü öffnen"
+        style={{
+          width: '44px', height: '44px',
+          borderRadius: '50%',
+          background: 'var(--pe-bg-elevated)',
+          border: '1px solid var(--pe-border)',
+          color: 'var(--pe-text-muted)',
+          fontSize: '18px',
+          cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: 'Verdana, Geneva, sans-serif',
+        }}
+      >
+        ⚙
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+          background: 'var(--pe-bg-elevated)',
+          border: '1px solid var(--pe-border)',
+          borderRadius: '12px',
+          padding: '8px',
+          minWidth: '140px',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+          fontFamily: 'Verdana, Geneva, sans-serif',
+        }}>
+          <button
+            onClick={handleLogout}
+            style={{
+              width: '100%', minHeight: '44px',
+              padding: '10px 12px',
+              background: 'none',
+              border: '1px solid var(--pe-border)',
+              borderRadius: '8px',
+              color: 'var(--pe-danger)',
+              cursor: 'pointer',
+              fontSize: '13px', fontWeight: 'bold',
+              fontFamily: 'Verdana, Geneva, sans-serif',
+              textAlign: 'left',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,69,96,0.1)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+          >
+            Abmelden
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Shared styles ──────────────────────────────────────────────────────────
@@ -537,6 +618,7 @@ function TabletLayout({ boardId, boardNumber, selectedGameId, setSelectedGameId,
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: 'Verdana, Geneva, sans-serif', background: 'var(--pe-bg)' }}>
+      <EmergencyLogout />
 
       {/* ── LEFT PANEL ── */}
       <div style={{ width: '360px', minWidth: '320px', flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'var(--pe-bg-card)', borderRight: '1px solid var(--pe-border)', overflow: 'hidden', overflowX: 'hidden' }}>
@@ -703,6 +785,7 @@ function PhoneLayout({ boardId, boardNumber, selectedGameId, setSelectedGameId, 
 
   return (
     <div style={{ minHeight: '100vh', padding: '12px', maxWidth: '480px', margin: '0 auto', fontFamily: 'Verdana, Geneva, sans-serif', boxSizing: 'border-box' }}>
+      <EmergencyLogout />
 
       {/* Board indicator */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
