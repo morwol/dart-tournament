@@ -554,7 +554,7 @@ export default function GastronomyPage() {
                           <button
                             onClick={() => removeFromCart(item.product_id)}
                             className="rounded-full flex items-center justify-center text-xs font-bold"
-                            style={{ background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', fontFamily: 'Verdana, Geneva, sans-serif', width: '40px', height: '40px', minWidth: '40px', padding: '10px', boxSizing: 'content-box' }}
+                            style={{ background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', fontFamily: 'Verdana, Geneva, sans-serif', width: '44px', height: '44px', minWidth: '44px', padding: '10px', boxSizing: 'content-box' }}
                           >
                             -
                           </button>
