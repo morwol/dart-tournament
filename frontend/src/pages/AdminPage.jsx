@@ -192,7 +192,7 @@ function BoardsTab() {
       )}
 
       {isDesktop ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', maxWidth: '900px', margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
           {boards.map((b) => {
             const isFinalDisabled = !b.is_final && boards.some(x => x.is_final && x.id !== b.id);
             return (
@@ -508,7 +508,7 @@ function PlayersTab() {
       )}
 
       {isDesktop ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', maxWidth: '1100px', margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
           {players.map((p) => {
             const isExpanded = editingPlayer?.id === p.id;
             const hasWalkon = p.walkon_url || p.walkon_youtube;
@@ -734,7 +734,7 @@ function UsersTab() {
       )}
 
       {isDesktop ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', maxWidth: '900px', margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
           {users.map((u) => {
             const badge = ROLE_BADGE_STYLES[u.role] || { color: 'var(--pe-text-muted)', bg: 'rgba(90,115,148,0.15)', border: 'var(--pe-border)' };
             const isExpanded = editId === u.id;
