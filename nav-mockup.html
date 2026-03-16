@@ -550,6 +550,92 @@ body {
 .ref-act-btn.undo    { background: rgba(255,69,96,0.1); border-color: rgba(255,69,96,0.3); color: var(--pe-danger); }
 .ref-act-btn.confirm { background: var(--pe-blue-deep); border-color: var(--pe-blue-mid);  color: var(--pe-text); }
 
+/* ─── BOARD QUEUE CHIP (access from score view) ─── */
+.ref-queue-chip {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  background: rgba(0,184,255,0.1);
+  border: 1px solid rgba(0,184,255,0.25);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: bold;
+  color: var(--pe-cyan-bright);
+  cursor: pointer;
+  z-index: 5;
+  white-space: nowrap;
+}
+
+/* ─── BOARD QUEUE SCREEN ─── */
+.ref-queue-header {
+  background: var(--pe-bg-card);
+  border-bottom: 1px solid var(--pe-border);
+  padding: 14px 14px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.ref-queue-back {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--pe-bg-elevated);
+  border: 1px solid var(--pe-border);
+  color: var(--pe-text-sub);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ref-queue-title { font-size: 14px; font-weight: bold; color: var(--pe-text); flex: 1; }
+.ref-queue-list  { flex: 1; overflow-y: auto; padding: 12px; background: var(--pe-bg); }
+.ref-game-card {
+  background: var(--pe-bg-card);
+  border: 1px solid var(--pe-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ref-game-card.current {
+  border-color: var(--pe-cyan-bright);
+  background: rgba(0,184,255,0.05);
+}
+.ref-game-card.missing {
+  border-color: var(--pe-warning);
+  background: rgba(255,176,32,0.05);
+}
+.ref-game-info   { flex: 1; min-width: 0; }
+.ref-game-round  { font-size: 10px; color: var(--pe-text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+.ref-game-players { font-size: 13px; font-weight: bold; color: var(--pe-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ref-game-status { font-size: 10px; margin-top: 4px; font-weight: bold; }
+.ref-game-start {
+  flex-shrink: 0;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: none;
+  background: var(--pe-blue-deep);
+  color: var(--pe-text);
+  font-family: Verdana, Geneva, sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ref-game-start:disabled {
+  background: var(--pe-bg-elevated);
+  color: var(--pe-text-muted);
+  border: 1px solid var(--pe-border);
+  cursor: default;
+}
+
 /* ─── LOGIN SCREEN ─── */
 .login-screen {
   flex: 1;
@@ -674,6 +760,7 @@ body {
     <button class="ctrl-btn"        id="s-ref-login"     onclick="setScreen('ref-login')">Referee Login</button>
     <button class="ctrl-btn"        id="s-ref-picker"    onclick="setScreen('ref-picker')">Board Picker</button>
     <button class="ctrl-btn"        id="s-ref-board"     onclick="setScreen('ref-board')">Board (Score)</button>
+    <button class="ctrl-btn"        id="s-ref-queue"     onclick="setScreen('ref-queue')">Board Queue</button>
   </div>
 </div>
 
@@ -790,8 +877,9 @@ const NOTES = {
     home:      'Referee-Rolle — Boards-Übersicht nach Login. Gleicher AppShell wie alle anderen: TopBar mit Logo + Referee-Pill + Avatar. Mobile: Bottom-Nav mit "Boards" + "Turnier". Desktop: Top-Nav. KEIN eigener interner Header in der Page.',
     subpage:   'Sub-Pages für Referee: TopBar mit ← Zurück. Bottom-Nav bleibt. Nur relevant falls Referee Turnier-Details ansehen will.',
     'ref-login':  '⚡ STANDALONE — kein AppShell, kein TopBar, kein Nav. Nur Logo + Login-Formular. Einstiegspunkt /referee — dort landet der Referee zuerst. Nach erfolgreichem Login → Board Picker.',
-    'ref-picker': 'Board-Picker nach Login: Minimale Shell — TopBar (Logo + Avatar), KEIN Bottom-Nav, KEINE Top-Nav. Nur Liste der Boards. Wahl eines Boards → /referee/:boardId.',
-    'ref-board':  '🔴 ABSOLUT KEIN HEADER, KEIN NAV — volle Bildschirmfläche für Score-Eingabe! Referee verlässt diesen Screen nie. Einziger Ausweg: kleiner diskreter "verlassen"-Link ganz unten (opacity 50%, kaum sichtbar). Kein Chrome das ablenkt.',
+    'ref-picker': 'Board-Picker nach Login: Minimale Shell — TopBar (Logo + Avatar), KEIN Bottom-Nav. Jedes Board zeigt: Spielstatus + wer Referee ist (falls belegt). Belegte Boards sind rot markiert und nicht anklickbar → verhindert Doppelbelegung. Freie Boards mit Cyan-Border hervorgehoben.',
+    'ref-board':  '🔴 KEIN HEADER, KEIN NAV — volle Fläche für Score-Eingabe. Kleiner "📋 3 Spiele"-Chip oben links: dezent, aber erreichbar → öffnet die Spiele-Queue. Spieler-Cards zeigen wer Anwurf hatte und wer gerade wirft.',
+    'ref-queue':  'Spiele-Queue für das Board: kein TopBar, kein Nav — gleiche Logik wie Score-Screen. ← Zurück bringt zurück zur Scoreingabe. Liste zeigt alle Spiele des Boards: läuft / bereit / Spieler fehlt / noch nicht dran. "Starten"-Button für bereite Spiele, "Überspringen" wenn Spieler fehlt.',
   },
   gastronomy: {
     home:      'Gastro-Ansicht: AppShell TopBar mit Logo + Gastro-Pill + Avatar. Mobile: Bottom-Nav mit 3 Items (Bestellung | Kasse | NFC). Desktop: 4 Items (+Produkte). KEIN doppelter interner Header mehr — der aktuelle GastronomyPage-eigene Header wird entfernt. Navigation NUR via AppShell.',
@@ -960,17 +1048,99 @@ function refPickerContent() {
   return `
     <div class="content-area" style="padding-bottom:24px;">
       <p style="font-size:10px;color:var(--pe-text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;">Board auswählen</p>
-      <div class="board-card">
-        <div><div class="board-num">Board 1</div><div class="board-name">Hauptscheibe</div></div>
-        <span class="badge" style="background:rgba(0,229,160,0.15);color:var(--pe-success);border:1px solid var(--pe-success);">Aktiv</span>
+
+      <!-- Board 1: active game + referee already assigned → blocked -->
+      <div class="board-card" style="border-color:var(--pe-danger);opacity:0.7;cursor:not-allowed;">
+        <div style="flex:1;min-width:0;">
+          <div class="board-num">Board 1</div>
+          <div class="board-name">Hauptscheibe</div>
+          <div style="font-size:11px;color:var(--pe-success);margin-top:4px;">● Müller vs Schmidt läuft</div>
+          <div style="font-size:11px;color:var(--pe-danger);margin-top:2px;">🔒 Referee: Huber</div>
+        </div>
+        <span class="badge" style="background:rgba(255,69,96,0.12);color:var(--pe-danger);border:1px solid rgba(255,69,96,0.3);flex-shrink:0;">Belegt</span>
       </div>
-      <div class="board-card">
-        <div><div class="board-num">Board 2</div><div class="board-name">Nebenraum</div></div>
-        <span class="badge" style="background:rgba(255,176,32,0.15);color:var(--pe-warning);border:1px solid var(--pe-warning);">Warten</span>
+
+      <!-- Board 2: game waiting, no referee yet → available -->
+      <div class="board-card" style="border-color:var(--pe-cyan-bright);">
+        <div style="flex:1;min-width:0;">
+          <div class="board-num">Board 2</div>
+          <div class="board-name">Nebenraum</div>
+          <div style="font-size:11px;color:var(--pe-warning);margin-top:4px;">⏳ Fischer vs Wagner wartet</div>
+          <div style="font-size:11px;color:var(--pe-text-muted);margin-top:2px;">Kein Referee zugewiesen</div>
+        </div>
+        <span class="badge" style="background:rgba(0,184,255,0.12);color:var(--pe-cyan-bright);border:1px solid rgba(0,184,255,0.3);flex-shrink:0;">Frei</span>
       </div>
+
+      <!-- Board 3: idle, no referee -->
       <div class="board-card">
-        <div><div class="board-num">Board 3</div><div class="board-name"> </div></div>
-        <span class="badge" style="background:rgba(90,115,148,0.15);color:var(--pe-text-muted);border:1px solid var(--pe-text-muted);">Frei</span>
+        <div style="flex:1;min-width:0;">
+          <div class="board-num">Board 3</div>
+          <div class="board-name"> </div>
+          <div style="font-size:11px;color:var(--pe-text-muted);margin-top:4px;">Kein aktives Spiel</div>
+          <div style="font-size:11px;color:var(--pe-text-muted);margin-top:2px;">Kein Referee zugewiesen</div>
+        </div>
+        <span class="badge" style="background:rgba(90,115,148,0.12);color:var(--pe-text-muted);border:1px solid var(--pe-border);flex-shrink:0;">Frei</span>
+      </div>
+    </div>
+  `;
+}
+
+function refQueueContent() {
+  return `
+    <div class="ref-board">
+      <!-- Header with back to score entry -->
+      <div class="ref-queue-header">
+        <button class="ref-queue-back" onclick="setScreen('ref-board')">←</button>
+        <span class="ref-queue-title">Board 1 — Spiele</span>
+        <span class="ref-no-nav-tag" style="position:static;top:auto;right:auto;">KEIN NAV</span>
+      </div>
+
+      <div class="ref-queue-list">
+
+        <!-- Currently active game -->
+        <p style="font-size:10px;color:var(--pe-text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Aktuell</p>
+        <div class="ref-game-card current">
+          <div class="ref-game-info">
+            <div class="ref-game-round">Runde 1</div>
+            <div class="ref-game-players">Müller vs Schmidt</div>
+            <div class="ref-game-status" style="color:var(--pe-cyan-bright);">● Läuft gerade</div>
+          </div>
+          <button class="ref-game-start" disabled>Läuft</button>
+        </div>
+
+        <!-- Queue -->
+        <p style="font-size:10px;color:var(--pe-text-muted);text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px;">Warteschlange</p>
+
+        <!-- Ready game -->
+        <div class="ref-game-card">
+          <div class="ref-game-info">
+            <div class="ref-game-round">Runde 1</div>
+            <div class="ref-game-players">Fischer vs Wagner</div>
+            <div class="ref-game-status" style="color:var(--pe-success);">✓ Beide Spieler bereit</div>
+          </div>
+          <button class="ref-game-start">Starten</button>
+        </div>
+
+        <!-- Missing player -->
+        <div class="ref-game-card missing">
+          <div class="ref-game-info">
+            <div class="ref-game-round">Runde 1</div>
+            <div class="ref-game-players">Bauer vs Krause</div>
+            <div class="ref-game-status" style="color:var(--pe-warning);">⚠ Krause nicht anwesend</div>
+          </div>
+          <button class="ref-game-start">Überspringen</button>
+        </div>
+
+        <!-- Waiting, another board -->
+        <div class="ref-game-card">
+          <div class="ref-game-info">
+            <div class="ref-game-round">Runde 2</div>
+            <div class="ref-game-players">Koch vs Richter</div>
+            <div class="ref-game-status" style="color:var(--pe-text-muted);">Wartet auf Runde 1</div>
+          </div>
+          <button class="ref-game-start" disabled>Nicht bereit</button>
+        </div>
+
       </div>
     </div>
   `;
@@ -983,6 +1153,9 @@ function refBoardContent() {
   return `
     <div class="ref-board">
       <div class="ref-no-nav-tag">KEIN HEADER · KEIN NAV</div>
+
+      <!-- Queue access chip — low-profile, always reachable -->
+      <div class="ref-queue-chip" onclick="setScreen('ref-queue')">📋 3 Spiele</div>
 
       <!-- Player Cards: Anwurf-Badge + Am-Zug-Badge + Score -->
       <div class="ref-player-cards">
@@ -1054,6 +1227,10 @@ function renderMobile() {
     el.innerHTML = refBoardContent();
     return;
   }
+  if (screen === 'ref-queue') {
+    el.innerHTML = refQueueContent();
+    return;
+  }
 
   const isSub  = screen === 'subpage';
   const inner  = isSub ? subpageContent() : homeContent(role);
@@ -1077,9 +1254,9 @@ function renderDesktop() {
       <div style="flex:1;padding:24px;background:var(--pe-bg);">
         <p style="font-size:10px;color:var(--pe-text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;">Board auswählen</p>
         <div style="max-width:440px;">
-          <div class="board-card"><div><div class="board-num">Board 1</div><div class="board-name">Hauptscheibe</div></div><span class="badge" style="background:rgba(0,229,160,0.15);color:var(--pe-success);border:1px solid var(--pe-success);">Aktiv</span></div>
-          <div class="board-card"><div><div class="board-num">Board 2</div><div class="board-name">Nebenraum</div></div><span class="badge" style="background:rgba(255,176,32,0.15);color:var(--pe-warning);border:1px solid var(--pe-warning);">Warten</span></div>
-          <div class="board-card"><div><div class="board-num">Board 3</div></div><span class="badge" style="background:rgba(90,115,148,0.15);color:var(--pe-text-muted);border:1px solid var(--pe-text-muted);">Frei</span></div>
+          <div class="board-card" style="border-color:var(--pe-danger);opacity:0.7;cursor:not-allowed;"><div style="flex:1;"><div class="board-num">Board 1</div><div class="board-name">Hauptscheibe</div><div style="font-size:11px;color:var(--pe-success);margin-top:3px;">● Müller vs Schmidt</div><div style="font-size:11px;color:var(--pe-danger);margin-top:2px;">🔒 Referee: Huber</div></div><span class="badge" style="background:rgba(255,69,96,0.12);color:var(--pe-danger);border:1px solid rgba(255,69,96,0.3);">Belegt</span></div>
+          <div class="board-card" style="border-color:var(--pe-cyan-bright);"><div style="flex:1;"><div class="board-num">Board 2</div><div class="board-name">Nebenraum</div><div style="font-size:11px;color:var(--pe-warning);margin-top:3px;">⏳ Fischer vs Wagner</div><div style="font-size:11px;color:var(--pe-text-muted);margin-top:2px;">Kein Referee</div></div><span class="badge" style="background:rgba(0,184,255,0.12);color:var(--pe-cyan-bright);border:1px solid rgba(0,184,255,0.3);">Frei</span></div>
+          <div class="board-card"><div style="flex:1;"><div class="board-num">Board 3</div><div style="font-size:11px;color:var(--pe-text-muted);margin-top:3px;">Kein aktives Spiel</div><div style="font-size:11px;color:var(--pe-text-muted);margin-top:2px;">Kein Referee</div></div><span class="badge" style="background:rgba(90,115,148,0.12);color:var(--pe-text-muted);border:1px solid var(--pe-border);">Frei</span></div>
         </div>
       </div>
     `;
@@ -1087,6 +1264,10 @@ function renderDesktop() {
   }
   if (screen === 'ref-board') {
     el.innerHTML = `<div style="display:flex;flex-direction:column;flex:1;position:relative;">${refBoardContent()}</div>`;
+    return;
+  }
+  if (screen === 'ref-queue') {
+    el.innerHTML = `<div style="display:flex;flex-direction:column;flex:1;">${refQueueContent()}</div>`;
     return;
   }
 
