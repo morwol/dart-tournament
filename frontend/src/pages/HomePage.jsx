@@ -110,7 +110,30 @@ export default function HomePage() {
         {loading ? (
           <p style={{ color: 'var(--pe-text-sub)', textAlign: 'center' }}>Lade Turniere...</p>
         ) : !activeTournament ? (
-          <p style={{ color: 'var(--pe-text-sub)', textAlign: 'center' }}>Keine Turniere vorhanden.</p>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ color: 'var(--pe-text-sub)', marginBottom: 24 }}>Keine Turniere vorhanden.</p>
+            <Link
+              to="/history"
+              className="pe-card-interactive"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '16px 24px',
+                borderRadius: 12,
+                background: 'var(--pe-bg-card)',
+                border: '1px solid var(--pe-border)',
+                textDecoration: 'none',
+                minHeight: 64,
+                color: 'var(--pe-text)',
+                fontSize: 15,
+                fontWeight: 'bold',
+              }}
+            >
+              <span style={{ fontSize: 22 }}>📜</span>
+              Turnier-Archiv
+            </Link>
+          </div>
         ) : (
           <>
             {/* NEU: Aktuelles Turnier Card */}
@@ -355,6 +378,39 @@ export default function HomePage() {
                   ))}
               </div>
             )}
+
+            {/* NEU: Turnier-Archiv Link */}
+            <div style={{ marginTop: 24 }}>
+              <h3 style={styles.sectionTitle}>Archiv</h3>
+              <Link
+                to="/history"
+                className="pe-card-interactive"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '16px 18px',
+                  borderRadius: 12,
+                  background: 'var(--pe-bg-card)',
+                  border: '1px solid var(--pe-border)',
+                  textDecoration: 'none',
+                  minHeight: 64,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 22 }}>📜</span>
+                  <div>
+                    <span style={{ fontSize: 15, fontWeight: 'bold', color: 'var(--pe-text)', display: 'block' }}>
+                      Turnier-Archiv
+                    </span>
+                    <span style={{ fontSize: 12, color: 'var(--pe-text-sub)' }}>
+                      Vergangene Turniere &amp; Statistiken
+                    </span>
+                  </div>
+                </div>
+                <span style={{ fontSize: 18, color: 'var(--pe-text-muted)' }}>›</span>
+              </Link>
+            </div>
           </>
         )}
       </div>
