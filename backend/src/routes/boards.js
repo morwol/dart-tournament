@@ -160,7 +160,12 @@ router.put('/:id/final', requireAdminOrDirector, (req, res) => {
   if (!board) return res.status(404).json({ error: 'Scheibe nicht gefunden' });
 
   if (is_final) {
-    const existingFinal = db.prepare('SELECT id FROM boards WHERE is_final = 1 AND id != ?').get(req.params.id);
+    let existingFinal;
+    if (board.tournament_id != null) {
+      existingFinal = db.prepare('SELECT id FROM boards WHERE is_final = 1 AND id != ? AND tournament_id = ?').get(req.params.id, board.tournament_id);
+    } else {
+      existingFinal = db.prepare('SELECT id FROM boards WHERE is_final = 1 AND id != ? AND tournament_id IS NULL').get(req.params.id);
+    }
     if (existingFinal) {
       return res.status(400).json({ error: 'Es kann nur ein Final-Board geben. Bitte zuerst das andere Board als Final deaktivieren.' });
     }
