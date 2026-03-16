@@ -332,7 +332,34 @@ function PlayersTab() {
   }, []);
   const [form, setForm] = useState({ vorname: '', nickname: '', nachname: '', walk_on_song: '', walkon_start: 0, walkon_duration: 30 });
   const [editingPlayer, setEditingPlayer] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
   useEffect(() => { setEditingPlayer(null); }, [isDesktop]);
+
+  // Poll every 3s for players whose walk-on is still downloading
+  useEffect(() => {
+    const downloading = Object.entries(walkonStatuses)
+      .filter(([, s]) => s === 'pending' || s === 'downloading')
+      .map(([id]) => Number(id));
+    if (downloading.length === 0) return;
+    const interval = setInterval(async () => {
+      const updates = {};
+      await Promise.all(downloading.map(async (id) => {
+        try {
+          const s = await api.get(`/walkon/${id}/status`);
+          updates[id] = s.status;
+          if (s.status === 'ready') {
+            addToast({ type: 'success', message: 'Walk-On bereit ✓' });
+            setEditingPlayer(prev => prev?.id === id ? null : prev);
+          } else if (s.status === 'error') {
+            addToast({ type: 'error', message: 'Walk-On Download fehlgeschlagen' });
+            setEditingPlayer(prev => prev?.id === id ? null : prev);
+          }
+        } catch { updates[id] = null; }
+      }));
+      setWalkonStatuses(prev => ({ ...prev, ...updates }));
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [walkonStatuses]);
 
   useEffect(() => {
     api.get('/tournaments').then((t) => {
@@ -398,9 +425,9 @@ function PlayersTab() {
   const handleEdit = async (e) => {
     e.preventDefault();
     if (!editingPlayer) return;
+    setIsSaving(true);
     try {
       await api.put(`/tournaments/${selectedTournament}/players/${editingPlayer.id}`, editingPlayer);
-      // Handle walkon: POST if URL set, DELETE if URL cleared
       if (editingPlayer.walk_on_song) {
         try {
           await api.post(`/walkon/${editingPlayer.id}`, {
@@ -408,18 +435,26 @@ function PlayersTab() {
             start: Number(editingPlayer.walkon_start) || 0,
             duration: Number(editingPlayer.walkon_duration) || 30,
           });
+          // Mark as pending immediately — polling effect takes over from here
+          setWalkonStatuses(prev => ({ ...prev, [editingPlayer.id]: 'pending' }));
+          addToast({ type: 'success', message: 'Gespeichert — Walk-On wird geladen…' });
+          // Keep card open so user sees the download progress
         } catch (err) {
-          console.warn('Walk-On Job konnte nicht gestartet werden:', err.message);
+          addToast({ type: 'error', message: 'Walk-On konnte nicht gestartet werden: ' + (err.message || '') });
+          setEditingPlayer(null);
         }
       } else {
         try {
           await api.del(`/walkon/${editingPlayer.id}`);
         } catch { /* ignore if no walkon exists */ }
+        addToast({ type: 'success', message: 'Spieler gespeichert' });
+        setEditingPlayer(null);
       }
-      setEditingPlayer(null);
       await loadPlayers();
     } catch (err) {
       addToast({ type: 'error', message: err.message || 'Spieler konnte nicht gespeichert werden' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -514,7 +549,7 @@ function PlayersTab() {
             </p>
           )}
           <div className="flex gap-2">
-            <button type="submit" className="flex-1 py-2 rounded-lg font-bold" style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>Speichern</button>
+            <button type="submit" disabled={isSaving} className="flex-1 py-2 rounded-lg font-bold" style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif', opacity: isSaving ? 0.7 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>{isSaving ? 'Speichert…' : 'Speichern'}</button>
             <button type="button" onClick={() => setEditingPlayer(null)} className="px-4 py-2 rounded-lg" style={{ background: 'var(--pe-bg-elevated)', color: 'var(--pe-text-sub)', fontFamily: 'Verdana, Geneva, sans-serif' }}>Abbrechen</button>
           </div>
         </form>
@@ -585,9 +620,15 @@ function PlayersTab() {
                     >
                       Löschen
                     </button>
-                    <button type="submit" style={{ ...btnSmall, background: 'var(--pe-gradient)', color: '#fff', borderRadius: '6px', padding: '8px', fontSize: '10px' }}>
-                      Speichern
-                    </button>
+                    {walkonStatuses[p.id] === 'pending' || walkonStatuses[p.id] === 'downloading' ? (
+                      <div style={{ padding: '8px', textAlign: 'center', fontSize: '10px', color: 'var(--pe-warning)', background: 'rgba(255,176,32,0.08)', borderRadius: '6px', border: '1px solid rgba(255,176,32,0.2)' }}>
+                        ⏳ Walk-On wird heruntergeladen…
+                      </div>
+                    ) : (
+                      <button type="submit" disabled={isSaving} style={{ ...btnSmall, background: 'var(--pe-gradient)', color: '#fff', borderRadius: '6px', padding: '8px', fontSize: '10px', opacity: isSaving ? 0.7 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>
+                        {isSaving ? 'Speichert…' : 'Speichern'}
+                      </button>
+                    )}
                   </form>
                 )}
               </div>
