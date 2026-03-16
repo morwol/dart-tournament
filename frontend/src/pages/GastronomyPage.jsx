@@ -283,7 +283,16 @@ export default function GastronomyPage() {
     storeSetToken(newToken);    // Zustand: updates role + localStorage → AppShell nav re-renders with correct tabs
   };
 
-  if (!token) return <GastronomyLogin onLogin={handleLogin} />;
+  if (!token) return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 500,
+      background: 'var(--pe-bg)',
+      display: 'flex', flexDirection: 'column',
+      overflow: 'auto',
+    }}>
+      <GastronomyLogin onLogin={handleLogin} />
+    </div>
+  );
 
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const filteredProducts = productFilter === 'all'
