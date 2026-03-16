@@ -180,7 +180,7 @@ body {
   letter-spacing: 0.01em;
 }
 
-/* Score display — large numbers with Barlow Condensed */
+/* Score display — large numbers */
 .pe-score {
   font-family: var(--pe-font-display);
   font-weight: 800;
