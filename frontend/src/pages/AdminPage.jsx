@@ -317,7 +317,7 @@ function WalkonBadge({ status, title, artist }) {
     bg     = 'rgba(0,229,160,0.1)';
     border = 'rgba(0,229,160,0.3)';
     color  = 'var(--pe-success)';
-    const label = (artist && title) ? `${artist} — ${title}` : (title || artist || 'bereit');
+    const label = (artist && title) ? `${artist} — ${title}` : 'bereit';
     text = `♪ ${label}`;
   } else if (status === 'pending' || status === 'downloading') {
     bg     = 'rgba(255,176,32,0.1)';
