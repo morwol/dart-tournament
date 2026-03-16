@@ -351,8 +351,9 @@ function PlayersTab() {
       await Promise.all(downloading.map(async (id) => {
         try {
           const s = await api.get(`/walkon/${id}/status`);
-          updates[id] = s.status;
-          if (s.status === 'ready') {
+          const status = s.job?.status;
+          updates[id] = status;
+          if (status === 'ready') {
             // Remove persistent loading toast and show success
             setWalkonLoadingToasts(prev => {
               if (prev[id]) removeToast(prev[id]);
@@ -362,7 +363,7 @@ function PlayersTab() {
             });
             addToast({ type: 'success', message: 'Walk-On bereit ✓' });
             setEditingPlayer(prev => prev?.id === id ? null : prev);
-          } else if (s.status === 'error') {
+          } else if (status === 'error') {
             setWalkonLoadingToasts(prev => {
               if (prev[id]) removeToast(prev[id]);
               const next = { ...prev };
@@ -407,7 +408,7 @@ function PlayersTab() {
       updated.filter(p => p.walkon_url || p.walkon_youtube).map(async (p) => {
         try {
           const s = await api.get(`/walkon/${p.id}/status`);
-          statuses[p.id] = s.status;
+          statuses[p.id] = s.job?.status;
         } catch { statuses[p.id] = null; }
       })
     );
@@ -587,7 +588,7 @@ function PlayersTab() {
               if (walkonStatus === 'ready')                                               { walkonText = '♪ bereit'; walkonColor = 'var(--pe-success)'; }
               else if (walkonStatus === 'downloading' || walkonStatus === 'pending')      { walkonText = '⏳ lädt';  walkonColor = 'var(--pe-warning)'; }
               else if (walkonStatus === 'error')                                          { walkonText = '✗ Fehler'; walkonColor = 'var(--pe-danger)'; }
-              else                                                                        { walkonText = '⏳ lädt';  walkonColor = 'var(--pe-warning)'; } // status not yet fetched → assume loading
+              else                                                                        { walkonText = '♪ —';     walkonColor = 'var(--pe-text-muted)'; }
             }
             return (
               <div key={p.id} style={{ background: 'var(--pe-bg-card)', border: `1px solid ${isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, borderRadius: '10px', padding: '12px' }}>
