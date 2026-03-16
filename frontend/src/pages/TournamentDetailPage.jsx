@@ -127,10 +127,14 @@ export default function TournamentDetailPage() {
                 <tbody>
                   {players.map((p) => (
                     <tr key={p.id} style={{ borderBottom: '1px solid var(--pe-border)' }}>
-                      <td style={{ padding: '10px' }}>
+                      <td style={{ padding: 0 }}>
                         <Link
                           to={`/players/${p.id}`}
                           style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            minHeight: 48,
+                            padding: '6px 10px',
                             color: 'var(--pe-cyan-bright)',
                             textDecoration: 'none',
                             fontWeight: 'bold',

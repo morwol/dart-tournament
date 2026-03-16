@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
+import BackButton from '../components/BackButton';
 
 export default function TournamentHistoryPage() {
   const [tournaments, setTournaments] = useState([]);
@@ -33,6 +34,8 @@ export default function TournamentHistoryPage() {
   return (
     <div className="pe-page-enter" style={{ fontFamily: 'var(--pe-font-body)' }}>
       <div style={{ maxWidth: 700, margin: '0 auto', padding: '16px 12px 100px' }}>
+        <BackButton to="/" label="Home" />
+
         <h1
           className="pe-font-display"
           style={{
@@ -41,7 +44,7 @@ export default function TournamentHistoryPage() {
             background: 'var(--pe-gradient)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
-            margin: '0 0 16px',
+            margin: '12px 0 16px',
           }}
         >
           Tournament History
@@ -64,6 +67,7 @@ export default function TournamentHistoryPage() {
                   borderRadius: 14,
                   border: '1px solid var(--pe-border)',
                   padding: 16,
+                  minHeight: 64,
                   textDecoration: 'none',
                 }}
               >
@@ -108,7 +112,7 @@ export default function TournamentHistoryPage() {
                       <span className="pe-font-display" style={{ fontSize: 15, fontWeight: 700, color: 'var(--pe-success)' }}>
                         {t.winner_name}
                       </span>
-                      <span style={{ fontSize: 10, color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>
+                      <span style={{ fontSize: 11, color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>
                         Winner
                       </span>
                     </div>
@@ -117,7 +121,7 @@ export default function TournamentHistoryPage() {
                     <span className="pe-font-display" style={{ fontSize: 15, fontWeight: 700, color: 'var(--pe-cyan-bright)' }}>
                       {t.player_count}
                     </span>
-                    <span style={{ fontSize: 10, color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>
+                    <span style={{ fontSize: 11, color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>
                       Players
                     </span>
                   </div>
@@ -125,7 +129,7 @@ export default function TournamentHistoryPage() {
                     <span className="pe-font-display" style={{ fontSize: 15, fontWeight: 700, color: 'var(--pe-cyan-bright)' }}>
                       {t.games_played}
                     </span>
-                    <span style={{ fontSize: 10, color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>
+                    <span style={{ fontSize: 11, color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>
                       Games
                     </span>
                   </div>

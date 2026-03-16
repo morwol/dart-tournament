@@ -255,7 +255,7 @@ function RevenueCard({ label, value, color }) {
       >
         {value}
       </span>
-      <span style={{ fontSize: 10, color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>
+      <span style={{ fontSize: 11, color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>
         {label}
       </span>
     </div>

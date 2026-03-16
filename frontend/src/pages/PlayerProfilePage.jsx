@@ -103,6 +103,7 @@ export default function PlayerProfilePage() {
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '12px 14px',
+                  minHeight: 64,
                   borderRadius: 12,
                   background: 'var(--pe-bg-card)',
                   border: '1px solid var(--pe-border)',
@@ -167,7 +168,7 @@ function StatCard({ label, value, color }) {
       >
         {value}
       </span>
-      <span style={{ fontSize: 10, color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>
+      <span style={{ fontSize: 11, color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>
         {label}
       </span>
     </div>
