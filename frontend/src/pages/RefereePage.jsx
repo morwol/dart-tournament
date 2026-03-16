@@ -89,7 +89,7 @@ function EmergencyLogout() {
           <button
             onClick={handleLogout}
             style={{
-              width: '100%', minHeight: '44px',
+              width: '100%', minHeight: '64px',
               padding: '10px 12px',
               background: 'none',
               border: '1px solid var(--pe-border)',
