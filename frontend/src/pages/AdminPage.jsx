@@ -319,6 +319,7 @@ function PlayersTab() {
   }, []);
   const [form, setForm] = useState({ vorname: '', nickname: '', nachname: '', walk_on_song: '', walkon_start: 0, walkon_duration: 30 });
   const [editingPlayer, setEditingPlayer] = useState(null);
+  useEffect(() => { setEditingPlayer(null); }, [isDesktop]);
 
   useEffect(() => {
     api.get('/tournaments').then((t) => {
@@ -567,11 +568,11 @@ function PlayersTab() {
                         try { await api.del(`/tournaments/${selectedTournament}/players/${p.id}`); await loadPlayers(); }
                         catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
                       }}
-                      style={{ ...btnSmall, padding: '6px', border: 'none', fontSize: '10px', cursor: isActive ? 'not-allowed' : 'pointer', color: isActive ? 'var(--pe-text-muted)' : 'var(--pe-danger)', opacity: isActive ? 0.4 : 1 }}
+                      style={{ ...btnSmall, padding: '6px', fontSize: '10px', cursor: isActive ? 'not-allowed' : 'pointer', color: isActive ? 'var(--pe-text-muted)' : 'var(--pe-danger)', opacity: isActive ? 0.4 : 1 }}
                     >
                       Löschen
                     </button>
-                    <button type="submit" style={{ ...btnSmall, background: 'var(--pe-gradient)', color: '#fff', border: 'none', borderRadius: '6px', padding: '8px', fontSize: '10px' }}>
+                    <button type="submit" style={{ ...btnSmall, background: 'var(--pe-gradient)', color: '#fff', borderRadius: '6px', padding: '8px', fontSize: '10px' }}>
                       Speichern
                     </button>
                   </form>
