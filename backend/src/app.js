@@ -25,6 +25,7 @@ const productRoutes = require('./routes/products');
 const registrationRoutes = require('./routes/registration');
 const configRoutes = require('./routes/config');
 const walkonRoutes = require('./routes/walkon');
+const historyRoutes = require('./routes/history');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -79,6 +80,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/registration', registrationRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/walkon', walkonRoutes);
+app.use('/api/history', historyRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
