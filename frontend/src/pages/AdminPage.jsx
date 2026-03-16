@@ -591,6 +591,21 @@ function UsersTab() {
 
   const canSubmit = createForm.username.trim() && createForm.password && createForm.vorname.trim() && createForm.nickname.trim() && createForm.nachname.trim();
 
+  const ROLE_BADGE_STYLES = {
+    admin:      { color: 'var(--pe-danger)',   bg: 'rgba(255,69,96,0.15)',   border: 'rgba(255,69,96,0.3)' },
+    director:   { color: 'var(--pe-blue-mid)', bg: 'rgba(30,127,235,0.15)',  border: 'rgba(30,127,235,0.3)' },
+    referee:    { color: 'var(--pe-warning)',   bg: 'rgba(255,176,32,0.15)',  border: 'rgba(255,176,32,0.3)' },
+    gastronomy: { color: 'var(--pe-success)',   bg: 'rgba(0,229,160,0.15)',   border: 'rgba(0,229,160,0.3)' },
+  };
+
+  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 768px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const handler = (e) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4" style={{ minHeight: '40px' }}>
@@ -624,69 +639,139 @@ function UsersTab() {
         </form>
       )}
 
-      <div className="space-y-2">
-        {users.map((u) => (
-          <div key={u.id} className="rounded-xl overflow-hidden" style={{ background: 'var(--pe-bg-card)', border: `1px solid ${editId === u.id ? 'var(--pe-blue-mid)' : 'var(--pe-border)'}` }}>
-            {/* User-Zeile */}
-            <div className="p-3 flex justify-between items-center">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="min-w-0">
-                  <span className="font-bold" style={{ color: u.active ? 'var(--pe-text)' : 'var(--pe-text-muted)' }}>{u.display_name || u.username}</span>
-                  {u.display_name && <span className="ml-2 text-xs" style={{ color: 'var(--pe-text-muted)' }}>@{u.username}</span>}
-                  {!u.active && <span className="ml-2 text-xs" style={{ color: 'var(--pe-danger)' }}>inaktiv</span>}
-                </div>
-                <span className="text-xs px-2 py-1 rounded-full font-bold flex-shrink-0" style={{ color: ROLE_COLORS[u.role] || 'var(--pe-text-muted)', border: `1px solid ${ROLE_COLORS[u.role] || 'var(--pe-border)'}` }}>
-                  {ROLE_LABELS[u.role] || u.role}
-                </span>
-              </div>
-              <div className="flex gap-2 flex-shrink-0">
-                <button
-                  onClick={() => editId === u.id ? setEditId(null) : startEdit(u)}
-                  style={{ ...btnSmall, background: editId === u.id ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: editId === u.id ? '#fff' : 'var(--pe-text-sub)', padding: '5px 12px' }}
-                >
-                  {editId === u.id ? 'Abbrechen' : 'Bearbeiten'}
-                </button>
-                {u.active && (
-                  <button onClick={() => handleDelete(u.id)} style={{ ...btnSmall, background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', padding: '5px 12px' }}>
-                    Deaktivieren
+      {isDesktop ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', maxWidth: '900px' }}>
+          {users.map((u) => {
+            const badge = ROLE_BADGE_STYLES[u.role] || { color: 'var(--pe-text-muted)', bg: 'rgba(90,115,148,0.15)', border: 'var(--pe-border)' };
+            const isExpanded = editId === u.id;
+            return (
+              <div key={u.id} style={{ background: 'var(--pe-bg-card)', border: `1px solid ${isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, borderRadius: '10px', padding: '12px', opacity: u.active ? 1 : 0.5 }}>
+                {/* Card header row */}
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                  {/* Avatar */}
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0, background: u.active ? 'var(--pe-gradient)' : 'var(--pe-bg-elevated)', border: u.active ? 'none' : '1px solid var(--pe-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px', color: u.active ? '#fff' : 'var(--pe-text-muted)' }}>
+                    {(u.vorname || u.username || '?')[0].toUpperCase()}
+                  </div>
+                  {/* Name + handle */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--pe-text)' }}>{u.display_name || u.username}</div>
+                    {u.display_name && <div style={{ fontSize: '10px', color: 'var(--pe-text-muted)' }}>@{u.username}</div>}
+                  </div>
+                  {/* Role badge */}
+                  <span style={{ fontSize: '9px', padding: '2px 7px', borderRadius: '10px', flexShrink: 0, whiteSpace: 'nowrap', color: badge.color, background: badge.bg, border: `1px solid ${badge.border}` }}>
+                    {ROLE_LABELS[u.role] || u.role}
+                  </span>
+                  {/* Edit / Close button */}
+                  <button
+                    onClick={() => isExpanded ? setEditId(null) : startEdit(u)}
+                    style={{ ...btnSmall, fontSize: '11px', padding: '4px 8px', border: isExpanded ? `1px solid var(--pe-cyan-bright)` : '1px solid var(--pe-border)', background: isExpanded ? 'rgba(0,184,255,0.1)' : 'var(--pe-bg-elevated)', color: isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)', flexShrink: 0 }}
+                  >
+                    {isExpanded ? '✕' : '✏️'}
                   </button>
+                  {/* Deactivate button (collapsed only, active users only) */}
+                  {!isExpanded && u.active && (
+                    <button
+                      onClick={() => handleDelete(u.id)}
+                      style={{ ...btnSmall, fontSize: '11px', padding: '4px 8px', color: 'var(--pe-danger)', flexShrink: 0 }}
+                    >
+                      Deaktivieren
+                    </button>
+                  )}
+                </div>
+                {/* Expanded accordion form */}
+                {isExpanded && (
+                  <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
+                      <input type="text" value={editForm.vorname} onChange={e => setEditForm({ ...editForm, vorname: e.target.value })} placeholder="Vorname" style={{ ...inputStyle, padding: '7px 10px', boxSizing: 'border-box' }} />
+                      <input type="text" value={editForm.nickname} onChange={e => setEditForm({ ...editForm, nickname: e.target.value })} placeholder="Nickname" style={{ ...inputStyle, padding: '7px 10px', boxSizing: 'border-box' }} />
+                      <input type="text" value={editForm.nachname} onChange={e => setEditForm({ ...editForm, nachname: e.target.value })} placeholder="Nachname" style={{ ...inputStyle, padding: '7px 10px', boxSizing: 'border-box' }} />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                      <select value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value })} style={{ ...inputStyle, padding: '7px 10px' }}>
+                        <option value="director">Turnierleitung</option>
+                        <option value="referee">Schiedsrichter</option>
+                        <option value="gastronomy">Gastronomie</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                      <input type="password" value={editForm.password} onChange={e => setEditForm({ ...editForm, password: e.target.value })} placeholder="Neues Passwort" style={{ ...inputStyle, padding: '7px 10px', boxSizing: 'border-box' }} />
+                    </div>
+                    <button onClick={() => handleSaveEdit(u.id)} style={{ background: 'var(--pe-gradient)', color: '#fff', border: 'none', borderRadius: '7px', padding: '9px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer', width: '100%' }}>
+                      Speichern
+                    </button>
+                  </div>
                 )}
               </div>
-            </div>
-
-            {/* Inline-Edit-Bereich */}
-            {editId === u.id && (
-              <div className="p-4 space-y-3" style={{ borderTop: '1px solid var(--pe-border)', background: 'var(--pe-bg-elevated)' }}>
-                {/* Name — wie Spieler */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-                  <input type="text" value={editForm.vorname} onChange={e => setEditForm({ ...editForm, vorname: e.target.value })} placeholder="Vorname" style={{ ...inputStyle, padding: '10px 12px', width: '100%', boxSizing: 'border-box' }} />
-                  <input type="text" value={editForm.nickname} onChange={e => setEditForm({ ...editForm, nickname: e.target.value })} placeholder="Nickname" style={{ ...inputStyle, padding: '10px 12px', width: '100%', boxSizing: 'border-box' }} />
-                  <input type="text" value={editForm.nachname} onChange={e => setEditForm({ ...editForm, nachname: e.target.value })} placeholder="Nachname" style={{ ...inputStyle, padding: '10px 12px', width: '100%', boxSizing: 'border-box' }} />
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <div>
-                    <label className="text-xs font-bold block mb-1" style={{ color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rolle</label>
-                    <select value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value })} style={{ ...inputStyle, width: '100%', padding: '10px 12px' }}>
-                      <option value="director">Turnierleitung</option>
-                      <option value="referee">Schiedsrichter</option>
-                      <option value="gastronomy">Gastronomie</option>
-                      <option value="admin">Admin</option>
-                    </select>
+            );
+          })}
+          {users.length === 0 && (
+            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--pe-text-muted)', fontSize: '13px', padding: '24px' }}>Keine User</p>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {users.map((u) => (
+            <div key={u.id} className="rounded-xl overflow-hidden" style={{ background: 'var(--pe-bg-card)', border: `1px solid ${editId === u.id ? 'var(--pe-blue-mid)' : 'var(--pe-border)'}` }}>
+              {/* User-Zeile */}
+              <div className="p-3 flex justify-between items-center">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="min-w-0">
+                    <span className="font-bold" style={{ color: u.active ? 'var(--pe-text)' : 'var(--pe-text-muted)' }}>{u.display_name || u.username}</span>
+                    {u.display_name && <span className="ml-2 text-xs" style={{ color: 'var(--pe-text-muted)' }}>@{u.username}</span>}
+                    {!u.active && <span className="ml-2 text-xs" style={{ color: 'var(--pe-danger)' }}>inaktiv</span>}
                   </div>
-                  <div>
-                    <label className="text-xs font-bold block mb-1" style={{ color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Neues Passwort</label>
-                    <input type="password" value={editForm.password} onChange={e => setEditForm({ ...editForm, password: e.target.value })} placeholder="Leer = unverändert" style={{ ...inputStyle, width: '100%', padding: '10px 12px', boxSizing: 'border-box' }} />
-                  </div>
+                  <span className="text-xs px-2 py-1 rounded-full font-bold flex-shrink-0" style={{ color: ROLE_COLORS[u.role] || 'var(--pe-text-muted)', border: `1px solid ${ROLE_COLORS[u.role] || 'var(--pe-border)'}` }}>
+                    {ROLE_LABELS[u.role] || u.role}
+                  </span>
                 </div>
-                <button onClick={() => handleSaveEdit(u.id)} style={{ background: 'var(--pe-gradient)', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px 20px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', width: '100%', minHeight: '44px' }}>
-                  Änderungen speichern
-                </button>
+                <div className="flex gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => editId === u.id ? setEditId(null) : startEdit(u)}
+                    style={{ ...btnSmall, background: editId === u.id ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: editId === u.id ? '#fff' : 'var(--pe-text-sub)', padding: '5px 12px' }}
+                  >
+                    {editId === u.id ? 'Abbrechen' : 'Bearbeiten'}
+                  </button>
+                  {u.active && (
+                    <button onClick={() => handleDelete(u.id)} style={{ ...btnSmall, background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', padding: '5px 12px' }}>
+                      Deaktivieren
+                    </button>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
-        ))}
-        {users.length === 0 && <p className="text-sm" style={{ color: 'var(--pe-text-muted)' }}>Keine User</p>}
-      </div>
+
+              {/* Inline-Edit-Bereich */}
+              {editId === u.id && (
+                <div className="p-4 space-y-3" style={{ borderTop: '1px solid var(--pe-border)', background: 'var(--pe-bg-elevated)' }}>
+                  {/* Name — wie Spieler */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                    <input type="text" value={editForm.vorname} onChange={e => setEditForm({ ...editForm, vorname: e.target.value })} placeholder="Vorname" style={{ ...inputStyle, padding: '10px 12px', width: '100%', boxSizing: 'border-box' }} />
+                    <input type="text" value={editForm.nickname} onChange={e => setEditForm({ ...editForm, nickname: e.target.value })} placeholder="Nickname" style={{ ...inputStyle, padding: '10px 12px', width: '100%', boxSizing: 'border-box' }} />
+                    <input type="text" value={editForm.nachname} onChange={e => setEditForm({ ...editForm, nachname: e.target.value })} placeholder="Nachname" style={{ ...inputStyle, padding: '10px 12px', width: '100%', boxSizing: 'border-box' }} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div>
+                      <label className="text-xs font-bold block mb-1" style={{ color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rolle</label>
+                      <select value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value })} style={{ ...inputStyle, width: '100%', padding: '10px 12px' }}>
+                        <option value="director">Turnierleitung</option>
+                        <option value="referee">Schiedsrichter</option>
+                        <option value="gastronomy">Gastronomie</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold block mb-1" style={{ color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Neues Passwort</label>
+                      <input type="password" value={editForm.password} onChange={e => setEditForm({ ...editForm, password: e.target.value })} placeholder="Leer = unverändert" style={{ ...inputStyle, width: '100%', padding: '10px 12px', boxSizing: 'border-box' }} />
+                    </div>
+                  </div>
+                  <button onClick={() => handleSaveEdit(u.id)} style={{ background: 'var(--pe-gradient)', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px 20px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', width: '100%', minHeight: '44px' }}>
+                    Änderungen speichern
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+          {users.length === 0 && <p className="text-sm" style={{ color: 'var(--pe-text-muted)' }}>Keine User</p>}
+        </div>
+      )}
     </div>
   );
 }
