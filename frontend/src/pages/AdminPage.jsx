@@ -756,7 +756,7 @@ function UsersTab() {
                     {ROLE_LABELS[u.role] || u.role}
                   </span>
                   {/* Edit / Close button — hidden for inactive users */}
-                  {u.active && (
+                  {!!u.active && (
                     <button
                       onClick={() => isExpanded ? setEditId(null) : startEdit(u)}
                       style={{ ...btnSmall, fontSize: '11px', padding: '4px 8px', minHeight: '36px', border: isExpanded ? `1px solid var(--pe-cyan-bright)` : '1px solid var(--pe-border)', background: isExpanded ? 'rgba(0,184,255,0.1)' : 'var(--pe-bg-elevated)', color: isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)', flexShrink: 0 }}
@@ -827,7 +827,7 @@ function UsersTab() {
                   </span>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
-                  {u.active && (
+                  {!!u.active && (
                     <button
                       onClick={() => editId === u.id ? setEditId(null) : startEdit(u)}
                       style={{ ...btnSmall, background: editId === u.id ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: editId === u.id ? '#fff' : 'var(--pe-text-sub)', padding: '5px 12px' }}
