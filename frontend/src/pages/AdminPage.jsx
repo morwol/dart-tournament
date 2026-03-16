@@ -310,12 +310,47 @@ function BoardsTab() {
 
 // NEU: Tab "Spieler" — Anlegen, Walk-On Song, Statistiken
 // Walk-On Status Badge
-function WalkonBadge({ status }) {
-  if (!status) return <span style={{ fontSize: '11px', color: 'var(--pe-text-muted)', marginLeft: '6px' }}>♪</span>;
-  if (status === 'ready') return <span style={{ fontSize: '11px', color: 'var(--pe-success)', marginLeft: '6px' }} title="Bereit">✓</span>;
-  if (status === 'error') return <span style={{ fontSize: '11px', color: 'var(--pe-danger)', marginLeft: '6px' }} title="Fehler">✗</span>;
-  if (status === 'pending' || status === 'downloading') return <span style={{ fontSize: '11px', color: 'var(--pe-warning)', marginLeft: '6px' }} title="Wird geladen">⏳</span>;
-  return <span style={{ fontSize: '11px', color: 'var(--pe-text-muted)', marginLeft: '6px' }}>♪</span>;
+function WalkonBadge({ status, title, artist }) {
+  let bg, border, color, text;
+
+  if (status === 'ready') {
+    bg     = 'rgba(0,229,160,0.1)';
+    border = 'rgba(0,229,160,0.3)';
+    color  = 'var(--pe-success)';
+    const label = (artist && title) ? `${artist} — ${title}` : (title || artist || 'bereit');
+    text = `♪ ${label}`;
+  } else if (status === 'pending' || status === 'downloading') {
+    bg     = 'rgba(255,176,32,0.1)';
+    border = 'rgba(255,176,32,0.3)';
+    color  = 'var(--pe-warning)';
+    text   = '⏳ lädt…';
+  } else if (status === 'error') {
+    bg     = 'rgba(255,69,96,0.1)';
+    border = 'rgba(255,69,96,0.3)';
+    color  = 'var(--pe-danger)';
+    text   = '✗ Fehler';
+  } else {
+    // has_walkon but no known status yet — muted fallback
+    bg     = 'transparent';
+    border = 'transparent';
+    color  = 'var(--pe-text-muted)';
+    text   = '♪';
+  }
+
+  if (!text) return null;
+
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: '4px',
+      background: bg, border: `1px solid ${border}`,
+      borderRadius: '6px', padding: '2px 7px',
+      fontSize: '11px', color,
+      fontFamily: 'Verdana, Geneva, sans-serif',
+      maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+    }}>
+      {text}
+    </span>
+  );
 }
 
 function PlayersTab() {
@@ -402,16 +437,13 @@ function PlayersTab() {
   const loadPlayers = async () => {
     const updated = await api.get(`/tournaments/${selectedTournament}/players`);
     setPlayers(updated);
-    // Load walkon statuses for players that have a walkon_url
+    // Use server-side walkon_status instead of per-player API calls
     const statuses = {};
-    await Promise.all(
-      updated.filter(p => p.walkon_url || p.walkon_youtube).map(async (p) => {
-        try {
-          const s = await api.get(`/walkon/${p.id}/status`);
-          statuses[p.id] = s.job?.status;
-        } catch { statuses[p.id] = null; }
-      })
-    );
+    for (const p of updated) {
+      if (p.has_walkon || p.walkon_youtube) {
+        statuses[p.id] = p.walkon_status || null;
+      }
+    }
     setWalkonStatuses(statuses);
   };
 
@@ -580,16 +612,7 @@ function PlayersTab() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
           {players.map((p) => {
             const isExpanded = editingPlayer?.id === p.id;
-            const hasWalkon = p.walkon_url || p.walkon_youtube;
-            const walkonStatus = walkonStatuses[p.id];
-            let walkonText = '♪ —';
-            let walkonColor = 'var(--pe-text-muted)';
-            if (hasWalkon) {
-              if (walkonStatus === 'ready')                                               { walkonText = '♪ bereit'; walkonColor = 'var(--pe-success)'; }
-              else if (walkonStatus === 'downloading' || walkonStatus === 'pending')      { walkonText = '⏳ lädt';  walkonColor = 'var(--pe-warning)'; }
-              else if (walkonStatus === 'error')                                          { walkonText = '✗ Fehler'; walkonColor = 'var(--pe-danger)'; }
-              else                                                                        { walkonText = '♪ —';     walkonColor = 'var(--pe-text-muted)'; }
-            }
+            const effectiveWalkonStatus = walkonStatuses[p.id] ?? p.walkon_status;
             return (
               <div key={p.id} style={{ background: 'var(--pe-bg-card)', border: `1px solid ${isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, borderRadius: '10px', padding: '12px' }}>
                 {/* Collapsed header — always visible */}
@@ -601,7 +624,13 @@ function PlayersTab() {
                   {/* Name + walk-on status */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--pe-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                    <div style={{ fontSize: '10px', color: walkonColor, marginTop: '2px' }}>{walkonText}</div>
+                    {(p.has_walkon || p.walkon_youtube) && (
+                      <WalkonBadge
+                        status={effectiveWalkonStatus}
+                        title={p.walkon_title}
+                        artist={p.walkon_artist}
+                      />
+                    )}
                   </div>
                   {/* Edit / Close button */}
                   <button
@@ -665,8 +694,12 @@ function PlayersTab() {
             <div key={p.id} className="p-3 rounded-lg flex justify-between items-center" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
               <div>
                 <span className="font-bold" style={{ color: 'var(--pe-text)' }}>{p.name}</span>
-                {(p.walkon_url || p.walkon_youtube) && (
-                  <WalkonBadge status={walkonStatuses[p.id]} />
+                {(p.has_walkon || p.walkon_youtube) && (
+                  <WalkonBadge
+                    status={walkonStatuses[p.id] ?? p.walkon_status}
+                    title={p.walkon_title}
+                    artist={p.walkon_artist}
+                  />
                 )}
                 <span className="ml-3 text-xs" style={{ color: 'var(--pe-text-muted)' }}>Seed: {p.seed || '—'}</span>
               </div>
