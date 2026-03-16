@@ -75,7 +75,9 @@ function OverviewTab() {
 
   return (
     <div>
-      <h2 className="text-lg font-bold mb-4" style={{ color: 'var(--pe-cyan-bright)' }}>Übersicht{activeTournament ? ` — ${activeTournament.name}` : ''}</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Übersicht{activeTournament ? ` — ${activeTournament.name}` : ''}</h2>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
         <div className="p-4 rounded-xl" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
           <p className="text-sm" style={{ color: 'var(--pe-text-muted)' }}>Aktive Spiele</p>
@@ -152,8 +154,8 @@ function BoardsTab() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4" style={{ minHeight: '40px' }}>
-        <h2 className="text-lg font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>Boards</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Boards</h2>
         <button onClick={() => setShowForm(!showForm)} disabled={!selectedTournamentId} className="px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50" style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
           {showForm ? 'Abbrechen' : '+ Neu'}
         </button>
@@ -412,8 +414,8 @@ function PlayersTab() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4" style={{ minHeight: '40px' }}>
-        <h2 className="text-lg font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>Spieler</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Spieler</h2>
         {!isActive && (
           <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
             {showForm ? 'Abbrechen' : '+ Neu'}
@@ -702,8 +704,8 @@ function UsersTab() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4" style={{ minHeight: '40px' }}>
-        <h2 className="text-lg font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>User</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>User</h2>
         <button onClick={() => { setShowCreate(!showCreate); setEditId(null); }} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
           {showCreate ? 'Abbrechen' : '+ Neu'}
         </button>
@@ -936,7 +938,9 @@ function GastroAdminTab() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Gastronomie</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Gastronomie</h2>
+      </div>
 
       {/* Umsatz-Kacheln */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px' }}>
@@ -1110,8 +1114,8 @@ function MailingTab() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4" style={{ minHeight: '40px' }}>
-        <h2 className="text-lg font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>Mailing</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Mailing</h2>
         <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
           {showForm ? 'Abbrechen' : '+ Template'}
         </button>
@@ -1252,7 +1256,7 @@ function TournamentDirectorTab() {
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
         <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>
           Turnierleiter {activeTournament ? `— ${activeTournament.name}` : ''}
         </h2>
@@ -2007,8 +2011,8 @@ function TournamentExtendedTab() {
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px' }}>Turniere</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Turniere</h2>
         <button onClick={() => { setWizardStep(1); setNewTournament(null); setCreateForm({ name: '', date: '', format: '501', checkout: 'double_out', use_seed: false }); }} style={{ padding: '10px 20px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px' }}>
           + Neues Turnier
         </button>
@@ -2190,7 +2194,7 @@ function LogTab() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* Header + Controls */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
         <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>
           System-Log
           <span style={{ fontSize: '13px', color: 'var(--pe-text-muted)', marginLeft: '10px', fontWeight: 'normal' }}>
@@ -2341,7 +2345,9 @@ function SettingsTab() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Einstellungen</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Einstellungen</h2>
+      </div>
 
       {/* App-Daten */}
       <div style={sectionStyle}>
@@ -2444,7 +2450,9 @@ function HelpTab() {
 
   return (
     <div>
-      <h2 style={h2}>Bedienungsanleitung</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Bedienungsanleitung</h2>
+      </div>
 
       {/* ── DASHBOARDS & URLs ── */}
       <div style={card}>
