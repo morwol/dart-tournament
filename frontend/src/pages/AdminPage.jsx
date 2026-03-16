@@ -664,7 +664,7 @@ function UsersTab() {
                   {/* Edit / Close button */}
                   <button
                     onClick={() => isExpanded ? setEditId(null) : startEdit(u)}
-                    style={{ ...btnSmall, fontSize: '11px', padding: '4px 8px', border: isExpanded ? `1px solid var(--pe-cyan-bright)` : '1px solid var(--pe-border)', background: isExpanded ? 'rgba(0,184,255,0.1)' : 'var(--pe-bg-elevated)', color: isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)', flexShrink: 0 }}
+                    style={{ ...btnSmall, fontSize: '11px', padding: '4px 8px', minHeight: '36px', border: isExpanded ? `1px solid var(--pe-cyan-bright)` : '1px solid var(--pe-border)', background: isExpanded ? 'rgba(0,184,255,0.1)' : 'var(--pe-bg-elevated)', color: isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)', flexShrink: 0 }}
                   >
                     {isExpanded ? '✕' : '✏️'}
                   </button>
@@ -672,7 +672,7 @@ function UsersTab() {
                   {!isExpanded && u.active && (
                     <button
                       onClick={() => handleDelete(u.id)}
-                      style={{ ...btnSmall, fontSize: '11px', padding: '4px 8px', color: 'var(--pe-danger)', flexShrink: 0 }}
+                      style={{ ...btnSmall, fontSize: '11px', padding: '4px 8px', minHeight: '36px', color: 'var(--pe-danger)', flexShrink: 0 }}
                     >
                       Deaktivieren
                     </button>
@@ -695,7 +695,7 @@ function UsersTab() {
                       </select>
                       <input type="password" value={editForm.password} onChange={e => setEditForm({ ...editForm, password: e.target.value })} placeholder="Neues Passwort" style={{ ...inputStyle, padding: '7px 10px', boxSizing: 'border-box' }} />
                     </div>
-                    <button onClick={() => handleSaveEdit(u.id)} style={{ background: 'var(--pe-gradient)', color: '#fff', border: 'none', borderRadius: '7px', padding: '9px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer', width: '100%' }}>
+                    <button onClick={() => handleSaveEdit(u.id)} style={{ ...btnSmall, background: 'var(--pe-gradient)', color: '#fff', border: 'none', borderRadius: '7px', padding: '9px', fontSize: '11px', width: '100%' }}>
                       Speichern
                     </button>
                   </div>
