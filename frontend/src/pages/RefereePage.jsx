@@ -514,7 +514,7 @@ function getPrevRoundLastThrow(liveData) {
 // ══════════════════════════════════════════════════════════════════════════
 // ── TABLET LAYOUT ─────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════
-function TabletLayout({ boardId, boardNumber, token, onLogout, selectedGameId, setSelectedGameId, liveData, fetchLive, modifier, setModifier, submitting, throwSegment, undoThrow }) {
+function TabletLayout({ boardId, boardNumber, onLogout, selectedGameId, setSelectedGameId, liveData, fetchLive, modifier, setModifier, submitting, throwSegment, undoThrow }) {
   const { addToast } = useToastStore();
   const { game, player1, player2, current_round_throws = [] } = liveData || {};
   const currentThrowerId = game?.current_turn || game?.bull_winner_id;
@@ -700,7 +700,7 @@ function TabletLayout({ boardId, boardNumber, token, onLogout, selectedGameId, s
 // ══════════════════════════════════════════════════════════════════════════
 // ── PHONE LAYOUT ──────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════
-function PhoneLayout({ boardId, boardNumber, token, onLogout, selectedGameId, setSelectedGameId, liveData, fetchLive, modifier, setModifier, submitting, throwSegment, undoThrow }) {
+function PhoneLayout({ boardId, boardNumber, onLogout, selectedGameId, setSelectedGameId, liveData, fetchLive, modifier, setModifier, submitting, throwSegment, undoThrow }) {
   const { game, player1, player2, current_round_throws = [] } = liveData || {};
   const currentThrowerId = game?.current_turn || game?.bull_winner_id;
 
@@ -956,7 +956,7 @@ export default function RefereePage() {
   }
 
   const shared = {
-    boardId: resolvedBoardId, boardNumber, token, onLogout,
+    boardId: resolvedBoardId, boardNumber, onLogout,
     selectedGameId, setSelectedGameId,
     liveData, fetchLive,
     modifier, setModifier,
