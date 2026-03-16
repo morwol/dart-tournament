@@ -131,10 +131,7 @@ export default function TopBar({ isSubPage = false, title = '', onBack }) {
               style={{
                 width: '36px',
                 height: '36px',
-                padding: '14px',
-                minWidth: '64px',
-                minHeight: '64px',
-                boxSizing: 'content-box',
+                padding: 0,
                 borderRadius: '50%',
                 background: 'var(--pe-gradient)',
                 border: 'none',
