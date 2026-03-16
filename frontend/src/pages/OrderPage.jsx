@@ -21,12 +21,12 @@ export default function OrderPage() {
     border: '1px solid var(--pe-border)',
     borderRadius: '12px',
     padding: '16px',
-    fontFamily: 'Verdana, Geneva, sans-serif',
+    fontFamily: 'var(--pe-font-body)',
   };
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--pe-font-body)' }}>
         <p style={{ color: 'var(--pe-text-sub)' }}>Lade...</p>
       </div>
     );
@@ -34,7 +34,7 @@ export default function OrderPage() {
 
   if (error) {
     return (
-      <div style={{ minHeight: '100vh', padding: '16px', maxWidth: '480px', margin: '0 auto', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+      <div style={{ minHeight: '100vh', padding: '16px', maxWidth: '480px', margin: '0 auto', fontFamily: 'var(--pe-font-body)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
           <BackButton to="/" />
           <img src="/logo.jpeg" alt="DartEvent" style={{ height: '40px' }} />
@@ -51,7 +51,7 @@ export default function OrderPage() {
   const isBlocked = guest?.active === 0 || guest?.active === false;
 
   return (
-    <div style={{ minHeight: '100vh', padding: '16px', maxWidth: '480px', margin: '0 auto', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+    <div style={{ minHeight: '100vh', padding: '16px', maxWidth: '480px', margin: '0 auto', fontFamily: 'var(--pe-font-body)' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
         <BackButton to="/" />

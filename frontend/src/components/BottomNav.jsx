@@ -56,7 +56,7 @@ export default function BottomNav() {
       display: 'flex',
       alignItems: 'stretch',
       zIndex: 100,
-      fontFamily: 'Verdana, Geneva, sans-serif',
+      fontFamily: 'var(--pe-font-body)',
     }}>
       {tabs.map((tab) => {
         const active = isActive(tab, pathname, search);
@@ -74,7 +74,7 @@ export default function BottomNav() {
               borderTop: active ? '2px solid var(--pe-cyan-bright)' : '2px solid transparent',
               cursor: 'pointer',
               padding: '0 4px 8px',
-              fontFamily: 'Verdana, Geneva, sans-serif',
+              fontFamily: 'var(--pe-font-body)',
               minWidth: 0,
             }}
           >

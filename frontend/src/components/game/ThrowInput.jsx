@@ -49,8 +49,8 @@ export default function ThrowInput({ game, onThrow }) {
   return (
     <div className="mt-4">
       <div
-        className="text-center text-3xl font-bold p-4 rounded-xl mb-3"
-        style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', minHeight: '64px' }}
+        className="text-center p-4 rounded-xl mb-3 pe-score"
+        style={{ fontSize: '2rem', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', minHeight: '64px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
         {value || '0'}
       </div>
@@ -64,7 +64,7 @@ export default function ThrowInput({ game, onThrow }) {
             border: `1px solid ${isDouble ? 'var(--pe-blue-mid)' : 'var(--pe-border)'}`,
             color: isDouble ? 'var(--pe-text)' : 'var(--pe-text-sub)',
             minHeight: '64px',
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
           }}
         >
           {isDouble ? 'Double Out: AN' : 'Double Out: AUS'}
@@ -83,7 +83,7 @@ export default function ThrowInput({ game, onThrow }) {
               border: '1px solid var(--pe-border)',
               color: key === 'OK' || key === 'C' ? '#000' : 'var(--pe-text)',
               minHeight: '64px',
-              fontFamily: 'Verdana, Geneva, sans-serif',
+              fontFamily: 'var(--pe-font-body)',
             }}
           >
             {key}

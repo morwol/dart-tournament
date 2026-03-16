@@ -45,7 +45,7 @@ export default function TournamentManager() {
     border: '1px solid var(--pe-border)',
     color: 'var(--pe-text)',
     minHeight: '64px',
-    fontFamily: 'Verdana, Geneva, sans-serif',
+    fontFamily: 'var(--pe-font-body)',
   };
 
   const selectStyle = {
@@ -66,7 +66,7 @@ export default function TournamentManager() {
         <button
           onClick={() => setShowForm(!showForm)}
           className="px-4 rounded-lg text-sm font-bold"
-          style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif', minHeight: '64px' }}
+          style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'var(--pe-font-body)', minHeight: '64px' }}
         >
           {showForm ? 'Abbrechen' : '+ Neu'}
         </button>
@@ -113,7 +113,7 @@ export default function TournamentManager() {
             type="submit"
             disabled={submitting || !form.name.trim()}
             className="w-full py-3 rounded-lg font-bold disabled:opacity-50"
-            style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '64px', fontFamily: 'Verdana, Geneva, sans-serif' }}
+            style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '64px', fontFamily: 'var(--pe-font-body)' }}
           >
             Turnier erstellen
           </button>
@@ -140,7 +140,7 @@ export default function TournamentManager() {
               <button
                 onClick={() => handleStart(t.id)}
                 className="w-full py-3 rounded-lg font-bold text-sm mt-2"
-                style={{ background: 'var(--pe-success)', color: '#000', minHeight: '64px', fontFamily: 'Verdana, Geneva, sans-serif' }}
+                style={{ background: 'var(--pe-success)', color: '#000', minHeight: '64px', fontFamily: 'var(--pe-font-body)' }}
               >
                 Turnier starten
               </button>

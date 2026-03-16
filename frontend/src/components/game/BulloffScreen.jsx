@@ -56,7 +56,7 @@ function BulloffPlayer({ name, playerId, onScore, disabled }) {
             border: '1px solid var(--pe-border)',
             color: 'var(--pe-warning)',
             minHeight: '64px',
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
           }}
         >
           25
@@ -70,7 +70,7 @@ function BulloffPlayer({ name, playerId, onScore, disabled }) {
             border: '1px solid var(--pe-border)',
             color: 'var(--pe-success)',
             minHeight: '64px',
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
           }}
         >
           50
@@ -84,7 +84,7 @@ function BulloffPlayer({ name, playerId, onScore, disabled }) {
             border: '1px solid var(--pe-border)',
             color: 'var(--pe-danger)',
             minHeight: '64px',
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
           }}
         >
           Miss

@@ -6,7 +6,7 @@ const inp = {
   background: 'var(--pe-bg-card)',
   border: '1px solid var(--pe-border)',
   color: 'var(--pe-text)',
-  fontFamily: 'Verdana, Geneva, sans-serif',
+  fontFamily: 'var(--pe-font-body)',
   fontSize: '16px',
   borderRadius: '12px',
   padding: '16px',
@@ -74,7 +74,7 @@ export default function PlayerRegistrationPage() {
     const cancelLink = `${appBaseUrl}/cancel/${registered.cancelToken}`;
 
     return (
-      <div style={{ minHeight: '100vh', padding: '20px', maxWidth: '480px', margin: '0 auto', fontFamily: 'Verdana, Geneva, sans-serif', boxSizing: 'border-box' }}>
+      <div style={{ minHeight: '100vh', padding: '20px', maxWidth: '480px', margin: '0 auto', fontFamily: 'var(--pe-font-body)', boxSizing: 'border-box' }}>
 
         {/* Erfolgs-Card */}
         <div style={{ background: 'var(--pe-bg-card)', border: '2px solid var(--pe-success)', borderRadius: '16px', padding: '24px', marginBottom: '16px', textAlign: 'center' }}>
@@ -127,7 +127,7 @@ export default function PlayerRegistrationPage() {
 
   // ── Anmelde-Formular ───────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100vh', padding: '20px', maxWidth: '480px', margin: '0 auto', fontFamily: 'Verdana, Geneva, sans-serif', boxSizing: 'border-box' }}>
+    <div style={{ minHeight: '100vh', padding: '20px', maxWidth: '480px', margin: '0 auto', fontFamily: 'var(--pe-font-body)', boxSizing: 'border-box' }}>
 
 
       {/* Turnier-Info */}
@@ -202,7 +202,7 @@ export default function PlayerRegistrationPage() {
             minHeight: '64px',
             cursor: canSubmit ? 'pointer' : 'not-allowed',
             opacity: submitting ? 0.6 : 1,
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
             marginTop: '8px',
           }}
         >

@@ -27,7 +27,7 @@ router.get('/:id/players', (req, res) => {
 });
 
 // POST /api/tournaments/:id/players — Spieler anmelden (findet existierendes Profil oder legt neues an)
-router.post('/:id/players', requireFields(['vorname', 'nickname', 'nachname']), (req, res) => {
+router.post('/:id/players', (req, res) => {
   const tournament = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(req.params.id);
   if (!tournament) {
     return res.status(404).json({ error: 'Turnier nicht gefunden' });
@@ -36,7 +36,35 @@ router.post('/:id/players', requireFields(['vorname', 'nickname', 'nachname']), 
     return res.status(400).json({ error: 'Die Anmeldephase für dieses Turnier ist bereits geschlossen' });
   }
 
+  // ── Path A: existing player by player_id ────────────────────
+  if (req.body.player_id) {
+    const pid = parseInt(req.body.player_id, 10);
+    if (!pid || pid <= 0) {
+      return res.status(400).json({ error: 'Ungültige player_id' });
+    }
+    const player = db.prepare('SELECT * FROM players WHERE id = ?').get(pid);
+    if (!player) {
+      return res.status(404).json({ error: 'Spieler nicht gefunden' });
+    }
+    const alreadyRegistered = db.prepare(
+      'SELECT id FROM tournament_registrations WHERE player_id = ? AND tournament_id = ?'
+    ).get(pid, req.params.id);
+    if (alreadyRegistered) {
+      return res.status(409).json({ error: 'Spieler ist bereits in diesem Turnier angemeldet' });
+    }
+    const cancelToken = crypto.randomBytes(32).toString('hex');
+    db.prepare(
+      'INSERT INTO tournament_registrations (player_id, tournament_id, seed, cancel_token) VALUES (?, ?, ?, ?)'
+    ).run(pid, req.params.id, req.body.seed || null, cancelToken);
+    auditLog(req, 'player', 'REGISTER', `Spieler "${player.name}" (bestehend) in Turnier "${tournament.name}" angemeldet`, pid);
+    return res.status(201).json({ ...player, cancel_token: cancelToken });
+  }
+
+  // ── Path B: new or existing player by name fields ────────────
   const { vorname, nickname, nachname, seed } = req.body;
+  if (!vorname || !nickname || !nachname) {
+    return res.status(400).json({ error: 'vorname, nickname und nachname sind Pflichtfelder' });
+  }
   const vn = vorname.trim();
   const nn = nickname.trim();
   const na = nachname.trim();

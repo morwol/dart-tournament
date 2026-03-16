@@ -34,8 +34,8 @@ export default function TournamentPage() {
     <div className="min-h-screen p-4 max-w-2xl mx-auto">
 
       <h1
-        className="text-xl font-bold mb-1"
-        style={{ background: 'var(--pe-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+        className="text-xl mb-1 pe-font-display"
+        style={{ background: 'var(--pe-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 700 }}
       >
         {tournament.name}
       </h1>

@@ -25,7 +25,7 @@ export default function ProductList({ products, onAdd }) {
               background: filter === cat.id ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)',
               border: '1px solid var(--pe-border)',
               color: filter === cat.id ? 'var(--pe-text)' : 'var(--pe-text-sub)',
-              fontFamily: 'Verdana, Geneva, sans-serif',
+              fontFamily: 'var(--pe-font-body)',
               minHeight: '64px',
             }}
           >
@@ -52,7 +52,7 @@ export default function ProductList({ products, onAdd }) {
                 background: 'var(--pe-blue-deep)',
                 color: 'var(--pe-text)',
                 minHeight: '64px',
-                fontFamily: 'Verdana, Geneva, sans-serif',
+                fontFamily: 'var(--pe-font-body)',
               }}
             >
               + Warenkorb

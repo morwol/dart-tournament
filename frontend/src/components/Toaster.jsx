@@ -88,7 +88,7 @@ function Toast({ toast, onDismiss }) {
         borderBottom: `1px solid ${c.border}`,
         borderLeft: `4px solid ${c.accent}`,
         borderRadius: '10px',
-        fontFamily: 'Verdana, Geneva, sans-serif',
+        fontFamily: 'var(--pe-font-body)',
         fontSize: '13px',
         color: 'var(--pe-text)',
         boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
@@ -130,7 +130,7 @@ function Toast({ toast, onDismiss }) {
           fontSize: '16px',
           flexShrink: 0,
           transition: 'color 150ms ease',
-          fontFamily: 'Verdana, Geneva, sans-serif',
+          fontFamily: 'var(--pe-font-body)',
         }}
         onMouseEnter={e => { e.currentTarget.style.color = 'var(--pe-text)'; }}
         onMouseLeave={e => { e.currentTarget.style.color = 'var(--pe-text-muted)'; }}

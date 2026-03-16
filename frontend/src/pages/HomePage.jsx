@@ -104,7 +104,7 @@ export default function HomePage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+    <div style={{ minHeight: '100vh', fontFamily: 'var(--pe-font-body)' }}>
 
       <div style={{ ...styles.content, maxWidth: isDesktop ? 1200 : 600 }}>
         {loading ? (
@@ -179,7 +179,7 @@ export default function HomePage() {
                     placeholder="Spieler suchen..."
                     value={playerSearch}
                     onChange={e => setPlayerSearch(e.target.value)}
-                    style={{ width: '100%', boxSizing: 'border-box', marginBottom: 10, padding: '12px 14px', borderRadius: 10, border: '1px solid var(--pe-border)', background: 'var(--pe-bg-card)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif', fontSize: 14, outline: 'none', minHeight: '64px' }}
+                    style={{ width: '100%', boxSizing: 'border-box', marginBottom: 10, padding: '12px 14px', borderRadius: 10, border: '1px solid var(--pe-border)', background: 'var(--pe-bg-card)', color: 'var(--pe-text)', fontFamily: 'var(--pe-font-body)', fontSize: 14, outline: 'none', minHeight: '64px' }}
                   />
                 )}
               <div style={styles.playerGrid}>
@@ -422,11 +422,13 @@ const styles = {
   },
   tournamentName: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: 'var(--pe-font-display)',
+    fontWeight: 700,
     color: 'var(--pe-text)',
     margin: 0,
     lineHeight: 1.3,
     wordBreak: 'break-word',
+    letterSpacing: '0.01em',
   },
   tournamentMeta: {
     fontSize: 12,
@@ -464,8 +466,10 @@ const styles = {
   },
   statValue: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontFamily: 'var(--pe-font-display)',
+    fontWeight: 700,
     color: 'var(--pe-cyan-bright)',
+    letterSpacing: '0.01em',
   },
   statLabel: {
     fontSize: 11,
@@ -481,7 +485,7 @@ const styles = {
     borderRadius: 12,
     background: 'var(--pe-blue-deep)',
     color: 'var(--pe-text)',
-    fontFamily: 'Verdana, Geneva, sans-serif',
+    fontFamily: 'var(--pe-font-body)',
     fontSize: 14,
     fontWeight: 'bold',
     textDecoration: 'none',
@@ -504,7 +508,7 @@ const styles = {
     borderColor: 'var(--pe-border)',
     background: 'var(--pe-bg-card)',
     color: 'var(--pe-text-sub)',
-    fontFamily: 'Verdana, Geneva, sans-serif',
+    fontFamily: 'var(--pe-font-body)',
     fontSize: 14,
     fontWeight: 'bold',
     cursor: 'pointer',
@@ -545,8 +549,10 @@ const styles = {
   },
   playerStatValue: {
     fontSize: 13,
-    fontWeight: 'bold',
+    fontFamily: 'var(--pe-font-display)',
+    fontWeight: 700,
     color: 'var(--pe-cyan-bright)',
+    letterSpacing: '0.01em',
   },
   playerStatLabel: {
     fontSize: 10,
@@ -696,7 +702,7 @@ const styles = {
     background: 'var(--pe-bg-elevated)',
     border: '1px solid var(--pe-border)',
     color: 'var(--pe-text-sub)',
-    fontFamily: 'Verdana, Geneva, sans-serif',
+    fontFamily: 'var(--pe-font-body)',
     boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
   },
 };
