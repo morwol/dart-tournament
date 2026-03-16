@@ -806,14 +806,14 @@ function UsersTab() {
                     {u.display_name && <div style={{ fontSize: '10px', color: 'var(--pe-text-muted)' }}>@{u.username}</div>}
                   </div>
                   {/* Role badge */}
-                  <span style={{ fontSize: '9px', padding: '2px 7px', borderRadius: '10px', flexShrink: 0, whiteSpace: 'nowrap', color: badge.color, background: badge.bg, border: `1px solid ${badge.border}` }}>
+                  <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '10px', flexShrink: 0, whiteSpace: 'nowrap', color: badge.color, background: badge.bg, border: `1px solid ${badge.border}` }}>
                     {ROLE_LABELS[u.role] || u.role}
                   </span>
                   {/* Edit / Close button — hidden for inactive users */}
                   {!!u.active && (
                     <button
                       onClick={() => isExpanded ? setEditId(null) : startEdit(u)}
-                      style={{ ...btnSmall, fontSize: '11px', padding: '4px 8px', minHeight: '36px', border: isExpanded ? `1px solid var(--pe-cyan-bright)` : '1px solid var(--pe-border)', background: isExpanded ? 'rgba(0,184,255,0.1)' : 'var(--pe-bg-elevated)', color: isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)', flexShrink: 0 }}
+                      style={{ ...btnSmall, fontSize: '11px', padding: '3px 8px', minHeight: '28px', border: isExpanded ? `1px solid var(--pe-cyan-bright)` : '1px solid var(--pe-border)', background: isExpanded ? 'rgba(0,184,255,0.1)' : 'var(--pe-bg-elevated)', color: isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)', flexShrink: 0 }}
                     >
                       {isExpanded ? '✕' : '✏️'}
                     </button>
@@ -822,14 +822,14 @@ function UsersTab() {
                   {!isExpanded && (u.active ? (
                     <button
                       onClick={() => handleDelete(u.id)}
-                      style={{ ...btnSmall, fontSize: '11px', padding: '4px 8px', minHeight: '36px', color: 'var(--pe-danger)', flexShrink: 0 }}
+                      style={{ ...btnSmall, fontSize: '11px', padding: '3px 8px', minHeight: '28px', color: 'var(--pe-danger)', flexShrink: 0 }}
                     >
                       Deaktivieren
                     </button>
                   ) : (
                     <button
                       onClick={() => handleReactivate(u.id)}
-                      style={{ ...btnSmall, fontSize: '11px', padding: '4px 8px', minHeight: '36px', color: 'var(--pe-success)', border: '1px solid var(--pe-success)', flexShrink: 0 }}
+                      style={{ ...btnSmall, fontSize: '11px', padding: '3px 8px', minHeight: '28px', color: 'var(--pe-success)', border: '1px solid var(--pe-success)', flexShrink: 0 }}
                     >
                       Reaktivieren
                     </button>
