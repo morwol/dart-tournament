@@ -404,12 +404,151 @@ body {
 .np-btn.undo    { background: rgba(255,69,96,0.12); border-color: var(--pe-danger); color: var(--pe-danger); }
 .ref-exit {
   text-align: center;
-  padding: 8px 0 16px;
+  padding: 8px 0 12px;
   font-size: 10px;
   color: var(--pe-text-muted);
   opacity: 0.5;
   cursor: pointer;
 }
+
+/* ─── REFEREE PLAYER CARDS ─── */
+.ref-player-cards {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--pe-bg-card);
+  border-bottom: 1px solid var(--pe-border);
+}
+.ref-player-card {
+  flex: 1;
+  border-radius: 10px;
+  border: 2px solid var(--pe-border);
+  padding: 10px 12px;
+  transition: all 150ms;
+  position: relative;
+}
+.ref-player-card.active {
+  border-color: var(--pe-cyan-bright);
+  background: rgba(0,184,255,0.06);
+}
+.ref-player-card.inactive { opacity: 0.45; }
+.ref-card-name { font-size: 13px; font-weight: bold; color: var(--pe-text); margin-bottom: 4px; }
+.ref-card-score { font-size: 30px; font-weight: bold; line-height: 1; margin-bottom: 6px; }
+.ref-card-score.hi { background: var(--pe-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.ref-card-score.lo { color: var(--pe-text-muted); }
+.ref-card-badges { display: flex; gap: 4px; flex-wrap: wrap; }
+.ref-badge { font-size: 9px; font-weight: bold; padding: 2px 7px; border-radius: 10px; white-space: nowrap; }
+.ref-badge.anwurf  { background: rgba(255,176,32,0.15); color: var(--pe-warning);      border: 1px solid rgba(255,176,32,0.3);  }
+.ref-badge.am-zug  { background: rgba(0,184,255,0.15);  color: var(--pe-cyan-bright);  border: 1px solid rgba(0,184,255,0.3);   }
+
+/* ─── MODIFIER BAR ─── */
+.ref-mod-bar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--pe-bg-elevated);
+  border-bottom: 1px solid var(--pe-border);
+}
+.ref-mod-btn {
+  flex: 1;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--pe-border);
+  background: var(--pe-bg-card);
+  color: var(--pe-text-muted);
+  font-family: Verdana, Geneva, sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 120ms;
+}
+.ref-mod-btn.active {
+  background: var(--pe-blue-deep);
+  border-color: var(--pe-blue-mid);
+  color: var(--pe-text);
+}
+
+/* ─── NUMBER GRID 1-20 ─── */
+.ref-num-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+  padding: 8px 10px 4px;
+  background: var(--pe-bg);
+}
+.ref-num-btn {
+  background: var(--pe-bg-elevated);
+  border: 1px solid var(--pe-border);
+  border-radius: 8px;
+  color: var(--pe-text);
+  font-size: 15px;
+  font-weight: bold;
+  font-family: Verdana, Geneva, sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+}
+
+/* ─── SPECIAL ROW (Bull / D-Bull / Miss) ─── */
+.ref-special-row {
+  display: flex;
+  gap: 5px;
+  padding: 4px 10px;
+  background: var(--pe-bg);
+}
+.ref-special-btn {
+  flex: 1;
+  min-height: 40px;
+  border-radius: 8px;
+  border: 1px solid var(--pe-border);
+  background: var(--pe-bg-elevated);
+  color: var(--pe-text-sub);
+  font-family: Verdana, Geneva, sans-serif;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.ref-special-btn.miss {
+  background: rgba(255,69,96,0.1);
+  border-color: rgba(255,69,96,0.3);
+  color: var(--pe-danger);
+}
+
+/* ─── ACTION ROW (Undo / display / Confirm) ─── */
+.ref-action-row {
+  display: flex;
+  gap: 8px;
+  padding: 5px 10px 8px;
+  background: var(--pe-bg);
+}
+.ref-input-display {
+  flex: 1;
+  background: var(--pe-bg-elevated);
+  border: 1px solid var(--pe-border);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--pe-cyan-bright);
+  font-family: Verdana, Geneva, sans-serif;
+}
+.ref-act-btn {
+  height: 50px;
+  width: 58px;
+  border-radius: 10px;
+  border: 1px solid var(--pe-border);
+  font-family: Verdana, Geneva, sans-serif;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.ref-act-btn.undo    { background: rgba(255,69,96,0.1); border-color: rgba(255,69,96,0.3); color: var(--pe-danger); }
+.ref-act-btn.confirm { background: var(--pe-blue-deep); border-color: var(--pe-blue-mid);  color: var(--pe-text); }
 
 /* ─── LOGIN SCREEN ─── */
 .login-screen {
@@ -838,32 +977,54 @@ function refPickerContent() {
 }
 
 function refBoardContent() {
+  const nums = Array.from({length:20}, (_,i) =>
+    `<button class="ref-num-btn">${i+1}</button>`
+  ).join('');
   return `
     <div class="ref-board">
       <div class="ref-no-nav-tag">KEIN HEADER · KEIN NAV</div>
-      <div class="ref-scores">
-        <div class="ref-score-block">
-          <div class="ref-player-name">Müller</div>
-          <div class="ref-score-big">342</div>
-          <div class="ref-score-label">verbleibend</div>
+
+      <!-- Player Cards: Anwurf-Badge + Am-Zug-Badge + Score -->
+      <div class="ref-player-cards">
+        <div class="ref-player-card active">
+          <div class="ref-card-name">Müller</div>
+          <div class="ref-card-score hi">342</div>
+          <div class="ref-card-badges">
+            <span class="ref-badge anwurf">Anwurf</span>
+            <span class="ref-badge am-zug">▶ Am Zug</span>
+          </div>
         </div>
-        <div style="font-size:20px;color:var(--pe-text-muted);font-weight:bold;align-self:center;">VS</div>
-        <div class="ref-score-block">
-          <div class="ref-player-name">Schmidt</div>
-          <div class="ref-score-big dim">287</div>
-          <div class="ref-score-label">verbleibend</div>
+        <div class="ref-player-card inactive">
+          <div class="ref-card-name">Schmidt</div>
+          <div class="ref-card-score lo">287</div>
+          <div class="ref-card-badges"></div>
         </div>
       </div>
-      <div class="ref-turn-bar">
-        <span class="ref-turn-label">Eingabe für:</span>
-        <span class="ref-turn-name">Müller</span>
+
+      <!-- Modifier: Single / Double / Triple -->
+      <div class="ref-mod-bar">
+        <button class="ref-mod-btn active">Single</button>
+        <button class="ref-mod-btn">Double</button>
+        <button class="ref-mod-btn">Triple</button>
       </div>
-      <div class="numpad">
-        ${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="np-btn">${n}</button>`).join('')}
-        <button class="np-btn undo">↩</button>
-        <button class="np-btn">0</button>
-        <button class="np-btn confirm">✓</button>
+
+      <!-- Numbers 1–20 (5 columns × 4 rows) -->
+      <div class="ref-num-grid">${nums}</div>
+
+      <!-- Special fields: Bull / D-Bull / Miss -->
+      <div class="ref-special-row">
+        <button class="ref-special-btn">Bull (25)</button>
+        <button class="ref-special-btn">D-Bull (50)</button>
+        <button class="ref-special-btn miss">Miss</button>
       </div>
+
+      <!-- Undo / current input display / Confirm -->
+      <div class="ref-action-row">
+        <button class="ref-act-btn undo">↩</button>
+        <div class="ref-input-display">D-20</div>
+        <button class="ref-act-btn confirm">✓</button>
+      </div>
+
       <div class="ref-exit">← Turnier verlassen</div>
     </div>
   `;
