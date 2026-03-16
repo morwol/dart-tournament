@@ -628,7 +628,7 @@ function PlayersTab() {
                     <div style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--pe-text)' }}>{p.name}</div>
                     <div style={{ fontSize: '11px', color: 'var(--pe-text-muted)', marginTop: '2px' }}>
                       {p.tournaments_count} Turnier{p.tournaments_count !== 1 ? 'e' : ''} · {p.wins}S / {p.losses}N
-                      {p.has_walkon ? <span style={{ marginLeft: '6px', color: 'var(--pe-success)' }}>♪</span> : null}
+                      {p.has_walkon ? <WalkonBadge status={p.walkon_status} title={p.walkon_title} artist={p.walkon_artist} /> : null}
                     </div>
                   </div>
                 </div>
