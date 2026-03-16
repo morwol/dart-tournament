@@ -41,7 +41,7 @@ const inputStyle = {
   background: 'var(--pe-bg-card)',
   border: '1px solid var(--pe-border)',
   color: 'var(--pe-text)',
-  minHeight: '48px',
+  minHeight: '52px',
   fontFamily: 'Verdana, Geneva, sans-serif',
 };
 
@@ -629,7 +629,7 @@ function PlayersTab() {
                         ⏳ Walk-On wird heruntergeladen…
                       </div>
                     ) : (
-                      <button type="submit" disabled={isSaving} style={{ ...btnSmall, background: 'var(--pe-gradient)', color: '#fff', borderRadius: '6px', padding: '8px', fontSize: '10px', opacity: isSaving ? 0.7 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>
+                      <button type="submit" disabled={isSaving} style={{ ...btnSmall, background: 'var(--pe-gradient)', color: 'var(--pe-text)', borderRadius: '6px', padding: '8px', fontSize: '10px', opacity: isSaving ? 0.7 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>
                         {isSaving ? 'Speichert…' : 'Speichern'}
                       </button>
                     )}
@@ -801,7 +801,7 @@ function UsersTab() {
                 {/* Card header row */}
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                   {/* Avatar */}
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0, background: u.active ? 'var(--pe-gradient)' : 'var(--pe-bg-elevated)', border: u.active ? 'none' : '1px solid var(--pe-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px', color: u.active ? '#fff' : 'var(--pe-text-muted)' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0, background: u.active ? 'var(--pe-gradient)' : 'var(--pe-bg-elevated)', border: u.active ? 'none' : '1px solid var(--pe-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px', color: u.active ? 'var(--pe-text)' : 'var(--pe-text-muted)' }}>
                     {(u.vorname || u.username || '?')[0].toUpperCase()}
                   </div>
                   {/* Name + handle */}
@@ -856,7 +856,7 @@ function UsersTab() {
                       </select>
                       <input type="password" value={editForm.password} onChange={e => setEditForm({ ...editForm, password: e.target.value })} placeholder="Neues Passwort" style={{ ...inputStyle, padding: '7px 10px', boxSizing: 'border-box' }} />
                     </div>
-                    <button onClick={() => handleSaveEdit(u.id)} style={{ ...btnSmall, background: 'var(--pe-gradient)', color: '#fff', border: 'none', borderRadius: '7px', padding: '9px', fontSize: '11px', width: '100%' }}>
+                    <button onClick={() => handleSaveEdit(u.id)} style={{ ...btnSmall, background: 'var(--pe-gradient)', color: 'var(--pe-text)', border: 'none', borderRadius: '7px', padding: '9px', fontSize: '11px', width: '100%' }}>
                       Speichern
                     </button>
                   </div>
@@ -888,7 +888,7 @@ function UsersTab() {
                   {!!u.active && (
                     <button
                       onClick={() => editId === u.id ? setEditId(null) : startEdit(u)}
-                      style={{ ...btnSmall, background: editId === u.id ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: editId === u.id ? '#fff' : 'var(--pe-text-sub)', padding: '5px 12px' }}
+                      style={{ ...btnSmall, background: editId === u.id ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: editId === u.id ? 'var(--pe-text)' : 'var(--pe-text-sub)', padding: '5px 12px' }}
                     >
                       {editId === u.id ? 'Abbrechen' : 'Bearbeiten'}
                     </button>
@@ -929,7 +929,7 @@ function UsersTab() {
                       <input type="password" value={editForm.password} onChange={e => setEditForm({ ...editForm, password: e.target.value })} placeholder="Leer = unverändert" style={{ ...inputStyle, width: '100%', padding: '10px 12px', boxSizing: 'border-box' }} />
                     </div>
                   </div>
-                  <button onClick={() => handleSaveEdit(u.id)} style={{ background: 'var(--pe-gradient)', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px 20px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', width: '100%', minHeight: '44px' }}>
+                  <button onClick={() => handleSaveEdit(u.id)} style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', border: 'none', borderRadius: '8px', padding: '12px 20px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', width: '100%', minHeight: '44px' }}>
                     Änderungen speichern
                   </button>
                 </div>
@@ -1016,7 +1016,7 @@ function GastroAdminTab() {
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <h3 style={{ color: 'var(--pe-text-sub)', fontWeight: 'bold', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>Produkte ({products.length})</h3>
-          <button onClick={() => setShowForm(!showForm)} style={{ ...btnSmall, background: 'var(--pe-blue-deep)', color: '#fff', padding: '6px 14px' }}>
+          <button onClick={() => setShowForm(!showForm)} style={{ ...btnSmall, background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', padding: '6px 14px' }}>
             {showForm ? 'Abbrechen' : '+ Neu'}
           </button>
         </div>
@@ -1030,7 +1030,7 @@ function GastroAdminTab() {
             </select>
             <input type="number" step="0.01" min="0" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="Preis (€) *" required style={inputStyle} />
             <input type="number" value={form.sort_order} onChange={e => setForm({ ...form, sort_order: e.target.value })} placeholder="Sortierung" style={inputStyle} />
-            <button type="submit" disabled={!form.name.trim() || !form.price} style={{ gridColumn: '1/-1', background: 'var(--pe-gradient)', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '44px', opacity: (!form.name.trim() || !form.price) ? 0.5 : 1 }}>
+            <button type="submit" disabled={!form.name.trim() || !form.price} style={{ gridColumn: '1/-1', background: 'var(--pe-gradient)', color: 'var(--pe-text)', border: 'none', borderRadius: '8px', padding: '12px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '44px', opacity: (!form.name.trim() || !form.price) ? 0.5 : 1 }}>
               Produkt anlegen
             </button>
           </form>
@@ -1804,7 +1804,7 @@ function TournamentExtendedTab() {
                 : null
               }
             </div>
-            <button type="submit" disabled={creating || !createForm.name.trim()} style={{ width: '100%', marginTop: '16px', padding: '14px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer', minHeight: '52px', opacity: creating ? 0.6 : 1 }}>
+            <button type="submit" disabled={creating || !createForm.name.trim()} style={{ width: '100%', marginTop: '16px', padding: '14px', borderRadius: '10px', background: 'var(--pe-gradient)', color: 'var(--pe-text)', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer', minHeight: '52px', opacity: creating ? 0.6 : 1 }}>
               {creating ? 'Wird angelegt...' : 'Turnier anlegen & weiter →'}
             </button>
           </form>
@@ -1835,7 +1835,7 @@ function TournamentExtendedTab() {
               <span style={{ color: 'var(--pe-text-sub)', fontSize: '13px', fontWeight: 'bold' }}>Anzahl Boards</span>
               <input type="number" min="1" value={config.board_count} onChange={e => setConfig({...config, board_count: e.target.value})} style={{ ...inputStyle, width: '70px', padding: '8px', textAlign: 'center' }} />
             </div>
-            <button onClick={handleSaveConfig} disabled={savingConfig} style={{ width: '100%', marginTop: '16px', padding: '14px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer', minHeight: '52px', opacity: savingConfig ? 0.6 : 1 }}>
+            <button onClick={handleSaveConfig} disabled={savingConfig} style={{ width: '100%', marginTop: '16px', padding: '14px', borderRadius: '10px', background: 'var(--pe-gradient)', color: 'var(--pe-text)', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer', minHeight: '52px', opacity: savingConfig ? 0.6 : 1 }}>
               {savingConfig ? 'Speichern...' : 'Format speichern & weiter →'}
             </button>
           </div>
@@ -1860,7 +1860,7 @@ function TournamentExtendedTab() {
                     <button type="button" onClick={() => setPlayerForm({...playerForm, seed: String((parseInt(playerForm.seed) || 0) + 1)})} style={{ minHeight: '44px', minWidth: '36px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '6px', fontWeight: 'bold', fontSize: '18px', cursor: 'pointer', fontFamily: 'Verdana, Geneva, sans-serif' }}>+</button>
                   </div>
                 )}
-                  <button type="submit" disabled={!playerForm.vorname.trim() || !playerForm.nickname.trim() || !playerForm.nachname.trim()} style={{ flex: 1, padding: '10px 16px', borderRadius: '8px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px', fontSize: '13px', opacity: (!playerForm.vorname.trim() || !playerForm.nickname.trim() || !playerForm.nachname.trim()) ? 0.5 : 1 }}>+ Spieler hinzufügen</button>
+                  <button type="submit" disabled={!playerForm.vorname.trim() || !playerForm.nickname.trim() || !playerForm.nachname.trim()} style={{ flex: 1, padding: '10px 16px', borderRadius: '8px', background: 'var(--pe-gradient)', color: 'var(--pe-text)', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px', fontSize: '13px', opacity: (!playerForm.vorname.trim() || !playerForm.nickname.trim() || !playerForm.nachname.trim()) ? 0.5 : 1 }}>+ Spieler hinzufügen</button>
                 </div>
               </form>
               {/* Mock */}
@@ -1889,7 +1889,7 @@ function TournamentExtendedTab() {
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button onClick={() => setWizardStep(2)} style={{ flex: 1, padding: '14px', borderRadius: '10px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-text-sub)', border: '1px solid var(--pe-border)', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '52px' }}>← Zurück</button>
-              <button onClick={() => setWizardStep(4)} disabled={players.length < 2} style={{ flex: 2, padding: '14px', borderRadius: '10px', background: players.length >= 2 ? 'var(--pe-gradient)' : 'var(--pe-bg-elevated)', color: players.length >= 2 ? '#fff' : 'var(--pe-text-muted)', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '16px', cursor: players.length >= 2 ? 'pointer' : 'not-allowed', minHeight: '52px' }}>
+              <button onClick={() => setWizardStep(4)} disabled={players.length < 2} style={{ flex: 2, padding: '14px', borderRadius: '10px', background: players.length >= 2 ? 'var(--pe-gradient)' : 'var(--pe-bg-elevated)', color: players.length >= 2 ? 'var(--pe-text)' : 'var(--pe-text-muted)', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '16px', cursor: players.length >= 2 ? 'pointer' : 'not-allowed', minHeight: '52px' }}>
                 Weiter mit {players.length} Spielern →
               </button>
             </div>
@@ -1911,7 +1911,7 @@ function TournamentExtendedTab() {
                   <div style={{ color: 'var(--pe-text-sub)', fontSize: '14px', marginBottom: '24px' }}>
                     {wizardTour?.name || newTournament?.name} wurde erfolgreich gestartet.
                   </div>
-                  <button onClick={() => { setWizardStep(0); setNewTournament(null); setWizardTour(null); }} style={{ padding: '14px 28px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '52px' }}>
+                  <button onClick={() => { setWizardStep(0); setNewTournament(null); setWizardTour(null); }} style={{ padding: '14px 28px', borderRadius: '10px', background: 'var(--pe-gradient)', color: 'var(--pe-text)', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '52px' }}>
                     Zur Turnierliste →
                   </button>
                 </div>
@@ -1999,7 +1999,7 @@ function TournamentExtendedTab() {
                 </div>
 
                 {/* Primärer CTA */}
-                <button onClick={generateGroupSchedule} style={{ width: '100%', padding: '16px', borderRadius: '12px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '60px', fontSize: '15px', marginBottom: '8px' }}>
+                <button onClick={generateGroupSchedule} style={{ width: '100%', padding: '16px', borderRadius: '12px', background: 'var(--pe-gradient)', color: 'var(--pe-text)', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '60px', fontSize: '15px', marginBottom: '8px' }}>
                   🎲 Spielplan generieren & Turnier starten
                 </button>
                 <p style={{ color: 'var(--pe-text-muted)', fontSize: '11px', textAlign: 'center', marginBottom: '16px' }}>
@@ -2034,7 +2034,7 @@ function TournamentExtendedTab() {
                   </div>
 
                   {/* Option A: Gruppenphase */}
-                  <button onClick={drawGroups} style={{ padding: '16px', borderRadius: '12px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', boxShadow: '0 4px 14px rgba(0,184,255,0.3)', fontFamily: 'Verdana, Geneva, sans-serif', cursor: 'pointer', minHeight: '64px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <button onClick={drawGroups} style={{ padding: '16px', borderRadius: '12px', background: 'var(--pe-gradient)', color: 'var(--pe-text)', border: 'none', boxShadow: '0 4px 14px rgba(0,184,255,0.3)', fontFamily: 'Verdana, Geneva, sans-serif', cursor: 'pointer', minHeight: '64px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '14px' }}>
                     <span style={{ fontSize: '28px', flexShrink: 0 }}>🏆</span>
                     <div>
                       <div style={{ fontWeight: 'bold', fontSize: '15px' }}>Mit Gruppenphase starten</div>
@@ -2085,7 +2085,7 @@ function TournamentExtendedTab() {
       {tournaments.length === 0 && (
         <div style={{ textAlign: 'center', padding: '48px 16px' }}>
           <p style={{ color: 'var(--pe-text-muted)', fontSize: '16px', marginBottom: '16px' }}>Noch keine Turniere vorhanden.</p>
-          <button onClick={() => setWizardStep(1)} style={{ padding: '14px 28px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '52px' }}>
+          <button onClick={() => setWizardStep(1)} style={{ padding: '14px 28px', borderRadius: '10px', background: 'var(--pe-gradient)', color: 'var(--pe-text)', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '52px' }}>
             Erstes Turnier anlegen
           </button>
         </div>
@@ -2099,7 +2099,7 @@ function TournamentExtendedTab() {
                 <div style={{ color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '16px' }}>{t.name}</div>
                 {t.date && <div style={{ color: 'var(--pe-text-muted)', fontSize: '13px', marginTop: '2px' }}>{t.date}</div>}
               </div>
-              <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', background: t.status === 'active' ? 'var(--pe-success)' : t.status === 'finished' ? 'var(--pe-border)' : 'var(--pe-blue-deep)', color: t.status === 'active' ? '#000' : '#fff' }}>
+              <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', background: t.status === 'active' ? 'var(--pe-success)' : t.status === 'finished' ? 'var(--pe-border)' : 'var(--pe-blue-deep)', color: t.status === 'active' ? '#000' : 'var(--pe-text)' }}>
                 {t.status === 'open' ? 'Offen' : t.status === 'active' ? 'Aktiv' : 'Beendet'}
               </span>
             </div>
@@ -2127,7 +2127,7 @@ function TournamentExtendedTab() {
                 Seeding
               </span>
             ) : null}
-            <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', background: selectedTournament.status === 'active' ? 'var(--pe-success)' : selectedTournament.status === 'finished' ? 'var(--pe-border)' : 'var(--pe-blue-deep)', color: selectedTournament.status === 'active' ? '#000' : '#fff' }}>
+            <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', background: selectedTournament.status === 'active' ? 'var(--pe-success)' : selectedTournament.status === 'finished' ? 'var(--pe-border)' : 'var(--pe-blue-deep)', color: selectedTournament.status === 'active' ? '#000' : 'var(--pe-text)' }}>
               {selectedTournament.status === 'open' ? 'Offen' : selectedTournament.status === 'active' ? 'Aktiv' : 'Beendet'}
             </span>
           </div>
@@ -2150,7 +2150,7 @@ function TournamentExtendedTab() {
                 </div>
               ))}
               {selectedTournament.status === 'open' && !selectedTournament.group_draw_done && (
-                <button onClick={generateGroupSchedule} style={{ width: '100%', marginTop: '8px', padding: '12px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '44px', fontSize: '13px' }}>
+                <button onClick={generateGroupSchedule} style={{ width: '100%', marginTop: '8px', padding: '12px', borderRadius: '10px', background: 'var(--pe-gradient)', color: 'var(--pe-text)', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '44px', fontSize: '13px' }}>
                   Spielplan generieren
                 </button>
               )}
@@ -2160,10 +2160,10 @@ function TournamentExtendedTab() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
             {selectedTournament.status === 'open' && (
               <>
-                <button onClick={() => { setWizardStep(3); }} style={{ padding: '12px 16px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', minHeight: '48px', textAlign: 'left' }}>
+                <button onClick={() => { setWizardStep(3); }} style={{ padding: '12px 16px', borderRadius: '10px', background: 'var(--pe-gradient)', color: 'var(--pe-text)', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', minHeight: '48px', textAlign: 'left' }}>
                   Spieler verwalten →
                 </button>
-                <button onClick={() => { setWizardStep(4); }} style={{ padding: '12px 16px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', minHeight: '48px', textAlign: 'left' }}>
+                <button onClick={() => { setWizardStep(4); }} style={{ padding: '12px 16px', borderRadius: '10px', background: 'var(--pe-gradient)', color: 'var(--pe-text)', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', minHeight: '48px', textAlign: 'left' }}>
                   Auslosung →
                 </button>
               </>
@@ -2186,28 +2186,28 @@ function TournamentExtendedTab() {
 
 // Tab "System-Log" — Audit-Log im Terminal-Stil
 const LOG_CATEGORY_COLORS = {
-  tournament: '#1E7FEB',
-  player:     '#00B8FF',
-  game:       '#00E5A0',
-  config:     '#FFB020',
+  tournament: 'var(--pe-blue-mid)',
+  player:     'var(--pe-cyan-bright)',
+  game:       'var(--pe-success)',
+  config:     'var(--pe-warning)',
   user:       '#C850FF',
-  board:      '#5DD5FF',
-  auth:       '#9CA3AF',
-  system:     '#FF4560',
+  board:      'var(--pe-cyan-light)',
+  auth:       'var(--pe-text-muted)',
+  system:     'var(--pe-danger)',
 };
 
 const LOG_ACTION_COLORS = {
-  CREATE:    '#00E5A0',
-  REGISTER:  '#00E5A0',
-  START:     '#00E5A0',
-  FINISH:    '#1E7FEB',
-  UPDATE:    '#FFB020',
-  LOGIN:     '#9CA3AF',
-  DELETE:    '#FF4560',
-  RESET:     '#FF4560',
-  WIPE:      '#FF4560',
-  LOCK:      '#FFB020',
-  LOG_CLEAR: '#FF4560',
+  CREATE:    'var(--pe-success)',
+  REGISTER:  'var(--pe-success)',
+  START:     'var(--pe-success)',
+  FINISH:    'var(--pe-blue-mid)',
+  UPDATE:    'var(--pe-warning)',
+  LOGIN:     'var(--pe-text-muted)',
+  DELETE:    'var(--pe-danger)',
+  RESET:     'var(--pe-danger)',
+  WIPE:      'var(--pe-danger)',
+  LOCK:      'var(--pe-warning)',
+  LOG_CLEAR: 'var(--pe-danger)',
 };
 
 function LogTab() {
@@ -2235,8 +2235,8 @@ function LogTab() {
   const actions    = ['', 'CREATE', 'REGISTER', 'START', 'FINISH', 'UPDATE', 'DELETE', 'RESET', 'LOCK', 'WIPE', 'LOGIN', 'LOG_CLEAR'];
 
   const termStyle = {
-    background: '#050A10',
-    border: '1px solid #1A2840',
+    background: 'var(--pe-bg)',
+    border: '1px solid var(--pe-border)',
     borderRadius: '10px',
     fontFamily: '"Courier New", Courier, monospace',
     fontSize: '12px',
@@ -2275,25 +2275,25 @@ function LogTab() {
       {/* Terminal */}
       <div style={termStyle}>
         {loading && logs.length === 0 && (
-          <span style={{ color: '#4A6A8A' }}>Lade Log-Einträge...</span>
+          <span style={{ color: 'var(--pe-text-muted)' }}>Lade Log-Einträge...</span>
         )}
         {!loading && loadError && (
-          <span style={{ color: '#FF4560' }}>Fehler: {loadError} — Backend neu starten?</span>
+          <span style={{ color: 'var(--pe-danger)' }}>Fehler: {loadError} — Backend neu starten?</span>
         )}
         {!loading && !loadError && logs.length === 0 && (
-          <span style={{ color: '#4A6A8A' }}>Keine Log-Einträge gefunden.</span>
+          <span style={{ color: 'var(--pe-text-muted)' }}>Keine Log-Einträge gefunden.</span>
         )}
         {logs.map(entry => {
-          const catColor    = LOG_CATEGORY_COLORS[entry.category] || '#9CA3AF';
-          const actionColor = LOG_ACTION_COLORS[entry.action]    || '#FFFFFF';
+          const catColor    = LOG_CATEGORY_COLORS[entry.category] || 'var(--pe-text-muted)';
+          const actionColor = LOG_ACTION_COLORS[entry.action]    || 'var(--pe-text)';
           const ts = entry.ts ? entry.ts.replace('T', ' ').slice(0, 19) : '';
           return (
             <div key={entry.id} style={{ marginBottom: '2px', display: 'flex', gap: '8px', alignItems: 'baseline' }}>
-              <span style={{ color: '#4A6A8A', flexShrink: 0 }}>{ts}</span>
-              <span style={{ color: '#6B8AB0', flexShrink: 0 }}>[{entry.actor}/{entry.role}]</span>
+              <span style={{ color: 'var(--pe-text-muted)', flexShrink: 0 }}>{ts}</span>
+              <span style={{ color: 'var(--pe-text-sub)', flexShrink: 0 }}>[{entry.actor}/{entry.role}]</span>
               <span style={{ color: catColor, fontWeight: 'bold', flexShrink: 0 }}>{entry.category}</span>
               <span style={{ color: actionColor, fontWeight: 'bold', flexShrink: 0 }}>{entry.action}</span>
-              <span style={{ color: '#C8D8E8' }}>{entry.detail}</span>
+              <span style={{ color: 'var(--pe-text)' }}>{entry.detail}</span>
             </div>
           );
         })}
@@ -2470,7 +2470,7 @@ function SettingsTab() {
           disabled={saving}
           style={{
             flex: 2, padding: '14px', borderRadius: '10px', border: 'none', cursor: saving ? 'not-allowed' : 'pointer',
-            background: saved ? 'var(--pe-success)' : 'var(--pe-gradient)', color: saved ? '#000' : '#fff',
+            background: saved ? 'var(--pe-success)' : 'var(--pe-gradient)', color: saved ? '#000' : 'var(--pe-text)',
             fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '15px', minHeight: '52px',
             opacity: saving ? 0.6 : 1,
           }}

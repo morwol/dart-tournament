@@ -190,7 +190,7 @@ function BulloffPanel({ gameId, player1, player2, onDone, isTablet }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             {[player1, player2].map(p => (
               <button key={p.id} onClick={() => setMissWinner(p.id)}
-                style={btn({ minHeight: '56px', background: missWinner === p.id ? 'var(--pe-warning)' : 'var(--pe-bg-card)', color: missWinner === p.id ? '#000' : 'var(--pe-text)', fontSize: '14px', borderColor: missWinner === p.id ? 'var(--pe-warning)' : 'var(--pe-border)', width: '100%' })}>
+                style={btn({ minHeight: '64px', background: missWinner === p.id ? 'var(--pe-warning)' : 'var(--pe-bg-card)', color: missWinner === p.id ? '#000' : 'var(--pe-text)', fontSize: '14px', borderColor: missWinner === p.id ? 'var(--pe-warning)' : 'var(--pe-border)', width: '100%' })}>
                 {p.name}
               </button>
             ))}
@@ -199,7 +199,7 @@ function BulloffPanel({ gameId, player1, player2, onDone, isTablet }) {
       )}
 
       <button onClick={submit} disabled={saving || !canSubmit}
-        style={btn({ minHeight: isTablet ? '68px' : '56px', background: canSubmit ? 'var(--pe-gradient)' : 'var(--pe-bg-elevated)', color: '#fff', border: 'none', fontSize: isTablet ? '18px' : '16px', opacity: (saving || !canSubmit) ? 0.5 : 1, width: '100%' })}>
+        style={btn({ minHeight: isTablet ? '68px' : '64px', background: canSubmit ? 'var(--pe-gradient)' : 'var(--pe-bg-elevated)', color: 'var(--pe-text)', border: 'none', fontSize: isTablet ? '18px' : '16px', opacity: (saving || !canSubmit) ? 0.5 : 1, width: '100%' })}>
         {saving ? 'Speichern...' : 'Bulloff bestätigen'}
       </button>
     </div>
@@ -208,7 +208,7 @@ function BulloffPanel({ gameId, player1, player2, onDone, isTablet }) {
 
 // ── Dart Number Pad ────────────────────────────────────────────────────────
 function DartPad({ modifier, setModifier, onThrow, disabled, isTablet }) {
-  const btnH = isTablet ? '58px' : '54px';
+  const btnH = isTablet ? '64px' : '58px';
   const numFs = isTablet ? '20px' : '17px';
 
   return (
@@ -217,7 +217,7 @@ function DartPad({ modifier, setModifier, onThrow, disabled, isTablet }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
         {['Single', 'Double', 'Triple'].map(m => (
           <button key={m} onClick={() => setModifier(m)}
-            style={btn({ minHeight: isTablet ? '52px' : '48px', background: modifier === m ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: modifier === m ? 'var(--pe-text)' : 'var(--pe-text-sub)', borderColor: modifier === m ? 'var(--pe-blue-mid)' : 'var(--pe-border)', fontSize: isTablet ? '15px' : '14px' })}>
+            style={btn({ minHeight: isTablet ? '64px' : '56px', background: modifier === m ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: modifier === m ? 'var(--pe-text)' : 'var(--pe-text-sub)', borderColor: modifier === m ? 'var(--pe-blue-mid)' : 'var(--pe-border)', fontSize: isTablet ? '15px' : '14px' })}>
             {m}
           </button>
         ))}
@@ -491,7 +491,7 @@ function GameQueue({ boardId, currentGameId, canSwitch, onSelect, onSkip, isTabl
                 </button>
                 {canSwitch && (
                   <button onClick={() => onSelect(g.id)}
-                    style={btn({ padding: '6px 12px', background: 'var(--pe-blue-deep)', color: '#fff', border: 'none', fontSize: '12px', minHeight: '36px', whiteSpace: 'nowrap' })}>
+                    style={btn({ padding: '6px 12px', background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', border: 'none', fontSize: '12px', minHeight: '36px', whiteSpace: 'nowrap' })}>
                     Starten ▶
                   </button>
                 )}
@@ -676,7 +676,7 @@ function TabletLayout({ boardId, boardNumber, selectedGameId, setSelectedGameId,
                 )}
                 {(game.status === 'finished' || canSwitch) && (
                   <button onClick={() => { setSelectedGameId(null); setModifier('Single'); }}
-                    style={btn({ minHeight: '36px', background: 'var(--pe-blue-deep)', color: '#fff', fontSize: '13px', border: 'none' })}>
+                    style={btn({ minHeight: '36px', background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontSize: '13px', border: 'none' })}>
                     Andere Partie wählen
                   </button>
                 )}
@@ -749,7 +749,7 @@ function TabletLayout({ boardId, boardNumber, selectedGameId, setSelectedGameId,
               style={btn({
                 minHeight: '60px',
                 background: current_round_throws.length === 3 ? 'var(--pe-gradient)' : 'var(--pe-bg-elevated)',
-                color: '#fff',
+                color: 'var(--pe-text)',
                 border: current_round_throws.length === 3 ? 'none' : '1px solid var(--pe-border)',
                 fontSize: '17px',
                 opacity: current_round_throws.length === 0 ? 0.4 : 1,
@@ -820,7 +820,7 @@ function PhoneLayout({ boardId, boardNumber, selectedGameId, setSelectedGameId, 
               Gewinner: {(game.winner_id === player1?.id ? player1 : player2)?.name || '—'}
             </p>
           </div>
-          <button onClick={goToPicker} style={btn({ width: '100%', minHeight: '56px', background: 'var(--pe-blue-deep)', color: '#fff', border: 'none', fontSize: '16px' })}>
+          <button onClick={goToPicker} style={btn({ width: '100%', minHeight: '64px', background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', border: 'none', fontSize: '16px' })}>
             Nächste Partie wählen
           </button>
         </div>
@@ -891,7 +891,7 @@ function PhoneLayout({ boardId, boardNumber, selectedGameId, setSelectedGameId, 
             style={btn({
               width: '100%', minHeight: '58px', marginTop: '8px',
               background: current_round_throws.length === 3 ? 'var(--pe-gradient)' : 'var(--pe-bg-card)',
-              color: '#fff', border: `1px solid ${current_round_throws.length === 3 ? 'transparent' : 'var(--pe-border)'}`,
+              color: 'var(--pe-text)', border: `1px solid ${current_round_throws.length === 3 ? 'transparent' : 'var(--pe-border)'}`,
               fontSize: '16px', opacity: current_round_throws.length === 0 ? 0.4 : 1,
             })}>
             Runde abschließen ({current_round_throws.length}/3)
