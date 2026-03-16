@@ -309,6 +309,14 @@ function PlayersTab() {
   const [players, setPlayers] = useState([]);
   const [walkonStatuses, setWalkonStatuses] = useState({}); // { [playerId]: status string }
   const [showForm, setShowForm] = useState(false);
+
+  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 768px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const handler = (e) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
   const [form, setForm] = useState({ vorname: '', nickname: '', nachname: '', walk_on_song: '', walkon_start: 0, walkon_duration: 30 });
   const [editingPlayer, setEditingPlayer] = useState(null);
 
@@ -459,7 +467,7 @@ function PlayersTab() {
         </form>
       )}
 
-      {editingPlayer && (
+      {editingPlayer && !isDesktop && (
         <form onSubmit={handleEdit} className="p-4 rounded-xl mb-4 space-y-3" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-cyan-bright)' }}>
           <p className="text-sm font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>Spieler bearbeiten</p>
           <input type="text" value={editingPlayer.vorname} onChange={(e) => setEditingPlayer({ ...editingPlayer, vorname: e.target.value })} placeholder="Vorname *" required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
@@ -498,47 +506,126 @@ function PlayersTab() {
         </form>
       )}
 
-      <div className="space-y-2">
-        {players.map((p) => (
-          <div key={p.id} className="p-3 rounded-lg flex justify-between items-center" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
-            <div>
-              <span className="font-bold" style={{ color: 'var(--pe-text)' }}>{p.name}</span>
-              {(p.walkon_url || p.walkon_youtube) && (
-                <WalkonBadge status={walkonStatuses[p.id]} />
-              )}
-              <span className="ml-3 text-xs" style={{ color: 'var(--pe-text-muted)' }}>Seed: {p.seed || '—'}</span>
+      {isDesktop ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', maxWidth: '1100px' }}>
+          {players.map((p) => {
+            const isExpanded = editingPlayer?.id === p.id;
+            const hasWalkon = p.walkon_url || p.walkon_youtube;
+            const walkonStatus = walkonStatuses[p.id];
+            let walkonText = '♪ —';
+            let walkonColor = 'var(--pe-text-muted)';
+            if (hasWalkon) {
+              if (walkonStatus === 'ready')                                               { walkonText = '♪ ready';  walkonColor = 'var(--pe-success)'; }
+              else if (walkonStatus === 'downloading' || walkonStatus === 'pending')      { walkonText = '⏳ lädt';  walkonColor = 'var(--pe-warning)'; }
+              else if (walkonStatus === 'error')                                          { walkonText = '✗ Fehler'; walkonColor = 'var(--pe-danger)'; }
+              else                                                                        { walkonText = '♪ —';     walkonColor = 'var(--pe-text-muted)'; }
+            }
+            return (
+              <div key={p.id} style={{ background: 'var(--pe-bg-card)', border: `1px solid ${isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, borderRadius: '10px', padding: '12px' }}>
+                {/* Collapsed header — always visible */}
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  {/* Seed circle */}
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0, background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '13px', color: p.seed ? 'var(--pe-cyan-bright)' : 'var(--pe-text-muted)' }}>
+                    {p.seed ? `#${p.seed}` : '—'}
+                  </div>
+                  {/* Name + walk-on status */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--pe-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                    <div style={{ fontSize: '10px', color: walkonColor, marginTop: '2px' }}>{walkonText}</div>
+                  </div>
+                  {/* Edit / Close button */}
+                  <button
+                    onClick={() => isExpanded
+                      ? setEditingPlayer(null)
+                      : setEditingPlayer({ id: p.id, vorname: p.vorname || '', nickname: p.nickname || '', nachname: p.nachname || '', walk_on_song: p.walkon_url || p.walkon_youtube || '', walkon_start: p.walkon_start ?? 0, walkon_duration: p.walkon_duration ?? 30 })
+                    }
+                    style={{ ...btnSmall, fontSize: '11px', padding: '4px 8px', minHeight: '36px', border: isExpanded ? '1px solid var(--pe-cyan-bright)' : '1px solid var(--pe-border)', background: isExpanded ? 'rgba(0,184,255,0.1)' : 'var(--pe-bg-elevated)', color: isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)', flexShrink: 0 }}
+                  >
+                    {isExpanded ? '✕' : '✏️'}
+                  </button>
+                </div>
+                {/* Expanded accordion form */}
+                {isExpanded && (
+                  <form onSubmit={handleEdit} style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
+                      <input type="text" value={editingPlayer.vorname} onChange={e => setEditingPlayer({ ...editingPlayer, vorname: e.target.value })} placeholder="Vorname *" required style={{ ...inputStyle, padding: '6px 8px' }} />
+                      <input type="text" value={editingPlayer.nachname} onChange={e => setEditingPlayer({ ...editingPlayer, nachname: e.target.value })} placeholder="Nachname *" required style={{ ...inputStyle, padding: '6px 8px' }} />
+                    </div>
+                    <input type="text" value={editingPlayer.nickname} onChange={e => setEditingPlayer({ ...editingPlayer, nickname: e.target.value })} placeholder="Nickname *" required style={{ ...inputStyle, padding: '6px 8px' }} />
+                    <input type="url" value={editingPlayer.walk_on_song || ''} onChange={e => setEditingPlayer({ ...editingPlayer, walk_on_song: e.target.value })} placeholder="Walk-On URL (optional)" style={{ ...inputStyle, padding: '6px 8px' }} />
+                    {editingPlayer.walk_on_song && (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
+                        <input type="number" min="0" value={editingPlayer.walkon_start ?? 0} onChange={e => setEditingPlayer({ ...editingPlayer, walkon_start: e.target.value })} placeholder="Start (Sek.)" required style={{ ...inputStyle, padding: '6px 8px' }} />
+                        <input type="number" min="5" max="120" value={editingPlayer.walkon_duration ?? 30} onChange={e => setEditingPlayer({ ...editingPlayer, walkon_duration: e.target.value })} placeholder="Länge (Sek.)" required style={{ ...inputStyle, padding: '6px 8px' }} />
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      disabled={isActive}
+                      onClick={async () => {
+                        if (!confirm(`${p.name} löschen?`)) return;
+                        try { await api.del(`/tournaments/${selectedTournament}/players/${p.id}`); await loadPlayers(); }
+                        catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
+                      }}
+                      style={{ ...btnSmall, padding: '6px', border: 'none', fontSize: '10px', cursor: isActive ? 'not-allowed' : 'pointer', color: isActive ? 'var(--pe-text-muted)' : 'var(--pe-danger)', opacity: isActive ? 0.4 : 1 }}
+                    >
+                      Löschen
+                    </button>
+                    <button type="submit" style={{ ...btnSmall, background: 'var(--pe-gradient)', color: '#fff', border: 'none', borderRadius: '6px', padding: '8px', fontSize: '10px' }}>
+                      Speichern
+                    </button>
+                  </form>
+                )}
+              </div>
+            );
+          })}
+          {players.length === 0 && (
+            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--pe-text-muted)', fontSize: '13px', padding: '24px' }}>Keine Spieler</p>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {players.map((p) => (
+            <div key={p.id} className="p-3 rounded-lg flex justify-between items-center" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
+              <div>
+                <span className="font-bold" style={{ color: 'var(--pe-text)' }}>{p.name}</span>
+                {(p.walkon_url || p.walkon_youtube) && (
+                  <WalkonBadge status={walkonStatuses[p.id]} />
+                )}
+                <span className="ml-3 text-xs" style={{ color: 'var(--pe-text-muted)' }}>Seed: {p.seed || '—'}</span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setEditingPlayer({
+                    id: p.id,
+                    vorname: p.vorname || '',
+                    nickname: p.nickname || '',
+                    nachname: p.nachname || '',
+                    walk_on_song: p.walkon_url || p.walkon_youtube || '',
+                    walkon_start: p.walkon_start ?? 0,
+                    walkon_duration: p.walkon_duration ?? 30,
+                  })}
+                  style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-cyan-bright)', minHeight: '36px' }}
+                >
+                  Bearbeiten
+                </button>
+                <button
+                  disabled={isActive}
+                  onClick={async () => {
+                    if (!confirm(`${p.name} löschen?`)) return;
+                    try { await api.del(`/tournaments/${selectedTournament}/players/${p.id}`); await loadPlayers(); }
+                    catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
+                  }}
+                  style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: isActive ? 'var(--pe-text-muted)' : 'var(--pe-danger)', minHeight: '36px', cursor: isActive ? 'not-allowed' : 'pointer', opacity: isActive ? 0.4 : 1 }}
+                >
+                  Löschen
+                </button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setEditingPlayer({
-                  id: p.id,
-                  vorname: p.vorname || '',
-                  nickname: p.nickname || '',
-                  nachname: p.nachname || '',
-                  walk_on_song: p.walkon_url || p.walkon_youtube || '',
-                  walkon_start: p.walkon_start ?? 0,
-                  walkon_duration: p.walkon_duration ?? 30,
-                })}
-                style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-cyan-bright)', minHeight: '36px' }}
-              >
-                Bearbeiten
-              </button>
-              <button
-                disabled={isActive}
-                onClick={async () => {
-                  if (!confirm(`${p.name} löschen?`)) return;
-                  try { await api.del(`/tournaments/${selectedTournament}/players/${p.id}`); await loadPlayers(); }
-                  catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
-                }}
-                style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: isActive ? 'var(--pe-text-muted)' : 'var(--pe-danger)', minHeight: '36px', cursor: isActive ? 'not-allowed' : 'pointer', opacity: isActive ? 0.4 : 1 }}
-              >
-                Löschen
-              </button>
-            </div>
-          </div>
-        ))}
-        {players.length === 0 && <p className="text-sm" style={{ color: 'var(--pe-text-muted)' }}>Keine Spieler</p>}
-      </div>
+          ))}
+          {players.length === 0 && <p className="text-sm" style={{ color: 'var(--pe-text-muted)' }}>Keine Spieler</p>}
+        </div>
+      )}
     </div>
   );
 }
