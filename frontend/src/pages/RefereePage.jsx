@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, Navigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useToastStore } from '../store/toasts';
 import { useStore } from '../store';
@@ -839,7 +839,9 @@ function PhoneLayout({ boardId, boardNumber, onLogout, selectedGameId, setSelect
 // ══════════════════════════════════════════════════════════════════════════
 export default function RefereePage() {
   const { addToast } = useToastStore();
-  const { logout } = useStore();
+  const { logout, token } = useStore();
+
+  if (!token) return <Navigate to="/referee" replace />;
   const { boardId: boardNumber } = useParams();
   const [resolvedBoardId, setResolvedBoardId] = useState(null);
   const [boardNotFound, setBoardNotFound] = useState(false);
