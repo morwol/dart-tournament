@@ -14,15 +14,13 @@ function useSubPage() {
 
 export default function AppShell() {
   const { isSubPage, title } = useSubPage();
-  // /referee: TopBar only, no nav row (board picker context)
-  const isRefereeEntry = useMatch('/referee');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar isSubPage={isSubPage} title={title} />
 
-      {/* Desktop top nav — hidden on mobile, hidden at /referee and on sub-pages */}
-      {!isSubPage && !isRefereeEntry && (
+      {/* Desktop top nav — hidden on mobile, hidden on sub-pages */}
+      {!isSubPage && (
         <div className="desktop-nav-only">
           <TopNav />
         </div>
@@ -32,8 +30,8 @@ export default function AppShell() {
         <Outlet />
       </main>
 
-      {/* Mobile bottom nav — hidden on desktop, hidden at /referee and on sub-pages */}
-      {!isSubPage && !isRefereeEntry && (
+      {/* Mobile bottom nav — hidden on desktop, hidden on sub-pages */}
+      {!isSubPage && (
         <div className="mobile-nav-only">
           <BottomNav />
         </div>

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store';
 import { api } from '../api/client';
+import TopBar from '../components/TopBar';
 import { useToastStore } from '../store/toasts';
 
 // ── Login form ──────────────────────────────────────────────────────────────
@@ -224,13 +225,22 @@ function BoardPicker() {
 }
 
 // ── Entry point ─────────────────────────────────────────────────────────────
+// Standalone page (no AppShell):
+//   - Login state:       no TopBar, no nav — just the form
+//   - Board picker state: TopBar (logo + avatar) only — no nav
 export default function RefereeEntryPage() {
   const { setToken, token } = useStore();
 
   const handleLogin = (newToken) => {
-    setToken(newToken);  // updates localStorage + Zustand role → AppShell nav re-renders
+    setToken(newToken);
   };
 
   if (!token) return <RefereeLogin onLogin={handleLogin} />;
-  return <BoardPicker />;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--pe-bg)' }}>
+      <TopBar />
+      <BoardPicker />
+    </div>
+  );
 }

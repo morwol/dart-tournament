@@ -5,6 +5,7 @@ import { useStore } from '../store';
 const TABS = {
   public:     [
     { icon: '🏠', label: 'Home',       path: '/' },
+    { icon: '🎯', label: 'Turnier',    path: '/' },
   ],
   referee:    [
     { icon: '📋', label: 'Boards',     path: '/referee' },

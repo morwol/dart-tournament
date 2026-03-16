@@ -2340,11 +2340,12 @@ function AdminDashboard() {
   const userRole = payload?.role || 'admin';
   const visibleTabs = ALL_TABS.filter(t => t.roles.includes(userRole));
 
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   // Keep role-based guard: if URL names a tab not visible for this role, fall back to 'overview'
   const activeTab = visibleTabs.find(t => t.id === (searchParams.get('tab') || 'overview'))
     ? (searchParams.get('tab') || 'overview')
     : 'overview';
+  const setActiveTab = (tab) => setSearchParams({ tab }, { replace: true });
 
   return (
     <div style={{ fontFamily: 'Verdana, Geneva, sans-serif', padding: '16px', maxWidth: '1200px', margin: '0 auto' }}>

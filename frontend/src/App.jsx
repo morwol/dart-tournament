@@ -83,25 +83,15 @@ export default function App() {
             <Route path="/tournament/:id" element={<TournamentPage />} />
             <Route path="/tournament/:id/register" element={<PlayerRegistrationPage />} />
             <Route path="/gastronomy" element={<GastronomyPage />} />
-            <Route
-              path="/admin"
-              element={<ProtectedRoute element={<AdminPage />} roles={['admin', 'director']} />}
-            />
+            {/* AdminPage has its own AdminLogin gate — no ProtectedRoute needed */}
+            <Route path="/admin" element={<AdminPage />} />
             {/* /admin/users → redirect to /admin?tab=users */}
-            <Route
-              path="/admin/users"
-              element={
-                <ProtectedRoute
-                  element={<Navigate to="/admin?tab=users" replace />}
-                  roles={['admin', 'director']}
-                />
-              }
-            />
-            {/* /referee: TopBar only, no nav (AppShell suppresses via useMatch) */}
-            <Route path="/referee" element={<RefereeEntryPage />} />
+            <Route path="/admin/users" element={<Navigate to="/admin?tab=users" replace />} />
           </Route>
 
           {/* ── Standalone routes: no shell ── */}
+          {/* /referee: login = no TopBar; board picker = TopBar only (RefereeEntryPage renders it) */}
+          <Route path="/referee" element={<RefereeEntryPage />} />
           <Route path="/referee/:boardId" element={<RefereePage />} />
           <Route path="/board/:boardId" element={<CurrentGameView />} />
           <Route path="/nfc" element={<NFCScanPage />} />
