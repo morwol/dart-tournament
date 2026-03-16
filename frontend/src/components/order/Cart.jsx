@@ -22,7 +22,7 @@ export default function Cart({ items, onRemove, onSubmit }) {
               <button
                 onClick={() => onRemove(item.product_id)}
                 className="rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ background: 'var(--pe-bg-card)', color: 'var(--pe-danger)', fontFamily: 'Verdana, Geneva, sans-serif', width: '44px', height: '44px', minWidth: '44px', padding: '10px', boxSizing: 'content-box' }}
+                style={{ background: 'var(--pe-bg-card)', color: 'var(--pe-danger)', fontFamily: 'var(--pe-font-body)', width: '44px', height: '44px', minWidth: '44px', padding: '10px', boxSizing: 'content-box' }}
               >
                 -
               </button>
@@ -37,7 +37,7 @@ export default function Cart({ items, onRemove, onSubmit }) {
       <button
         onClick={onSubmit}
         className="w-full py-4 rounded-xl font-bold text-lg"
-        style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '64px', fontFamily: 'Verdana, Geneva, sans-serif' }}
+        style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '64px', fontFamily: 'var(--pe-font-body)' }}
       >
         Bestellen
       </button>

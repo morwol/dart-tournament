@@ -113,7 +113,7 @@ export default function CurrentGameView() {
 
   if (boardNotFound) {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--pe-bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'Verdana, Geneva, sans-serif', gap: 16, padding: 24 }}>
+      <div style={{ minHeight: '100vh', background: 'var(--pe-bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--pe-font-body)', gap: 16, padding: 24 }}>
         <img src="/logo.jpeg" alt="DartEvent" style={{ height: 56, borderRadius: 8, marginBottom: 8 }} />
         <p style={{ color: 'var(--pe-danger)', fontWeight: 'bold', fontSize: 16 }}>Board {boardNumber} nicht gefunden</p>
         <p style={{ color: 'var(--pe-text-muted)', fontSize: 13, textAlign: 'center' }}>Dieses Board existiert nicht oder gehört nicht zum aktiven Turnier.</p>
@@ -123,7 +123,7 @@ export default function CurrentGameView() {
 
   if (loading || !resolvedBoardId) {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--pe-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+      <div style={{ minHeight: '100vh', background: 'var(--pe-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--pe-font-body)' }}>
         <p style={{ color: 'var(--pe-text-sub)' }}>Lade Board-Daten...</p>
       </div>
     );
@@ -134,14 +134,14 @@ export default function CurrentGameView() {
   const secMar = isMobile ? '8px 12px' : isTablet ? '12px 20px' : '16px 32px';
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--pe-bg)', fontFamily: 'Verdana, Geneva, sans-serif', color: 'var(--pe-text)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--pe-bg)', fontFamily: 'var(--pe-font-body)', color: 'var(--pe-text)', display: 'flex', flexDirection: 'column' }}>
       {youtubeUrl && <YouTubeModal url={youtubeUrl} onClose={() => setYoutubeUrl(null)} />}
 
       {/* Header */}
       <div style={{ background: 'var(--pe-gradient)', padding: hPad, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <img src="/logo.jpeg" alt="DartEvent" style={{ height: isMobile ? 32 : 48, borderRadius: 8, flexShrink: 0 }} />
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          <span style={{ fontSize: isMobile ? 18 : isTablet ? 22 : 28, fontWeight: 'bold', color: 'var(--pe-text)', textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+          <span style={{ fontSize: isMobile ? 18 : isTablet ? 22 : 28, fontFamily: 'var(--pe-font-display)', fontWeight: 700, color: 'var(--pe-text)', textShadow: '0 2px 8px rgba(0,0,0,0.3)', letterSpacing: '0.02em' }}>
             Board {boardNumber}
           </span>
           {gameData && (
@@ -190,26 +190,26 @@ export default function CurrentGameView() {
                 // Mobile: name left, score right
                 <>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
-                    <div style={{ fontSize: 22, fontWeight: 'bold', color: 'var(--pe-text)', lineHeight: 1.2, wordBreak: 'break-word' }}>
+                    <div style={{ fontSize: 22, fontFamily: 'var(--pe-font-display)', fontWeight: 700, color: 'var(--pe-text)', lineHeight: 1.2, wordBreak: 'break-word', letterSpacing: '0.01em' }}>
                       {gameData.player1?.name || 'TBD'}
                     </div>
                     <div style={{ fontSize: 13, color: 'var(--pe-text-sub)' }}>Avg: {calcAverage(gameData.player1?.throws)}</div>
                     {playerStats.p1?.fav_single && <span style={{ fontSize: 11, color: 'var(--pe-text-muted)' }}>♦ {playerStats.p1.fav_single} ({playerStats.p1.fav_single_count}x)</span>}
                     {isQuarterOrLater(gameData.game?.round) && currentGame?.player1_walkon && (
-                      <button style={{ marginTop: 4, padding: '10px 16px', borderRadius: 8, border: '1px solid var(--pe-cyan-bright)', background: 'transparent', color: 'var(--pe-cyan-bright)', fontFamily: 'Verdana, Geneva, sans-serif', fontSize: 11, fontWeight: 'bold', cursor: 'pointer', alignSelf: 'flex-start', minHeight: 64 }} onClick={() => setYoutubeUrl(currentGame.player1_walkon)}>Walk-On</button>
+                      <button style={{ marginTop: 4, padding: '10px 16px', borderRadius: 8, border: '1px solid var(--pe-cyan-bright)', background: 'transparent', color: 'var(--pe-cyan-bright)', fontFamily: 'var(--pe-font-body)', fontSize: 11, fontWeight: 'bold', cursor: 'pointer', alignSelf: 'flex-start', minHeight: 64 }} onClick={() => setYoutubeUrl(currentGame.player1_walkon)}>Walk-On</button>
                     )}
                   </div>
-                  <div style={{ fontSize: 64, fontWeight: 'bold', background: 'var(--pe-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1, flexShrink: 0 }}>
+                  <div style={{ fontSize: 64, fontFamily: 'var(--pe-font-display)', fontWeight: 800, letterSpacing: '-0.01em', background: 'var(--pe-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1, flexShrink: 0 }}>
                     {gameData.player1?.remaining ?? '---'}
                   </div>
                 </>
               ) : (
                 // Desktop: vertical centered
                 <>
-                  <div style={{ fontSize: Math.round(32 * px), fontWeight: 'bold', color: 'var(--pe-text)', textAlign: 'center', lineHeight: 1.2, wordBreak: 'break-word' }}>
+                  <div style={{ fontSize: Math.round(32 * px), fontFamily: 'var(--pe-font-display)', fontWeight: 700, color: 'var(--pe-text)', textAlign: 'center', lineHeight: 1.2, wordBreak: 'break-word', letterSpacing: '0.01em' }}>
                     {gameData.player1?.name || 'TBD'}
                   </div>
-                  <div style={{ fontSize: Math.round(80 * px), fontWeight: 'bold', background: 'var(--pe-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1 }}>
+                  <div style={{ fontSize: Math.round(80 * px), fontFamily: 'var(--pe-font-display)', fontWeight: 800, letterSpacing: '-0.01em', background: 'var(--pe-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1 }}>
                     {gameData.player1?.remaining ?? '---'}
                   </div>
                   <div style={{ fontSize: Math.round(18 * px), color: 'var(--pe-text-sub)' }}>Avg: {calcAverage(gameData.player1?.throws)}</div>
@@ -220,7 +220,7 @@ export default function CurrentGameView() {
                     </div>
                   )}
                   {isQuarterOrLater(gameData.game?.round) && currentGame?.player1_walkon && (
-                    <button style={{ marginTop: 4, padding: '10px 20px', borderRadius: 8, border: '1px solid var(--pe-cyan-bright)', background: 'transparent', color: 'var(--pe-cyan-bright)', fontFamily: 'Verdana, Geneva, sans-serif', fontSize: 13, fontWeight: 'bold', cursor: 'pointer', minHeight: 64 }} onClick={() => setYoutubeUrl(currentGame.player1_walkon)}>Walk-On</button>
+                    <button style={{ marginTop: 4, padding: '10px 20px', borderRadius: 8, border: '1px solid var(--pe-cyan-bright)', background: 'transparent', color: 'var(--pe-cyan-bright)', fontFamily: 'var(--pe-font-body)', fontSize: 13, fontWeight: 'bold', cursor: 'pointer', minHeight: 64 }} onClick={() => setYoutubeUrl(currentGame.player1_walkon)}>Walk-On</button>
                   )}
                 </>
               )}
@@ -250,7 +250,7 @@ export default function CurrentGameView() {
               {isMobile ? (
                 // Mobile: score left, name right (mirrored from player 1)
                 <>
-                  <div style={{ fontSize: 64, fontWeight: 'bold', background: 'var(--pe-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1, flexShrink: 0 }}>
+                  <div style={{ fontSize: 64, fontFamily: 'var(--pe-font-display)', fontWeight: 800, letterSpacing: '-0.01em', background: 'var(--pe-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1, flexShrink: 0 }}>
                     {gameData.player2?.remaining ?? '---'}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flex: 1 }}>
@@ -260,17 +260,17 @@ export default function CurrentGameView() {
                     <div style={{ fontSize: 13, color: 'var(--pe-text-sub)' }}>Avg: {calcAverage(gameData.player2?.throws)}</div>
                     {playerStats.p2?.fav_single && <span style={{ fontSize: 11, color: 'var(--pe-text-muted)' }}>{playerStats.p2.fav_single} ({playerStats.p2.fav_single_count}x) ♦</span>}
                     {isQuarterOrLater(gameData.game?.round) && currentGame?.player2_walkon && (
-                      <button style={{ marginTop: 4, padding: '10px 16px', borderRadius: 8, border: '1px solid var(--pe-cyan-bright)', background: 'transparent', color: 'var(--pe-cyan-bright)', fontFamily: 'Verdana, Geneva, sans-serif', fontSize: 11, fontWeight: 'bold', cursor: 'pointer', alignSelf: 'flex-end', minHeight: 64 }} onClick={() => setYoutubeUrl(currentGame.player2_walkon)}>Walk-On</button>
+                      <button style={{ marginTop: 4, padding: '10px 16px', borderRadius: 8, border: '1px solid var(--pe-cyan-bright)', background: 'transparent', color: 'var(--pe-cyan-bright)', fontFamily: 'var(--pe-font-body)', fontSize: 11, fontWeight: 'bold', cursor: 'pointer', alignSelf: 'flex-end', minHeight: 64 }} onClick={() => setYoutubeUrl(currentGame.player2_walkon)}>Walk-On</button>
                     )}
                   </div>
                 </>
               ) : (
                 // Desktop: vertical centered
                 <>
-                  <div style={{ fontSize: Math.round(32 * px), fontWeight: 'bold', color: 'var(--pe-text)', textAlign: 'center', lineHeight: 1.2, wordBreak: 'break-word' }}>
+                  <div style={{ fontSize: Math.round(32 * px), fontFamily: 'var(--pe-font-display)', fontWeight: 700, color: 'var(--pe-text)', textAlign: 'center', lineHeight: 1.2, wordBreak: 'break-word', letterSpacing: '0.01em' }}>
                     {gameData.player2?.name || 'TBD'}
                   </div>
-                  <div style={{ fontSize: Math.round(80 * px), fontWeight: 'bold', background: 'var(--pe-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1 }}>
+                  <div style={{ fontSize: Math.round(80 * px), fontFamily: 'var(--pe-font-display)', fontWeight: 800, letterSpacing: '-0.01em', background: 'var(--pe-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1 }}>
                     {gameData.player2?.remaining ?? '---'}
                   </div>
                   <div style={{ fontSize: Math.round(18 * px), color: 'var(--pe-text-sub)' }}>Avg: {calcAverage(gameData.player2?.throws)}</div>
@@ -281,7 +281,7 @@ export default function CurrentGameView() {
                     </div>
                   )}
                   {isQuarterOrLater(gameData.game?.round) && currentGame?.player2_walkon && (
-                    <button style={{ marginTop: 4, padding: '10px 20px', borderRadius: 8, border: '1px solid var(--pe-cyan-bright)', background: 'transparent', color: 'var(--pe-cyan-bright)', fontFamily: 'Verdana, Geneva, sans-serif', fontSize: 13, fontWeight: 'bold', cursor: 'pointer', minHeight: 64 }} onClick={() => setYoutubeUrl(currentGame.player2_walkon)}>Walk-On</button>
+                    <button style={{ marginTop: 4, padding: '10px 20px', borderRadius: 8, border: '1px solid var(--pe-cyan-bright)', background: 'transparent', color: 'var(--pe-cyan-bright)', fontFamily: 'var(--pe-font-body)', fontSize: 13, fontWeight: 'bold', cursor: 'pointer', minHeight: 64 }} onClick={() => setYoutubeUrl(currentGame.player2_walkon)}>Walk-On</button>
                   )}
                 </>
               )}
@@ -346,7 +346,7 @@ export default function CurrentGameView() {
             color: 'var(--pe-text-muted)',
             fontSize: '13px',
             textDecoration: 'none',
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',

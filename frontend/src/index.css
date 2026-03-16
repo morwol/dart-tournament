@@ -29,10 +29,45 @@ html {
 body {
   background: var(--pe-bg);
   color: var(--pe-text);
-  font-family: Verdana, Geneva, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── PE Typography Tokens ──────────────────────────────────── */
+:root {
+  /* Body font — Inter Variable */
+  --pe-font-body: 'Inter', system-ui, sans-serif;
+  /* Display font — Barlow Condensed (scores, tournament names) */
+  --pe-font-display: 'Barlow Condensed', system-ui, sans-serif;
+
+  /* Font sizes */
+  --pe-text-xs:   11px;
+  --pe-text-sm:   13px;
+  --pe-text-base: 15px;
+  --pe-text-lg:   17px;
+  --pe-text-xl:   20px;
+  --pe-text-2xl:  24px;
+  --pe-text-3xl:  30px;
+  --pe-text-4xl:  36px;
+
+  /* Border radius scale */
+  --pe-radius-sm:  8px;
+  --pe-radius-md:  12px;
+  --pe-radius-lg:  16px;
+  --pe-radius-xl:  20px;
+  --pe-radius-pill: 9999px;
+
+  /* Spacing scale */
+  --pe-space-1: 4px;
+  --pe-space-2: 8px;
+  --pe-space-3: 12px;
+  --pe-space-4: 16px;
+  --pe-space-5: 20px;
+  --pe-space-6: 24px;
 }
 
 * {
@@ -128,4 +163,30 @@ body {
 /* Mobile content area: pad bottom to clear fixed BottomNav */
 @media (max-width: 767px) {
   main { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+}
+
+/* ─── PE Display Font Utility ───────────────────────────────── */
+/* Use .pe-font-display for score numbers, tournament titles */
+.pe-font-display {
+  font-family: var(--pe-font-display);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+/* Score display — large numbers with Barlow Condensed */
+.pe-score {
+  font-family: var(--pe-font-display);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+/* Label utility — uppercase tracking for section headers */
+.pe-label {
+  font-family: var(--pe-font-body);
+  font-size: var(--pe-text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--pe-text-muted);
 }

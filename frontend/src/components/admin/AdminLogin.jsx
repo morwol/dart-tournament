@@ -49,7 +49,7 @@ export default function AdminLogin() {
             border: '1px solid var(--pe-border)',
             color: 'var(--pe-text)',
             minHeight: '64px',
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
           }}
         />
         <input
@@ -63,7 +63,7 @@ export default function AdminLogin() {
             border: '1px solid var(--pe-border)',
             color: 'var(--pe-text)',
             minHeight: '64px',
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
           }}
         />
 
@@ -73,7 +73,7 @@ export default function AdminLogin() {
           type="submit"
           disabled={submitting || !username.trim() || !password}
           className="w-full py-4 rounded-xl font-bold text-lg disabled:opacity-50"
-          style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '64px', fontFamily: 'Verdana, Geneva, sans-serif' }}
+          style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '64px', fontFamily: 'var(--pe-font-body)' }}
         >
           {submitting ? 'Anmelden...' : 'Anmelden'}
         </button>

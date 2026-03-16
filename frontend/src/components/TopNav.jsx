@@ -61,7 +61,7 @@ export default function TopNav() {
       display: 'flex', alignItems: 'stretch',
       padding: '0 8px', height: '64px',
       flexShrink: 0, overflowX: 'auto',
-      fontFamily: 'Verdana, Geneva, sans-serif',
+      fontFamily: 'var(--pe-font-body)',
       scrollbarWidth: 'none',
     }}>
       {tabs.map((tab) => {
@@ -80,7 +80,7 @@ export default function TopNav() {
               fontWeight: active ? 'bold' : 'normal',
               color: active ? 'var(--pe-cyan-bright)' : 'var(--pe-text-muted)',
               whiteSpace: 'nowrap',
-              fontFamily: 'Verdana, Geneva, sans-serif',
+              fontFamily: 'var(--pe-font-body)',
               transition: 'color 150ms ease, border-color 150ms ease',
             }}
             onMouseEnter={e => { if (!active) e.currentTarget.style.color = 'var(--pe-text-sub)'; }}

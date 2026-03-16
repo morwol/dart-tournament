@@ -34,7 +34,10 @@ function PlayerScore({ name, remaining, lastThrows, isActive }) {
       >
         {isActive && '\u25B6 '}{name}
       </p>
-      <p className="text-4xl font-bold mb-2" style={{ color: 'var(--pe-text)' }}>
+      <p
+        className="mb-2 pe-score"
+        style={{ fontSize: '3rem', color: 'var(--pe-text)' }}
+      >
         {remaining}
       </p>
       {lastThrows.length > 0 && (

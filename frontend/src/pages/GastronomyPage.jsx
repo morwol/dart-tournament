@@ -31,10 +31,10 @@ function GastronomyLogin({ onLogin }) {
     }
   };
 
-  const inp = { background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif', minHeight: '64px', borderRadius: '12px', padding: '0 16px', width: '100%', outline: 'none', fontSize: '16px' };
+  const inp = { background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', fontFamily: 'var(--pe-font-body)', minHeight: '64px', borderRadius: '12px', padding: '0 16px', width: '100%', outline: 'none', fontSize: '16px' };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', fontFamily: 'var(--pe-font-body)' }}>
       <div style={{ width: '100%', maxWidth: '380px' }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <img src="/logo.jpeg" alt="DartEvent" style={{ height: '64px', marginBottom: '16px' }} />
@@ -44,7 +44,7 @@ function GastronomyLogin({ onLogin }) {
           <input type="text" value={form.username} onChange={e => setForm({...form, username: e.target.value})} placeholder="Benutzername" style={inp} />
           <input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="Passwort" style={inp} />
           {error && <p style={{ color: 'var(--pe-danger)', fontSize: '14px', textAlign: 'center' }}>{error}</p>}
-          <button type="submit" disabled={loading || !form.username || !form.password} style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', border: 'none', borderRadius: '12px', padding: '16px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer', minHeight: '64px', opacity: loading ? 0.6 : 1 }}>
+          <button type="submit" disabled={loading || !form.username || !form.password} style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', border: 'none', borderRadius: '12px', padding: '16px', fontFamily: 'var(--pe-font-body)', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer', minHeight: '64px', opacity: loading ? 0.6 : 1 }}>
             {loading ? 'Anmelden...' : 'Anmelden'}
           </button>
         </form>
@@ -57,7 +57,7 @@ function GastronomyLogin({ onLogin }) {
 function SettleConfirmDialog({ guest, total, onConfirm, onCancel }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '16px' }}>
-      <div style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', borderRadius: '16px', padding: '24px', maxWidth: '380px', width: '100%', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+      <div style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', borderRadius: '16px', padding: '24px', maxWidth: '380px', width: '100%', fontFamily: 'var(--pe-font-body)' }}>
         <h3 style={{ color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '18px', margin: '0 0 8px' }}>Abrechnung bestätigen</h3>
         <p style={{ color: 'var(--pe-text-sub)', fontSize: '14px', margin: '0 0 20px' }}>
           Gast <strong style={{ color: 'var(--pe-text)' }}>{guest.guest_name || guest.name || 'Gast'}</strong> jetzt abrechnen?
@@ -67,10 +67,10 @@ function SettleConfirmDialog({ guest, total, onConfirm, onCancel }) {
           <span style={{ color: 'var(--pe-success)', fontWeight: 'bold', fontSize: '22px' }}>{parseFloat(total || 0).toFixed(2)} EUR</span>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={onCancel} style={{ flex: 1, minHeight: '64px', borderRadius: '12px', border: '1px solid var(--pe-border)', background: 'var(--pe-bg-elevated)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
+          <button onClick={onCancel} style={{ flex: 1, minHeight: '64px', borderRadius: '12px', border: '1px solid var(--pe-border)', background: 'var(--pe-bg-elevated)', color: 'var(--pe-text)', fontFamily: 'var(--pe-font-body)', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
             Abbrechen
           </button>
-          <button onClick={onConfirm} style={{ flex: 1, minHeight: '64px', borderRadius: '12px', border: 'none', background: 'var(--pe-success)', color: '#000', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
+          <button onClick={onConfirm} style={{ flex: 1, minHeight: '64px', borderRadius: '12px', border: 'none', background: 'var(--pe-success)', color: '#000', fontFamily: 'var(--pe-font-body)', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
             Abrechnen
           </button>
         </div>
@@ -80,7 +80,7 @@ function SettleConfirmDialog({ guest, total, onConfirm, onCancel }) {
 }
 
 const btnStyle = {
-  fontFamily: 'Verdana, Geneva, sans-serif',
+  fontFamily: 'var(--pe-font-body)',
   borderRadius: '12px',
   fontWeight: 'bold',
   border: '1px solid var(--pe-border)',
@@ -300,7 +300,7 @@ export default function GastronomyPage() {
     : products.filter((p) => p.available && p.category === productFilter);
 
   return (
-    <div className="min-h-screen p-4" style={{ fontFamily: 'Verdana, Geneva, sans-serif' }}>
+    <div className="min-h-screen p-4" style={{ fontFamily: 'var(--pe-font-body)' }}>
       {/* Bestätigungs-Dialog */}
       {settleTarget && (
         <SettleConfirmDialog
@@ -358,7 +358,7 @@ export default function GastronomyPage() {
                     value={guestSearch}
                     onChange={(e) => setGuestSearch(e.target.value)}
                     placeholder="Name suchen..."
-                    style={{ flex: 1, padding: '10px 14px', borderRadius: '8px', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif', minHeight: '64px', outline: 'none' }}
+                    style={{ flex: 1, padding: '10px 14px', borderRadius: '8px', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', fontFamily: 'var(--pe-font-body)', minHeight: '64px', outline: 'none' }}
                   />
                   <button
                     onClick={() => {
@@ -366,7 +366,7 @@ export default function GastronomyPage() {
                         .then((g) => { setGuest(g); setCart([]); setGuestSearch(''); setAllGuests(prev => [...prev, g]); })
                         .catch((err) => addToast({ type: 'error', message: err.message || 'Gast konnte nicht angelegt werden' }));
                     }}
-                    style={{ padding: '10px 14px', borderRadius: '8px', background: 'var(--pe-blue-mid)', color: 'var(--pe-text)', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '64px', whiteSpace: 'nowrap' }}
+                    style={{ padding: '10px 14px', borderRadius: '8px', background: 'var(--pe-blue-mid)', color: 'var(--pe-text)', border: 'none', fontFamily: 'var(--pe-font-body)', fontWeight: 'bold', cursor: 'pointer', minHeight: '64px', whiteSpace: 'nowrap' }}
                   >
                     + Neu
                   </button>
@@ -380,7 +380,7 @@ export default function GastronomyPage() {
                         <button
                           key={g.id}
                           onClick={() => { setGuest(g); setCart([]); setOrderSuccess(false); }}
-                          style={{ padding: '12px 16px', borderRadius: '8px', background: 'var(--pe-bg-card)', border: `1px solid ${gBlocked ? 'var(--pe-danger)' : 'var(--pe-border)'}`, color: 'var(--pe-text)', textAlign: 'left', fontFamily: 'Verdana, Geneva, sans-serif', cursor: 'pointer', minHeight: '64px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                          style={{ padding: '12px 16px', borderRadius: '8px', background: 'var(--pe-bg-card)', border: `1px solid ${gBlocked ? 'var(--pe-danger)' : 'var(--pe-border)'}`, color: 'var(--pe-text)', textAlign: 'left', fontFamily: 'var(--pe-font-body)', cursor: 'pointer', minHeight: '64px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                         >
                           <span style={{ fontWeight: 'bold' }}>{g.name || 'Gast'}</span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -554,7 +554,7 @@ export default function GastronomyPage() {
                           <button
                             onClick={() => removeFromCart(item.product_id)}
                             className="rounded-full flex items-center justify-center text-xs font-bold"
-                            style={{ background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', fontFamily: 'Verdana, Geneva, sans-serif', width: '44px', height: '44px', minWidth: '44px', padding: '10px', boxSizing: 'content-box' }}
+                            style={{ background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', fontFamily: 'var(--pe-font-body)', width: '44px', height: '44px', minWidth: '44px', padding: '10px', boxSizing: 'content-box' }}
                           >
                             -
                           </button>
@@ -574,7 +574,7 @@ export default function GastronomyPage() {
                     onClick={submitOrder}
                     disabled={cart.length === 0 || submitting || isBlocked}
                     className="w-full py-4 rounded-xl font-bold text-lg disabled:opacity-50"
-                    style={{ background: isBlocked ? 'var(--pe-bg-elevated)' : 'var(--pe-gradient)', color: isBlocked ? 'var(--pe-danger)' : 'var(--pe-text)', minHeight: '64px', fontFamily: 'Verdana, Geneva, sans-serif', border: isBlocked ? '1px solid var(--pe-danger)' : 'none', cursor: isBlocked ? 'not-allowed' : 'pointer' }}
+                    style={{ background: isBlocked ? 'var(--pe-bg-elevated)' : 'var(--pe-gradient)', color: isBlocked ? 'var(--pe-danger)' : 'var(--pe-text)', minHeight: '64px', fontFamily: 'var(--pe-font-body)', border: isBlocked ? '1px solid var(--pe-danger)' : 'none', cursor: isBlocked ? 'not-allowed' : 'pointer' }}
                   >
                     {isBlocked ? 'Armband gesperrt' : submitting ? 'Wird gespeichert...' : 'Bestellen'}
                   </button>

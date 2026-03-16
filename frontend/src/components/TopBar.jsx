@@ -56,7 +56,7 @@ export default function TopBar({ isSubPage = false, title = '', onBack }) {
       padding: '0 12px',
       gap: '8px',
       flexShrink: 0,
-      fontFamily: 'Verdana, Geneva, sans-serif',
+      fontFamily: 'var(--pe-font-body)',
       position: 'sticky',
       top: 0,
       zIndex: 100,
@@ -143,7 +143,7 @@ export default function TopBar({ isSubPage = false, title = '', onBack }) {
                 fontSize: '13px',
                 fontWeight: 'bold',
                 color: 'var(--pe-text)',
-                fontFamily: 'Verdana, Geneva, sans-serif',
+                fontFamily: 'var(--pe-font-body)',
                 transition: 'opacity 150ms ease',
               }}
               onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
@@ -165,7 +165,7 @@ export default function TopBar({ isSubPage = false, title = '', onBack }) {
                 padding: '8px',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
                 zIndex: 200,
-                fontFamily: 'Verdana, Geneva, sans-serif',
+                fontFamily: 'var(--pe-font-body)',
               }}>
                 {pill && (
                   <div style={{
@@ -192,7 +192,7 @@ export default function TopBar({ isSubPage = false, title = '', onBack }) {
                     cursor: 'pointer',
                     fontSize: '13px',
                     fontWeight: 'bold',
-                    fontFamily: 'Verdana, Geneva, sans-serif',
+                    fontFamily: 'var(--pe-font-body)',
                     textAlign: 'left',
                     transition: 'background 150ms ease',
                   }}

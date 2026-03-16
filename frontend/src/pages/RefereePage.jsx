@@ -70,7 +70,7 @@ function EmergencyLogout() {
           fontSize: '18px',
           cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: 'Verdana, Geneva, sans-serif',
+          fontFamily: 'var(--pe-font-body)',
         }}
       >
         ⚙
@@ -84,7 +84,7 @@ function EmergencyLogout() {
           padding: '8px',
           minWidth: '140px',
           boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-          fontFamily: 'Verdana, Geneva, sans-serif',
+          fontFamily: 'var(--pe-font-body)',
         }}>
           <button
             onClick={handleLogout}
@@ -97,7 +97,7 @@ function EmergencyLogout() {
               color: 'var(--pe-danger)',
               cursor: 'pointer',
               fontSize: '13px', fontWeight: 'bold',
-              fontFamily: 'Verdana, Geneva, sans-serif',
+              fontFamily: 'var(--pe-font-body)',
               textAlign: 'left',
             }}
             onMouseEnter={e => e.currentTarget.style.background = 'color-mix(in srgb, var(--pe-danger) 10%, transparent)'}
@@ -113,7 +113,7 @@ function EmergencyLogout() {
 
 // ── Shared styles ──────────────────────────────────────────────────────────
 const btn = (extra = {}) => ({
-  fontFamily: 'Verdana, Geneva, sans-serif',
+  fontFamily: 'var(--pe-font-body)',
   borderRadius: '10px',
   fontWeight: 'bold',
   cursor: 'pointer',
@@ -385,7 +385,7 @@ function WalkonPlayButton({ playerId }) {
     <button
       onClick={handlePlay}
       style={{
-        fontFamily: 'Verdana, Geneva, sans-serif',
+        fontFamily: 'var(--pe-font-body)',
         fontSize: '11px',
         fontWeight: 'bold',
         borderRadius: '8px',
@@ -426,7 +426,7 @@ function Scoreboard({ player1, player2, currentThrowerId, bullWinnerId, game, is
               {isActive && <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '6px', background: 'var(--pe-success)', color: '#000', fontWeight: 'bold' }}>▶</span>}
             </div>
             <WalkonPlayButton playerId={p.id} />
-            <div style={{ fontSize: isTablet ? '58px' : '46px', fontWeight: 'bold', color: 'var(--pe-text)', lineHeight: 1, margin: '4px 0' }}>{p.remaining}</div>
+            <div style={{ fontSize: isTablet ? '58px' : '46px', fontFamily: 'var(--pe-font-display)', fontWeight: 800, letterSpacing: '-0.01em', color: 'var(--pe-text)', lineHeight: 1, margin: '4px 0' }}>{p.remaining}</div>
             {p.checkout_suggestions?.length > 0 && (
               <div style={{ fontSize: '11px', color: 'var(--pe-success)', marginBottom: '2px' }}>→ {p.checkout_suggestions[0]}</div>
             )}
@@ -617,7 +617,7 @@ function TabletLayout({ boardId, boardNumber, selectedGameId, setSelectedGameId,
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: 'Verdana, Geneva, sans-serif', background: 'var(--pe-bg)' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: 'var(--pe-font-body)', background: 'var(--pe-bg)' }}>
       <EmergencyLogout />
 
       {/* ── LEFT PANEL ── */}
@@ -728,7 +728,7 @@ function TabletLayout({ boardId, boardNumber, selectedGameId, setSelectedGameId,
                 {(currentThrowerId === player1.id ? player1 : player2)?.name}
               </span>
               <span style={{ marginLeft: 'auto', fontSize: '13px', color: 'var(--pe-text-muted)' }}>
-                Rest: <strong style={{ color: 'var(--pe-text)', fontSize: '16px' }}>
+                Rest: <strong style={{ color: 'var(--pe-text)', fontSize: '16px', fontFamily: 'var(--pe-font-display)', letterSpacing: '0.01em' }}>
                   {currentThrowerId === player1.id ? player1.remaining : player2.remaining}
                 </strong>
               </span>
@@ -784,7 +784,7 @@ function PhoneLayout({ boardId, boardNumber, selectedGameId, setSelectedGameId, 
   const goToPicker = () => { setSelectedGameId(null); setModifier('Single'); };
 
   return (
-    <div style={{ minHeight: '100vh', padding: '12px', maxWidth: '480px', margin: '0 auto', fontFamily: 'Verdana, Geneva, sans-serif', boxSizing: 'border-box' }}>
+    <div style={{ minHeight: '100vh', padding: '12px', maxWidth: '480px', margin: '0 auto', fontFamily: 'var(--pe-font-body)', boxSizing: 'border-box' }}>
       <EmergencyLogout />
 
       {/* Board indicator */}
@@ -857,7 +857,7 @@ function PhoneLayout({ boardId, boardNumber, selectedGameId, setSelectedGameId, 
             borderRadius: '10px',
             padding: '0 12px',
             marginBottom: '10px',
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
             boxSizing: 'border-box',
           }}>
             <span style={{ fontSize: '12px', color: game.bull_winner_id ? 'var(--pe-warning)' : 'var(--pe-text-muted)', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '45%' }}>
@@ -995,7 +995,7 @@ export default function RefereePage() {
 
   if (boardNotFound || !resolvedBoardId) {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--pe-bg)', display: 'flex', flexDirection: 'column', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+      <div style={{ minHeight: '100vh', background: 'var(--pe-bg)', display: 'flex', flexDirection: 'column', fontFamily: 'var(--pe-font-body)' }}>
         {/* Content */}
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
           {boardNotFound ? (
@@ -1006,7 +1006,7 @@ export default function RefereePage() {
                 Kein aktives Turnier mit Board {boardNumber} gefunden.<br />Bitte den Turnierleiter kontaktieren.
               </div>
               <button onClick={() => { setBoardNotFound(false); api.get(`/boards/by-number/${boardNumber}`).then(b => setResolvedBoardId(b.id)).catch(() => setBoardNotFound(true)); }}
-                style={{ background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '8px', padding: '10px 20px', cursor: 'pointer', fontSize: '13px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold' }}>
+                style={{ background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '8px', padding: '10px 20px', cursor: 'pointer', fontSize: '13px', fontFamily: 'var(--pe-font-body)', fontWeight: 'bold' }}>
                 ↻ Erneut versuchen
               </button>
             </div>

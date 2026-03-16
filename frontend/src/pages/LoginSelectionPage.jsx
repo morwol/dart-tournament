@@ -42,7 +42,7 @@ export default function LoginSelectionPage() {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '24px 16px',
-      fontFamily: 'Verdana, Geneva, sans-serif',
+      fontFamily: 'var(--pe-font-body)',
     }}>
       <p style={{
         fontSize: '10px',
@@ -69,7 +69,7 @@ export default function LoginSelectionPage() {
               padding: '18px 20px',
               cursor: 'pointer',
               textAlign: 'left',
-              fontFamily: 'Verdana, Geneva, sans-serif',
+              fontFamily: 'var(--pe-font-body)',
               minHeight: '72px',
               transition: 'opacity 120ms',
             }}

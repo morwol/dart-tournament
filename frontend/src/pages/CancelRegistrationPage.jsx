@@ -40,7 +40,7 @@ export default function CancelRegistrationPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', padding: '20px', maxWidth: '480px', margin: '0 auto', fontFamily: 'Verdana, Geneva, sans-serif', boxSizing: 'border-box' }}>
+    <div style={{ minHeight: '100vh', padding: '20px', maxWidth: '480px', margin: '0 auto', fontFamily: 'var(--pe-font-body)', boxSizing: 'border-box' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
@@ -109,7 +109,7 @@ export default function CancelRegistrationPage() {
           <button
             onClick={handleCancel}
             disabled={cancelling}
-            style={{ background: 'var(--pe-danger)', color: 'var(--pe-text)', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: 'bold', minHeight: '64px', cursor: cancelling ? 'wait' : 'pointer', opacity: cancelling ? 0.7 : 1, fontFamily: 'Verdana, Geneva, sans-serif' }}
+            style={{ background: 'var(--pe-danger)', color: 'var(--pe-text)', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: 'bold', minHeight: '64px', cursor: cancelling ? 'wait' : 'pointer', opacity: cancelling ? 0.7 : 1, fontFamily: 'var(--pe-font-body)' }}
           >
             {cancelling ? 'Wird abgemeldet...' : 'Abmeldung bestätigen'}
           </button>

@@ -34,7 +34,7 @@ function RefereeLogin({ onLogin }) {
     background: 'var(--pe-bg-card)',
     border: '1px solid var(--pe-border)',
     color: 'var(--pe-text)',
-    fontFamily: 'Verdana, Geneva, sans-serif',
+    fontFamily: 'var(--pe-font-body)',
     minHeight: '64px',
     borderRadius: '12px',
     padding: '0 16px',
@@ -50,7 +50,7 @@ function RefereeLogin({ onLogin }) {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '16px',
-      fontFamily: 'Verdana, Geneva, sans-serif',
+      fontFamily: 'var(--pe-font-body)',
     }}>
       <div style={{ width: '100%', maxWidth: '380px' }}>
         <h2 style={{
@@ -93,7 +93,7 @@ function RefereeLogin({ onLogin }) {
               border: 'none',
               borderRadius: '12px',
               padding: '16px',
-              fontFamily: 'Verdana, Geneva, sans-serif',
+              fontFamily: 'var(--pe-font-body)',
               fontWeight: 'bold',
               fontSize: '16px',
               cursor: 'pointer',
@@ -134,7 +134,7 @@ function BoardPicker() {
     justifyContent: 'space-between',
     cursor: occupied ? 'not-allowed' : 'pointer',
     opacity: occupied ? 0.65 : 1,
-    fontFamily: 'Verdana, Geneva, sans-serif',
+    fontFamily: 'var(--pe-font-body)',
     transition: 'border-color 120ms',
   });
 
@@ -165,7 +165,7 @@ function BoardPicker() {
       maxWidth: '480px',
       margin: '0 auto',
       padding: '16px',
-      fontFamily: 'Verdana, Geneva, sans-serif',
+      fontFamily: 'var(--pe-font-body)',
     }}>
       <p style={{
         fontSize: '10px',
@@ -228,7 +228,7 @@ function BoardPicker() {
             color: 'var(--pe-text-muted)',
             fontSize: '13px',
             textDecoration: 'none',
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',

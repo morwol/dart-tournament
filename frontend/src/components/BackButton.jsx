@@ -14,7 +14,7 @@ export default function BackButton({ to = '/', label = 'Zurück' }) {
         border: '1px solid var(--pe-border)',
         color: 'var(--pe-text-sub)',
         textDecoration: 'none',
-        fontFamily: 'Verdana, Geneva, sans-serif',
+        fontFamily: 'var(--pe-font-body)',
         fontWeight: 'bold',
         fontSize: '13px',
         minHeight: '64px',
