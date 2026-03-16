@@ -144,7 +144,7 @@ function BoardsTab() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4" style={{ minHeight: '40px' }}>
         <h2 className="text-lg font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>Boards</h2>
         <button onClick={() => setShowForm(!showForm)} disabled={!selectedTournamentId} className="px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50" style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
           {showForm ? 'Abbrechen' : '+ Neu'}
@@ -341,7 +341,7 @@ function PlayersTab() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4" style={{ minHeight: '40px' }}>
         <h2 className="text-lg font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>Spieler</h2>
         {!isActive && (
           <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
@@ -531,7 +531,7 @@ function UsersTab() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4" style={{ minHeight: '40px' }}>
         <h2 className="text-lg font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>User</h2>
         <button onClick={() => { setShowCreate(!showCreate); setEditId(null); }} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
           {showCreate ? 'Abbrechen' : '+ Neu'}
@@ -854,7 +854,7 @@ function MailingTab() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4" style={{ minHeight: '40px' }}>
         <h2 className="text-lg font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>Mailing</h2>
         <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
           {showForm ? 'Abbrechen' : '+ Template'}
