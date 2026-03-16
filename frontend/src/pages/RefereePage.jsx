@@ -100,7 +100,7 @@ function EmergencyLogout() {
               fontFamily: 'Verdana, Geneva, sans-serif',
               textAlign: 'left',
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,69,96,0.1)'}
+            onMouseEnter={e => e.currentTarget.style.background = 'color-mix(in srgb, var(--pe-danger) 10%, transparent)'}
             onMouseLeave={e => e.currentTarget.style.background = 'none'}
           >
             Abmelden
