@@ -62,7 +62,7 @@ export default function CancelRegistrationPage() {
           <p style={{ color: 'var(--pe-text-sub)', fontSize: '14px', marginBottom: '20px' }}>
             {error}
           </p>
-          <Link to="/" style={{ display: 'inline-block', padding: '12px 24px', background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', borderRadius: '10px', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px' }}>
+          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '12px 24px', background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', borderRadius: '10px', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px', minHeight: '64px' }}>
             Zur Startseite
           </Link>
         </div>
@@ -114,7 +114,7 @@ export default function CancelRegistrationPage() {
             {cancelling ? 'Wird abgemeldet...' : 'Abmeldung bestätigen'}
           </button>
 
-          <Link to="/" style={{ textAlign: 'center', color: 'var(--pe-text-muted)', fontSize: '14px', textDecoration: 'none' }}>
+          <Link to="/" style={{ textAlign: 'center', color: 'var(--pe-text-muted)', fontSize: '14px', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '64px' }}>
             Abbrechen — zurück zur Startseite
           </Link>
         </div>
@@ -133,7 +133,7 @@ export default function CancelRegistrationPage() {
           <p style={{ color: 'var(--pe-text-sub)', fontSize: '14px', marginBottom: '20px' }}>
             Das Turnier <strong style={{ color: 'var(--pe-text)' }}>{info.tournament_name}</strong> hat bereits begonnen. Eine Abmeldung ist nicht mehr möglich.
           </p>
-          <Link to="/" style={{ display: 'inline-block', padding: '12px 24px', background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', borderRadius: '10px', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px' }}>
+          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '12px 24px', background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', borderRadius: '10px', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px', minHeight: '64px' }}>
             Zur Startseite
           </Link>
         </div>
@@ -152,7 +152,7 @@ export default function CancelRegistrationPage() {
           <p style={{ color: 'var(--pe-text-muted)', fontSize: '13px', marginBottom: '24px' }}>
             Du kannst dich jederzeit erneut anmelden, solange die Registrierung noch offen ist.
           </p>
-          <Link to="/" style={{ display: 'inline-block', padding: '14px 28px', background: 'var(--pe-gradient)', color: 'var(--pe-text)', borderRadius: '10px', textDecoration: 'none', fontWeight: 'bold', fontSize: '15px' }}>
+          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '14px 28px', background: 'var(--pe-gradient)', color: 'var(--pe-text)', borderRadius: '10px', textDecoration: 'none', fontWeight: 'bold', fontSize: '15px', minHeight: '64px' }}>
             Zur Startseite
           </Link>
         </div>

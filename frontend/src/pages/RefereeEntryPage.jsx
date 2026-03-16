@@ -35,7 +35,7 @@ function RefereeLogin({ onLogin }) {
     border: '1px solid var(--pe-border)',
     color: 'var(--pe-text)',
     fontFamily: 'Verdana, Geneva, sans-serif',
-    minHeight: '52px',
+    minHeight: '64px',
     borderRadius: '12px',
     padding: '0 16px',
     width: '100%',
@@ -97,7 +97,7 @@ function RefereeLogin({ onLogin }) {
               fontWeight: 'bold',
               fontSize: '16px',
               cursor: 'pointer',
-              minHeight: '56px',
+              minHeight: '64px',
               opacity: loading ? 0.6 : 1,
             }}
           >
@@ -229,6 +229,11 @@ function BoardPicker() {
             fontSize: '13px',
             textDecoration: 'none',
             fontFamily: 'Verdana, Geneva, sans-serif',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '64px',
+            padding: '12px 24px',
           }}
           onMouseEnter={e => e.currentTarget.style.color = 'var(--pe-text-sub)'}
           onMouseLeave={e => e.currentTarget.style.color = 'var(--pe-text-muted)'}

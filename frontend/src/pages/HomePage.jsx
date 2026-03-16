@@ -508,7 +508,7 @@ const styles = {
     fontSize: 14,
     fontWeight: 'bold',
     cursor: 'pointer',
-    minHeight: 48,
+    minHeight: 64,
     whiteSpace: 'nowrap',
     flexShrink: 0,
   },

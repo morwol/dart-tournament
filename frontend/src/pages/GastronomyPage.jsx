@@ -31,7 +31,7 @@ function GastronomyLogin({ onLogin }) {
     }
   };
 
-  const inp = { background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif', minHeight: '56px', borderRadius: '12px', padding: '0 16px', width: '100%', outline: 'none', fontSize: '16px' };
+  const inp = { background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif', minHeight: '64px', borderRadius: '12px', padding: '0 16px', width: '100%', outline: 'none', fontSize: '16px' };
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', fontFamily: 'Verdana, Geneva, sans-serif' }}>
@@ -67,10 +67,10 @@ function SettleConfirmDialog({ guest, total, onConfirm, onCancel }) {
           <span style={{ color: 'var(--pe-success)', fontWeight: 'bold', fontSize: '22px' }}>{parseFloat(total || 0).toFixed(2)} EUR</span>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={onCancel} style={{ flex: 1, minHeight: '56px', borderRadius: '12px', border: '1px solid var(--pe-border)', background: 'var(--pe-bg-elevated)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
+          <button onClick={onCancel} style={{ flex: 1, minHeight: '64px', borderRadius: '12px', border: '1px solid var(--pe-border)', background: 'var(--pe-bg-elevated)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
             Abbrechen
           </button>
-          <button onClick={onConfirm} style={{ flex: 1, minHeight: '56px', borderRadius: '12px', border: 'none', background: 'var(--pe-success)', color: '#000', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
+          <button onClick={onConfirm} style={{ flex: 1, minHeight: '64px', borderRadius: '12px', border: 'none', background: 'var(--pe-success)', color: '#000', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
             Abrechnen
           </button>
         </div>
@@ -358,7 +358,7 @@ export default function GastronomyPage() {
                     value={guestSearch}
                     onChange={(e) => setGuestSearch(e.target.value)}
                     placeholder="Name suchen..."
-                    style={{ flex: 1, padding: '10px 14px', borderRadius: '8px', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif', minHeight: '48px', outline: 'none' }}
+                    style={{ flex: 1, padding: '10px 14px', borderRadius: '8px', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif', minHeight: '64px', outline: 'none' }}
                   />
                   <button
                     onClick={() => {
@@ -366,7 +366,7 @@ export default function GastronomyPage() {
                         .then((g) => { setGuest(g); setCart([]); setGuestSearch(''); setAllGuests(prev => [...prev, g]); })
                         .catch((err) => addToast({ type: 'error', message: err.message || 'Gast konnte nicht angelegt werden' }));
                     }}
-                    style={{ padding: '10px 14px', borderRadius: '8px', background: 'var(--pe-blue-mid)', color: 'var(--pe-text)', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px', whiteSpace: 'nowrap' }}
+                    style={{ padding: '10px 14px', borderRadius: '8px', background: 'var(--pe-blue-mid)', color: 'var(--pe-text)', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '64px', whiteSpace: 'nowrap' }}
                   >
                     + Neu
                   </button>
@@ -380,7 +380,7 @@ export default function GastronomyPage() {
                         <button
                           key={g.id}
                           onClick={() => { setGuest(g); setCart([]); setOrderSuccess(false); }}
-                          style={{ padding: '12px 16px', borderRadius: '8px', background: 'var(--pe-bg-card)', border: `1px solid ${gBlocked ? 'var(--pe-danger)' : 'var(--pe-border)'}`, color: 'var(--pe-text)', textAlign: 'left', fontFamily: 'Verdana, Geneva, sans-serif', cursor: 'pointer', minHeight: '52px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                          style={{ padding: '12px 16px', borderRadius: '8px', background: 'var(--pe-bg-card)', border: `1px solid ${gBlocked ? 'var(--pe-danger)' : 'var(--pe-border)'}`, color: 'var(--pe-text)', textAlign: 'left', fontFamily: 'Verdana, Geneva, sans-serif', cursor: 'pointer', minHeight: '64px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                         >
                           <span style={{ fontWeight: 'bold' }}>{g.name || 'Gast'}</span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -433,7 +433,7 @@ export default function GastronomyPage() {
                         </div>
                         <button
                           onClick={() => { setGuest(null); setCart([]); setGuestOpenOrders(null); }}
-                          style={{ ...btnStyle, minHeight: '44px', padding: '0 16px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-text-sub)', border: '1px solid var(--pe-border)', flexShrink: 0 }}
+                          style={{ ...btnStyle, minHeight: '64px', padding: '0 16px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-text-sub)', border: '1px solid var(--pe-border)', flexShrink: 0 }}
                         >
                           ✕ Schließen
                         </button>
@@ -445,7 +445,7 @@ export default function GastronomyPage() {
                         style={{
                           ...btnStyle,
                           width: '100%',
-                          minHeight: '48px',
+                          minHeight: '64px',
                           background: isBlocked ? 'rgba(0,229,160,0.12)' : 'rgba(255,69,96,0.12)',
                           color: isBlocked ? 'var(--pe-success)' : 'var(--pe-danger)',
                           border: `1px solid ${isBlocked ? 'var(--pe-success)' : 'var(--pe-danger)'}`,
@@ -553,8 +553,8 @@ export default function GastronomyPage() {
                           <span style={{ color: 'var(--pe-text-sub)' }}>{(item.price * item.quantity).toFixed(2)} €</span>
                           <button
                             onClick={() => removeFromCart(item.product_id)}
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-                            style={{ background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', fontFamily: 'Verdana, Geneva, sans-serif' }}
+                            className="rounded-full flex items-center justify-center text-xs font-bold"
+                            style={{ background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', fontFamily: 'Verdana, Geneva, sans-serif', width: '40px', height: '40px', minWidth: '40px', padding: '10px', boxSizing: 'content-box' }}
                           >
                             -
                           </button>
@@ -644,7 +644,7 @@ export default function GastronomyPage() {
                       <button
                         onClick={() => initSettle(g)}
                         disabled={submitting}
-                        style={{ ...btnStyle, width: '100%', minHeight: '56px', background: 'var(--pe-success)', color: '#000', border: 'none', fontSize: '15px' }}
+                        style={{ ...btnStyle, width: '100%', minHeight: '64px', background: 'var(--pe-success)', color: '#000', border: 'none', fontSize: '15px' }}
                       >
                         Jetzt abrechnen
                       </button>

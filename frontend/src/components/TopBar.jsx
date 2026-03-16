@@ -129,9 +129,10 @@ export default function TopBar({ isSubPage = false, title = '', onBack }) {
               aria-label="Benutzermenü öffnen"
               aria-expanded={menuOpen}
               style={{
-                width: '36px',
-                height: '36px',
-                padding: 0,
+                width: '44px',
+                height: '44px',
+                padding: '10px',
+                boxSizing: 'content-box',
                 borderRadius: '50%',
                 background: 'var(--pe-gradient)',
                 border: 'none',
@@ -182,7 +183,7 @@ export default function TopBar({ isSubPage = false, title = '', onBack }) {
                   onClick={handleLogout}
                   style={{
                     width: '100%',
-                    minHeight: '44px',
+                    minHeight: '64px',
                     padding: '10px 12px',
                     background: 'none',
                     border: '1px solid var(--pe-border)',

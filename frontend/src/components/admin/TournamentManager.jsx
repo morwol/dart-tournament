@@ -44,7 +44,7 @@ export default function TournamentManager() {
     background: 'var(--pe-bg-card)',
     border: '1px solid var(--pe-border)',
     color: 'var(--pe-text)',
-    minHeight: '48px',
+    minHeight: '64px',
     fontFamily: 'Verdana, Geneva, sans-serif',
   };
 
@@ -65,8 +65,8 @@ export default function TournamentManager() {
         <h2 className="text-lg font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>Turniere</h2>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 rounded-lg text-sm font-bold"
-          style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}
+          className="px-4 rounded-lg text-sm font-bold"
+          style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif', minHeight: '64px' }}
         >
           {showForm ? 'Abbrechen' : '+ Neu'}
         </button>
@@ -113,7 +113,7 @@ export default function TournamentManager() {
             type="submit"
             disabled={submitting || !form.name.trim()}
             className="w-full py-3 rounded-lg font-bold disabled:opacity-50"
-            style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '48px', fontFamily: 'Verdana, Geneva, sans-serif' }}
+            style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '64px', fontFamily: 'Verdana, Geneva, sans-serif' }}
           >
             Turnier erstellen
           </button>
@@ -140,7 +140,7 @@ export default function TournamentManager() {
               <button
                 onClick={() => handleStart(t.id)}
                 className="w-full py-3 rounded-lg font-bold text-sm mt-2"
-                style={{ background: 'var(--pe-success)', color: '#000', minHeight: '48px', fontFamily: 'Verdana, Geneva, sans-serif' }}
+                style={{ background: 'var(--pe-success)', color: '#000', minHeight: '64px', fontFamily: 'Verdana, Geneva, sans-serif' }}
               >
                 Turnier starten
               </button>

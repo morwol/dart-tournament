@@ -59,7 +59,7 @@ export default function TopNav() {
       background: 'var(--pe-bg-card)',
       borderBottom: '1px solid var(--pe-border)',
       display: 'flex', alignItems: 'stretch',
-      padding: '0 8px', height: '48px',
+      padding: '0 8px', height: '64px',
       flexShrink: 0, overflowX: 'auto',
       fontFamily: 'Verdana, Geneva, sans-serif',
       scrollbarWidth: 'none',

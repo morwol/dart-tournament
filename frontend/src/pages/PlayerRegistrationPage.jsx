@@ -109,7 +109,7 @@ export default function PlayerRegistrationPage() {
             href={cancelLink}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ display: 'block', textAlign: 'center', padding: '10px', borderRadius: '8px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-text-sub)', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold', border: '1px solid var(--pe-border)' }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px', borderRadius: '8px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-text-sub)', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold', border: '1px solid var(--pe-border)', minHeight: '64px' }}
           >
             Link öffnen / testen
           </a>
@@ -117,7 +117,7 @@ export default function PlayerRegistrationPage() {
 
         <Link
           to="/"
-          style={{ display: 'block', textAlign: 'center', padding: '16px', borderRadius: '12px', background: 'var(--pe-gradient)', color: 'var(--pe-text)', textDecoration: 'none', fontWeight: 'bold', fontSize: '16px', minHeight: '56px', lineHeight: '24px' }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', borderRadius: '12px', background: 'var(--pe-gradient)', color: 'var(--pe-text)', textDecoration: 'none', fontWeight: 'bold', fontSize: '16px', minHeight: '64px' }}
         >
           Zur Turnier-Übersicht
         </Link>

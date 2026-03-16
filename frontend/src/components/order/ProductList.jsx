@@ -20,12 +20,13 @@ export default function ProductList({ products, onAdd }) {
           <button
             key={cat.id}
             onClick={() => setFilter(cat.id)}
-            className="px-3 py-2 rounded-lg text-sm font-bold"
+            className="px-3 rounded-lg text-sm font-bold"
             style={{
               background: filter === cat.id ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)',
               border: '1px solid var(--pe-border)',
               color: filter === cat.id ? 'var(--pe-text)' : 'var(--pe-text-sub)',
               fontFamily: 'Verdana, Geneva, sans-serif',
+              minHeight: '64px',
             }}
           >
             {cat.label}
@@ -50,7 +51,7 @@ export default function ProductList({ products, onAdd }) {
               style={{
                 background: 'var(--pe-blue-deep)',
                 color: 'var(--pe-text)',
-                minHeight: '48px',
+                minHeight: '64px',
                 fontFamily: 'Verdana, Geneva, sans-serif',
               }}
             >
