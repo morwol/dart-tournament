@@ -86,7 +86,7 @@ export default function TopNav() {
             onMouseEnter={e => { if (!active) e.currentTarget.style.color = 'var(--pe-text-sub)'; }}
             onMouseLeave={e => { if (!active) e.currentTarget.style.color = 'var(--pe-text-muted)'; }}
           >
-            {tab.icon && <span style={{ fontSize: '13px' }}>{tab.icon}</span>}
+            {tab.icon && <span style={{ fontSize: '13px', marginRight: '4px' }}>{tab.icon}</span>}
             {tab.label}
           </button>
         );
