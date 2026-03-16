@@ -9,8 +9,10 @@ const COLORS = {
   error:   { bg: 'rgba(255,69,96,0.12)',  border: 'rgba(255,69,96,0.3)',  accent: 'var(--pe-danger)'   },
   success: { bg: 'rgba(0,229,160,0.12)',  border: 'rgba(0,229,160,0.3)',  accent: 'var(--pe-success)'  },
   warning: { bg: 'rgba(255,176,32,0.12)', border: 'rgba(255,176,32,0.3)', accent: 'var(--pe-warning)'  },
+  loading: { bg: 'rgba(0,184,255,0.10)',  border: 'rgba(0,184,255,0.3)',  accent: 'var(--pe-cyan-bright)' },
 };
 
+// loading toasts persist until manually removed via removeToast(id)
 const AUTO_DISMISS_MS = { error: 4000, success: 3000, warning: 3000 };
 
 // Inline SVG icons — no external dependency
@@ -33,6 +35,12 @@ const ICONS = {
       <path d="M8 6.5v2.5M8 10.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
   ),
+  loading: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" style={{ animation: 'toast-spin 1s linear infinite' }}>
+      <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.3"/>
+      <path d="M8 1.5A6.5 6.5 0 0 1 14.5 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  ),
 };
 
 // ── Single toast item ─────────────────────────────────────────
@@ -49,8 +57,9 @@ function Toast({ toast, onDismiss }) {
     exitTimerRef.current = setTimeout(() => onDismiss(toast.id), 150);
   };
 
-  // Auto-dismiss lifecycle
+  // Auto-dismiss lifecycle — loading toasts persist until removed via removeToast(id)
   useEffect(() => {
+    if (toast.type === 'loading') return; // no auto-dismiss for loading toasts
     timerRef.current = setTimeout(() => {
       setExiting(true);
       exitTimerRef.current = setTimeout(() => onDismiss(toast.id), 150);

@@ -319,12 +319,13 @@ function WalkonBadge({ status }) {
 }
 
 function PlayersTab() {
-  const { addToast } = useToastStore();
+  const { addToast, removeToast } = useToastStore();
   const [tournaments, setTournaments] = useState([]);
   const [selectedTournament, setSelectedTournament] = useState('');
   const [tournamentStatus, setTournamentStatus] = useState('open');
   const [players, setPlayers] = useState([]);
   const [walkonStatuses, setWalkonStatuses] = useState({}); // { [playerId]: status string }
+  const [walkonLoadingToasts, setWalkonLoadingToasts] = useState({}); // { [playerId]: toastId }
   const [showForm, setShowForm] = useState(false);
 
   const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 768px)').matches);
@@ -350,11 +351,25 @@ function PlayersTab() {
       await Promise.all(downloading.map(async (id) => {
         try {
           const s = await api.get(`/walkon/${id}/status`);
-          updates[id] = s.status;
-          if (s.status === 'ready') {
+          const status = s.job?.status;
+          updates[id] = status;
+          if (status === 'ready') {
+            // Remove persistent loading toast and show success
+            setWalkonLoadingToasts(prev => {
+              if (prev[id]) removeToast(prev[id]);
+              const next = { ...prev };
+              delete next[id];
+              return next;
+            });
             addToast({ type: 'success', message: 'Walk-On bereit ✓' });
             setEditingPlayer(prev => prev?.id === id ? null : prev);
-          } else if (s.status === 'error') {
+          } else if (status === 'error') {
+            setWalkonLoadingToasts(prev => {
+              if (prev[id]) removeToast(prev[id]);
+              const next = { ...prev };
+              delete next[id];
+              return next;
+            });
             addToast({ type: 'error', message: 'Walk-On Download fehlgeschlagen' });
             setEditingPlayer(prev => prev?.id === id ? null : prev);
           }
@@ -393,7 +408,7 @@ function PlayersTab() {
       updated.filter(p => p.walkon_url || p.walkon_youtube).map(async (p) => {
         try {
           const s = await api.get(`/walkon/${p.id}/status`);
-          statuses[p.id] = s.status;
+          statuses[p.id] = s.job?.status;
         } catch { statuses[p.id] = null; }
       })
     );
@@ -441,7 +456,9 @@ function PlayersTab() {
           });
           // Mark as pending immediately — polling effect takes over from here
           setWalkonStatuses(prev => ({ ...prev, [editingPlayer.id]: 'pending' }));
-          addToast({ type: 'success', message: 'Gespeichert — Walk-On wird geladen…' });
+          // Show persistent loading toast — removed automatically when download completes
+          const loadingToastId = addToast({ type: 'loading', message: 'Walk-On wird heruntergeladen…' });
+          setWalkonLoadingToasts(prev => ({ ...prev, [editingPlayer.id]: loadingToastId }));
           // Keep card open so user sees the download progress
         } catch (err) {
           addToast({ type: 'error', message: 'Walk-On konnte nicht gestartet werden: ' + (err.message || '') });
@@ -568,7 +585,7 @@ function PlayersTab() {
             let walkonText = '♪ —';
             let walkonColor = 'var(--pe-text-muted)';
             if (hasWalkon) {
-              if (walkonStatus === 'ready')                                               { walkonText = '♪ ready';  walkonColor = 'var(--pe-success)'; }
+              if (walkonStatus === 'ready')                                               { walkonText = '♪ bereit'; walkonColor = 'var(--pe-success)'; }
               else if (walkonStatus === 'downloading' || walkonStatus === 'pending')      { walkonText = '⏳ lädt';  walkonColor = 'var(--pe-warning)'; }
               else if (walkonStatus === 'error')                                          { walkonText = '✗ Fehler'; walkonColor = 'var(--pe-danger)'; }
               else                                                                        { walkonText = '♪ —';     walkonColor = 'var(--pe-text-muted)'; }
