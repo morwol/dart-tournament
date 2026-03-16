@@ -73,12 +73,16 @@ function OverviewTab() {
   const [activeTournament, setActiveTournament] = useState(null);
 
   useEffect(() => {
-    Promise.all([
-      api.get('/boards').catch(() => []),
-      api.get('/games?status=active').catch(() => []),
-      api.get('/tournaments/active').catch(() => null),
-    ])
-      .then(([b, g, t]) => { setBoards(b); setGames(Array.isArray(g) ? g : []); if(t) setActiveTournament(t); })
+    api.get('/tournaments/active').catch(() => null)
+      .then(t => {
+        if (t) {
+          setActiveTournament(t);
+          return Promise.all([
+            api.get(`/boards?tournament_id=${t.id}`).catch(() => []),
+            api.get('/games?status=active').catch(() => []),
+          ]).then(([b, g]) => { setBoards(b); setGames(Array.isArray(g) ? g : []); });
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -133,7 +137,7 @@ function BoardsTab() {
   }, []);
 
   const loadBoards = () => {
-    if (!selectedTournamentId) return;
+    if (!selectedTournamentId) { setBoards([]); return; }
     api.get(`/boards?tournament_id=${selectedTournamentId}`).then(setBoards).catch(() => {});
   };
 
@@ -217,7 +221,7 @@ function BoardsTab() {
                   <span style={{ fontSize: '9px', padding: '2px 7px', borderRadius: '8px', background: b.current_game_id ? 'rgba(0,229,160,0.15)' : 'rgba(90,115,148,0.15)', color: b.current_game_id ? 'var(--pe-success)' : 'var(--pe-text-muted)', border: b.current_game_id ? '1px solid rgba(0,229,160,0.3)' : '1px solid var(--pe-border)' }}>
                     {b.current_game_id ? '● Aktiv' : 'Frei'}
                   </span>
-                  {b.is_final && (
+                  {!!b.is_final && (
                     <span style={{ fontSize: '9px', padding: '2px 7px', borderRadius: '8px', background: 'rgba(255,176,32,0.15)', color: 'var(--pe-warning)', border: '1px solid rgba(255,176,32,0.3)' }}>★ Final</span>
                   )}
                 </div>
@@ -1525,7 +1529,7 @@ function TournamentExtendedTab() {
   };
 
   const loadBoards = (tid) => {
-    if (!tid) return;
+    if (!tid) { setBoards([]); return; }
     api.get(`/boards?tournament_id=${tid}`).then(setBoards).catch(() => {});
   };
 
@@ -1687,7 +1691,7 @@ function TournamentExtendedTab() {
         const tournamentBoards = availableBoards.filter(b => b.tournament_id == tid).sort((a, b) => a.number - b.number);
         await Promise.all(
           drawnGroups.map((g, i) => {
-            const board = tournamentBoards[i];
+            const board = tournamentBoards[i % tournamentBoards.length];
             if (board) return api.put(`/tournaments/${tid}/groups/${g.id}/board`, { board_id: board.id }).catch(() => null);
             return Promise.resolve();
           })
