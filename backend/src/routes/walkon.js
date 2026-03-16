@@ -173,7 +173,7 @@ router.get('/:playerId/status', (req, res) => {
   const playerId = parseInt(req.params.playerId, 10);
 
   const player = db.prepare(
-    'SELECT id, walkon_file, walkon_start, walkon_duration, walkon_youtube FROM players WHERE id = ?'
+    'SELECT id, walkon_file, walkon_start, walkon_duration, walkon_youtube, walkon_title, walkon_artist FROM players WHERE id = ?'
   ).get(playerId);
   if (!player) {
     return res.status(404).json({ error: 'Spieler nicht gefunden' });
@@ -189,6 +189,8 @@ router.get('/:playerId/status', (req, res) => {
     walkon_start:    player.walkon_start,
     walkon_duration: player.walkon_duration,
     walkon_url:      player.walkon_youtube,
+    walkon_title:    player.walkon_title,
+    walkon_artist:   player.walkon_artist,
     job:             job || null
   });
 });

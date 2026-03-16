@@ -16,6 +16,9 @@ router.get('/:id/players', (req, res) => {
 
   const players = db.prepare(`
     SELECT p.id, p.name, p.vorname, p.nickname, p.nachname, p.walkon_youtube,
+           p.walkon_title, p.walkon_artist,
+           (p.walkon_file IS NOT NULL) AS has_walkon,
+           (SELECT status FROM walkon_jobs WHERE player_id = p.id ORDER BY id DESC LIMIT 1) AS walkon_status,
            tr.seed, tr.registered_at, tr.id as registration_id
     FROM players p
     JOIN tournament_registrations tr ON tr.player_id = p.id
@@ -177,7 +180,11 @@ router.delete('/:id/players/:playerId', requireAdminOrDirector, (req, res) => {
 router.get('/', (req, res) => {
   const players = db.prepare(`
     SELECT
-      p.id, p.name, p.vorname, p.nickname, p.nachname, p.walkon_youtube, p.registered_at,
+      p.id, p.name, p.vorname, p.nickname, p.nachname, p.walkon_youtube,
+      p.walkon_title, p.walkon_artist,
+      (p.walkon_file IS NOT NULL) AS has_walkon,
+      (SELECT status FROM walkon_jobs WHERE player_id = p.id ORDER BY id DESC LIMIT 1) AS walkon_status,
+      p.registered_at,
       COUNT(DISTINCT tr.tournament_id) as tournaments_count,
       COUNT(CASE WHEN g.winner_id = p.id THEN 1 END) as wins,
       COUNT(CASE WHEN g.status = 'finished' AND (g.player1_id = p.id OR g.player2_id = p.id) AND g.winner_id != p.id THEN 1 END) as losses
