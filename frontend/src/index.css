@@ -102,19 +102,20 @@ body {
   to   { opacity: 0; }
 }
 
-/* Desktop top nav: visible only on ≥768px */
-.desktop-nav-only { display: none; }
+/* ─── Responsive nav wrappers ─── */
+/* Desktop TopNav: shown only on ≥768px */
+.pe-topnav-wrap { display: none; }
 @media (min-width: 768px) {
-  .desktop-nav-only { display: block; }
+  .pe-topnav-wrap { display: block; }
 }
 
-/* Mobile bottom nav: visible only on <768px */
-.mobile-nav-only { display: block; }
+/* Mobile BottomNav: shown only on <768px */
+.pe-bottomnav-wrap { display: block; }
 @media (min-width: 768px) {
-  .mobile-nav-only { display: none; }
+  .pe-bottomnav-wrap { display: none; }
 }
 
-/* Mobile content padding clears the fixed bottom nav */
+/* Mobile content area: pad bottom to clear fixed BottomNav */
 @media (max-width: 767px) {
   main { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
 }

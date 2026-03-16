@@ -2329,7 +2329,21 @@ function HelpTab() {
 
 export default function AdminPage() {
   const { token } = useStore();
-  if (!token) return <AdminLogin />;
+
+  if (!token) {
+    // Overlay covers entire viewport including AppShell TopBar — no double header
+    return (
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 500,
+        background: 'var(--pe-bg)',
+        display: 'flex', flexDirection: 'column',
+        overflow: 'auto',
+      }}>
+        <AdminLogin />
+      </div>
+    );
+  }
+
   return <AdminDashboard />;
 }
 
