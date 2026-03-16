@@ -18,8 +18,8 @@
   --pe-success: #00E5A0;
   --pe-warning: #FFB020;
   --pe-danger: #FF4560;
-  --pe-font-body: 'Inter', system-ui, -apple-system, sans-serif;
-  --pe-font-display: 'Barlow Condensed', 'Inter', sans-serif;
+  --pe-font-body: Verdana, Geneva, sans-serif;
+  --pe-font-display: Verdana, Geneva, sans-serif;
 }
 
 /* Display font utility — used for stats, numbers, headings */
@@ -36,7 +36,7 @@ html {
 body {
   background: var(--pe-bg);
   color: var(--pe-text);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: Verdana, Geneva, sans-serif;
   margin: 0;
   padding: 0;
   min-height: 100vh;
@@ -46,10 +46,10 @@ body {
 
 /* ─── PE Typography Tokens ──────────────────────────────────── */
 :root {
-  /* Body font — Inter Variable */
-  --pe-font-body: 'Inter', system-ui, sans-serif;
-  /* Display font — Barlow Condensed (scores, tournament names) */
-  --pe-font-display: 'Barlow Condensed', system-ui, sans-serif;
+  /* Body font — Verdana (PE Corporate Design) */
+  --pe-font-body: Verdana, Geneva, sans-serif;
+  /* Display font — Verdana (PE Corporate Design — no exceptions) */
+  --pe-font-display: Verdana, Geneva, sans-serif;
 
   /* Font sizes */
   --pe-text-xs:   11px;
