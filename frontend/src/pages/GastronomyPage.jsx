@@ -1,10 +1,11 @@
 // NEU: Gastronomie-Seite — iPad/Tablet optimiert, NFC-Scan + Bestellung + Kassen-Ansicht
 import { useEffect, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import NFCScanner from '../components/nfc/NFCScanner';
 import BackButton from '../components/BackButton';
 import { useToastStore } from '../store/toasts';
+import { useStore } from '../store';
 
 // NEU: Gastronomy Login (nur gastronomy + admin)
 function GastronomyLogin({ onLogin }) {
@@ -90,9 +91,18 @@ const btnStyle = {
 export default function GastronomyPage() {
   const { addToast } = useToastStore();
   const [token, setToken] = useState(localStorage.getItem('token'));
+  const { setToken: storeSetToken } = useStore();
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  // view state: initialized from URL, and kept in sync reactively via useEffect below
+  const [view, setView] = useState(
+    tabParam === 'kasse' ? 'register' : tabParam === 'products' ? 'products' : 'order'
+  );
 
-  // NEU: Kassen-Ansicht Toggle (oben: "Bestellung" | "Kasse")
-  const [view, setView] = useState('order'); // 'order' | 'register'
+  // Keep view in sync when user navigates between tabs (URL changes without unmount)
+  useEffect(() => {
+    setView(tabParam === 'kasse' ? 'register' : tabParam === 'products' ? 'products' : 'order');
+  }, [tabParam]);
 
   // NEU: Bestellungs-Ansicht State
   const [guest, setGuest] = useState(null);
@@ -271,7 +281,12 @@ export default function GastronomyPage() {
     return () => clearInterval(interval);
   }, [token, view, loadRegister]);
 
-  if (!token) return <GastronomyLogin onLogin={setToken} />;
+  const handleLogin = (newToken) => {
+    setToken(newToken);         // local state: drives the login gate in this component
+    storeSetToken(newToken);    // Zustand: updates role → AppShell nav re-renders with correct tabs
+  };
+
+  if (!token) return <GastronomyLogin onLogin={handleLogin} />;
 
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const filteredProducts = productFilter === 'all'
@@ -289,20 +304,6 @@ export default function GastronomyPage() {
           onCancel={() => setSettleTarget(null)}
         />
       )}
-
-      {/* NEU: Header */}
-      <div className="flex items-center justify-between mb-4 max-w-5xl mx-auto">
-        <div className="flex items-center gap-3">
-          <BackButton to="/" />
-          <img src="/logo.jpeg" alt="DartEvent" className="h-10" />
-        </div>
-        <h1
-          className="text-xl font-bold"
-          style={{ background: 'var(--pe-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
-        >
-          Gastronomie
-        </h1>
-      </div>
 
       {/* NEU: View-Toggle — Bestellung | Kasse */}
       <div className="flex gap-2 mb-6 max-w-5xl mx-auto">
