@@ -18,8 +18,8 @@
   --pe-success: #00E5A0;
   --pe-warning: #FFB020;
   --pe-danger: #FF4560;
-  --pe-font-body: Verdana, Geneva, sans-serif;
-  --pe-font-display: Verdana, Geneva, sans-serif;
+  --pe-font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --pe-font-display: 'Barlow Condensed', 'Inter', sans-serif;
 }
 
 /* Display font utility — used for stats, numbers, headings */
