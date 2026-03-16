@@ -4,8 +4,8 @@ import { useStore } from '../store';
 
 const TABS = {
   public: [
-    { icon: '🏠', label: 'Home',       path: '/',                    exact: true },
-    { icon: '🎯', label: 'Turnier',    path: '/',                    exact: true },
+    { icon: '🏠', label: 'Home',       path: '/',       exact: true },
+    { icon: '👤', label: 'Anmelden',   path: '/login',  exact: false },
   ],
   referee: [
     { icon: '📋', label: 'Boards',     path: '/referee',             exact: false },
@@ -17,10 +17,11 @@ const TABS = {
     { icon: '📡', label: 'NFC',        path: '/nfc-scan',            exact: false },
   ],
   admin: [
-    { icon: '📊', label: 'Übersicht',  path: '/admin',               exact: false, noQuery: true },
+    { icon: '🏠', label: 'Home',       path: '/',                     exact: true },
+    { icon: '📊', label: 'Übersicht',  path: '/admin',                exact: false, noQuery: true },
     { icon: '🏆', label: 'Turniere',   path: '/admin?tab=tournaments',exact: false },
-    { icon: '🎯', label: 'Boards',     path: '/admin?tab=boards',    exact: false },
-    { icon: '⚙️', label: 'Admin',      path: '/admin?tab=settings',  exact: false },
+    { icon: '🎯', label: 'Boards',     path: '/admin?tab=boards',     exact: false },
+    { icon: '⚙️', label: 'Admin',      path: '/admin?tab=settings',   exact: false },
   ],
   director: [
     { icon: '📊', label: 'Übersicht',  path: '/admin',               exact: false, noQuery: true },

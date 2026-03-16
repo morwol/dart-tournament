@@ -114,7 +114,7 @@ docs/kurze-beschreibung      # Nur Dokumentation
 2. git checkout -b fix/mein-bug
 3. Änderungen machen + committen
 4. git push origin fix/mein-bug
-5. gh pr create --base main --head fix/mein-bug
+5. gh pr create --base dev --head fix/mein-bug
 6. PR mergen
 7. git checkout dev && git pull origin dev  (dev aktuell halten)
 ```
@@ -133,6 +133,53 @@ fix: short description        # bug fix
 docs: short description       # documentation
 refactor: short description   # restructuring without behavior change
 ```
+
+---
+
+## Plugins & Skills (Aktiv)
+
+Diese Plugins sind installiert und müssen in den Workflow integriert werden.
+
+### Wann welchen Skill/Command nutzen
+
+| Aufgabe | Skill/Command |
+|---------|--------------|
+| Neues Feature (komplex, mehrere Dateien) | `/feature-dev <beschreibung>` |
+| Kreative UI-Komponente oder neue Page | `frontend-design` Skill (automatisch getriggert) |
+| PR vor dem Merge reviewen | `/code-review` |
+| Debugging (unklarer Bug, Test-Failures) | `superpowers:systematic-debugging` |
+| Großes Feature planen | `superpowers:writing-plans` → `superpowers:executing-plans` |
+| Ideen explorieren | `superpowers:brainstorming` |
+| Parallele unabhängige Tasks | `superpowers:dispatching-parallel-agents` |
+| Code vereinfachen | `code-simplifier` Agent |
+
+### KRITISCH: frontend-design Skill — PE Design Override
+
+Der `frontend-design` Skill hat eigene Design-Vorgaben, die **für dieses Projekt NICHT gelten**.
+Folgende Punkte des Skills werden durch PE Corporate Design **überschrieben**:
+
+- **Schrift:** Skill sagt "avoid Arial/Verdana" → IGNORIEREN. Hier gilt Verdana, Geneva, sans-serif — PFLICHT
+- **Farben:** Skill schlägt eigene Paletten vor → IGNORIEREN. Nur PE CSS Tokens verwenden (siehe Design-Sektion)
+- **Theme:** Skill variiert zwischen light/dark → IGNORIEREN. Immer Dark Mode (`--pe-bg: #090E1A`)
+- **Gestaltungsfreiheit:** Nur bei Layout, Animationen, Spatial Composition — dort darf der Skill kreativ sein
+
+**Kurzregel:** Frontend-Design Skill = kreative Layouts & Animationen in PE Corporate Design.
+
+### feature-dev Workflow
+
+7-Phasen Prozess: Discovery → Codebase Exploration → Clarifying Questions → Architecture Design → Implementation → Quality Review → Summary.
+
+- Nutzen bei: neuen Features, Architekturentscheidungen, unklaren Requirements
+- **Nicht** nutzen bei: einzelne Bugfixes, Trivial-Änderungen, Hotfixes
+- Agents: `code-explorer`, `code-architect`, `code-reviewer` laufen automatisch parallel
+
+### code-review Workflow
+
+Startet 4 parallele Review-Agents (CLAUDE.md-Compliance × 2, Bug-Scan, Git-Blame-Analyse).
+Filtert Issues unter Confidence 80 heraus — nur echte, hochwahrscheinliche Probleme werden gepostet.
+
+- Laufen lassen: vor jedem nicht-trivialen PR-Merge
+- Ergebnis: GitHub Comment mit konkreten Issues + File-Links
 
 ---
 

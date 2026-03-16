@@ -63,7 +63,7 @@ export default function ThrowInput({ game, onThrow }) {
             background: isDouble ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)',
             border: `1px solid ${isDouble ? 'var(--pe-blue-mid)' : 'var(--pe-border)'}`,
             color: isDouble ? 'var(--pe-text)' : 'var(--pe-text-sub)',
-            minHeight: '48px',
+            minHeight: '64px',
             fontFamily: 'Verdana, Geneva, sans-serif',
           }}
         >

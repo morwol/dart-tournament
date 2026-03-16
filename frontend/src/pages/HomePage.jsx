@@ -22,6 +22,13 @@ export default function HomePage() {
   // NEU: Tab-State für Spielerliste / Bracket / Gruppen
   const [activeTab, setActiveTab] = useState('players');
   const [playerSearch, setPlayerSearch] = useState('');
+  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 768px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const handler = (e) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   // NEU: Turnierdaten laden
   const fetchData = useCallback(async () => {
@@ -99,7 +106,7 @@ export default function HomePage() {
   return (
     <div style={{ minHeight: '100vh', fontFamily: 'Verdana, Geneva, sans-serif' }}>
 
-      <div style={styles.content}>
+      <div style={{ ...styles.content, maxWidth: isDesktop ? 1200 : 600 }}>
         {loading ? (
           <p style={{ color: 'var(--pe-text-sub)', textAlign: 'center' }}>Lade Turniere...</p>
         ) : !activeTournament ? (
@@ -501,7 +508,7 @@ const styles = {
     fontSize: 14,
     fontWeight: 'bold',
     cursor: 'pointer',
-    minHeight: 48,
+    minHeight: 64,
     whiteSpace: 'nowrap',
     flexShrink: 0,
   },
@@ -512,7 +519,7 @@ const styles = {
   },
   playerGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
     gap: 8,
   },
   playerCard: {

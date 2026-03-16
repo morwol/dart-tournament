@@ -1,11 +1,11 @@
 const express = require('express');
 const { db } = require('../db/db');
-const { verifyToken, requireAuth, requireAdmin } = require('../middleware/auth');
+const { verifyToken, requireAuth, requireAdmin, requireAny } = require('../middleware/auth');
 
 const router = express.Router();
 
-// POST /api/orders
-router.post('/', (req, res) => {
+// POST /api/orders — requires guest validation (guest must exist)
+router.post('/', requireAuth, (req, res) => {
   const { guest_id, guest_uid, product_id, quantity } = req.body;
   if (!product_id) return res.status(400).json({ error: 'Produkt-ID fehlt' });
   const qty = quantity !== undefined ? parseInt(quantity, 10) : 1;
@@ -133,7 +133,8 @@ router.post('/settle/:guestId', requireAuth, (req, res) => {
       total_amount: totalAmount,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[orders/settle]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -179,7 +180,8 @@ router.get('/dashboard', requireAuth, (req, res) => {
       settlements: settlements || { count: 0, total: 0 },
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[orders/dashboard]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -203,7 +205,8 @@ router.get('/guest/:guestId', requireAuth, (req, res) => {
     const total = items.reduce((sum, i) => sum + i.total, 0);
     return res.json({ guest, items, total });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[orders/guest]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -214,7 +217,6 @@ router.get('/by-guest', requireAuth, (req, res) => {
       SELECT
         g.id as guest_id,
         g.name as guest_name,
-        g.nfc_uid,
         COUNT(o.id) as open_orders,
         COALESCE(SUM(o.quantity * p.price), 0) as total
       FROM guests g
@@ -240,7 +242,8 @@ router.get('/by-guest', requireAuth, (req, res) => {
 
     return res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[orders/by-guest]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

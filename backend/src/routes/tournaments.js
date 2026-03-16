@@ -47,7 +47,7 @@ router.get('/active', (req, res) => {
     WHERE g.tournament_id = ? ORDER BY g.round, g.id
   `).all(tournament.id);
   const players = db.prepare(`
-    SELECT p.*, tr.seed, tr.registered_at as registered_at, tr.cancel_token
+    SELECT p.*, tr.seed, tr.registered_at as registered_at
     FROM players p JOIN tournament_registrations tr ON tr.player_id = p.id
     WHERE tr.tournament_id = ? ORDER BY tr.seed, tr.registered_at
   `).all(tournament.id);
@@ -75,7 +75,7 @@ router.get('/:id', (req, res) => {
   `).all(req.params.id);
 
   const players = db.prepare(`
-    SELECT p.*, tr.seed, tr.registered_at as registered_at, tr.cancel_token
+    SELECT p.*, tr.seed, tr.registered_at as registered_at
     FROM players p JOIN tournament_registrations tr ON tr.player_id = p.id
     WHERE tr.tournament_id = ? ORDER BY tr.seed, tr.registered_at
   `).all(req.params.id);
@@ -335,7 +335,8 @@ router.post('/:id/draw-groups', requireAdminOrDirector, (req, res) => {
 
     return res.json({ groups: result, num_groups: numGroups });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[tournaments]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -363,7 +364,8 @@ router.get('/:id/groups', (req, res) => {
 
     return res.json({ groups: result, group_draw_done: !!tournament.group_draw_done });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[tournaments]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -503,7 +505,8 @@ router.post('/:id/generate-group-schedule', requireAdminOrDirector, (req, res) =
       board_assignments: groupBoardAssignments,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[tournaments]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -597,7 +600,8 @@ router.post('/:id/generate-bracket', requireAdminOrDirector, (req, res) => {
     const games = db.prepare('SELECT * FROM games WHERE tournament_id = ? ORDER BY round, id').all(req.params.id);
     return res.json({ bracket_size: bracketSize, players: bracketPlayers.length, games });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[tournaments]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -613,7 +617,8 @@ router.put('/:id/lock', requireAdminOrDirector, (req, res) => {
     auditLog(req, 'tournament', 'LOCK', `Turnier "${tournament.name}" abgeschlossen`, tournament.id);
     return res.json(updated);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[tournaments]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -637,7 +642,8 @@ router.post('/:id/reset', requireAdmin, (req, res) => {
     const updated = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(req.params.id);
     return res.json(updated);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[tournaments]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

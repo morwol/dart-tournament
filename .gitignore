@@ -9,7 +9,13 @@ build/
 # Umgebung & Secrets (niemals committen)
 .env
 .env.*
+.env.local
+.env.production
 !.env.example
+
+# Private keys / certificates
+*.pem
+*.key
 
 # SQLite-Datenbank (Backend)
 backend/data/

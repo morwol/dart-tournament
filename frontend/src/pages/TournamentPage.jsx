@@ -46,8 +46,8 @@ export default function TournamentPage() {
       {tournament.status === 'open' && (
         <Link
           to={`/tournament/${id}/register`}
-          className="block text-center py-3 rounded-xl font-bold mb-6 no-underline"
-          style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)' }}
+          className="flex items-center justify-center rounded-xl font-bold mb-6 no-underline"
+          style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '64px' }}
         >
           Jetzt anmelden
         </Link>

@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useToastStore } from '../store/toasts';
 import { useStore } from '../store';
@@ -28,6 +28,87 @@ function useTabletLandscape() {
     return () => window.removeEventListener('resize', h);
   }, []);
   return is;
+}
+
+// Emergency logout — fixed ⚙ button, visible in full-screen scoring view (no AppShell)
+function EmergencyLogout() {
+  const { logout } = useStore();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
+  }, [open]);
+
+  const handleLogout = () => {
+    setOpen(false);
+    logout();
+    navigate('/referee');
+  };
+
+  return (
+    <div ref={ref} style={{ position: 'fixed', top: '12px', right: '12px', zIndex: 200 }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        aria-label="Menü öffnen"
+        style={{
+          width: '64px', height: '64px',
+          borderRadius: '50%',
+          background: 'var(--pe-bg-elevated)',
+          border: '1px solid var(--pe-border)',
+          color: 'var(--pe-text-muted)',
+          fontSize: '18px',
+          cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: 'Verdana, Geneva, sans-serif',
+        }}
+      >
+        ⚙
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+          background: 'var(--pe-bg-elevated)',
+          border: '1px solid var(--pe-border)',
+          borderRadius: '12px',
+          padding: '8px',
+          minWidth: '140px',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+          fontFamily: 'Verdana, Geneva, sans-serif',
+        }}>
+          <button
+            onClick={handleLogout}
+            style={{
+              width: '100%', minHeight: '64px',
+              padding: '10px 12px',
+              background: 'none',
+              border: '1px solid var(--pe-border)',
+              borderRadius: '8px',
+              color: 'var(--pe-danger)',
+              cursor: 'pointer',
+              fontSize: '13px', fontWeight: 'bold',
+              fontFamily: 'Verdana, Geneva, sans-serif',
+              textAlign: 'left',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'color-mix(in srgb, var(--pe-danger) 10%, transparent)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+          >
+            Abmelden
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Shared styles ──────────────────────────────────────────────────────────
@@ -514,7 +595,7 @@ function getPrevRoundLastThrow(liveData) {
 // ══════════════════════════════════════════════════════════════════════════
 // ── TABLET LAYOUT ─────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════
-function TabletLayout({ boardId, boardNumber, onLogout, selectedGameId, setSelectedGameId, liveData, fetchLive, modifier, setModifier, submitting, throwSegment, undoThrow }) {
+function TabletLayout({ boardId, boardNumber, selectedGameId, setSelectedGameId, liveData, fetchLive, modifier, setModifier, submitting, throwSegment, undoThrow }) {
   const { addToast } = useToastStore();
   const { game, player1, player2, current_round_throws = [] } = liveData || {};
   const currentThrowerId = game?.current_turn || game?.bull_winner_id;
@@ -537,18 +618,14 @@ function TabletLayout({ boardId, boardNumber, onLogout, selectedGameId, setSelec
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: 'Verdana, Geneva, sans-serif', background: 'var(--pe-bg)' }}>
+      <EmergencyLogout />
 
       {/* ── LEFT PANEL ── */}
       <div style={{ width: '360px', minWidth: '320px', flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'var(--pe-bg-card)', borderRight: '1px solid var(--pe-border)', overflow: 'hidden', overflowX: 'hidden' }}>
 
-        {/* Header */}
-        <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--pe-border)', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          <img src="/logo.jpeg" alt="" style={{ height: '32px' }} />
-          <span style={{ fontWeight: 'bold', color: 'var(--pe-cyan-bright)', fontSize: '14px', flex: 1 }}>Board {boardNumber}</span>
-          <Link to="/" style={{ color: 'var(--pe-text-muted)', textDecoration: 'none', fontSize: '18px', lineHeight: 1 }}>←</Link>
-          <button onClick={onLogout} style={btn({ padding: '4px 10px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', fontSize: '12px', minHeight: '30px' })}>
-            Abmelden
-          </button>
+        {/* Board indicator */}
+        <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--pe-border)', flexShrink: 0 }}>
+          <span style={{ fontWeight: 'bold', color: 'var(--pe-cyan-bright)', fontSize: '14px' }}>🎯 Board {boardNumber}</span>
         </div>
 
         {/* Content */}
@@ -700,7 +777,7 @@ function TabletLayout({ boardId, boardNumber, onLogout, selectedGameId, setSelec
 // ══════════════════════════════════════════════════════════════════════════
 // ── PHONE LAYOUT ──────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════
-function PhoneLayout({ boardId, boardNumber, onLogout, selectedGameId, setSelectedGameId, liveData, fetchLive, modifier, setModifier, submitting, throwSegment, undoThrow }) {
+function PhoneLayout({ boardId, boardNumber, selectedGameId, setSelectedGameId, liveData, fetchLive, modifier, setModifier, submitting, throwSegment, undoThrow }) {
   const { game, player1, player2, current_round_throws = [] } = liveData || {};
   const currentThrowerId = game?.current_turn || game?.bull_winner_id;
 
@@ -708,20 +785,16 @@ function PhoneLayout({ boardId, boardNumber, onLogout, selectedGameId, setSelect
 
   return (
     <div style={{ minHeight: '100vh', padding: '12px', maxWidth: '480px', margin: '0 auto', fontFamily: 'Verdana, Geneva, sans-serif', boxSizing: 'border-box' }}>
+      <EmergencyLogout />
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-        <Link to="/" style={{ color: 'var(--pe-text-muted)', textDecoration: 'none', fontSize: '20px' }}>←</Link>
-        <img src="/logo.jpeg" alt="" style={{ height: '32px' }} />
-        <span style={{ color: 'var(--pe-text-muted)', fontSize: '13px', fontWeight: 'bold', marginLeft: 'auto' }}>Board {boardNumber}</span>
+      {/* Board indicator */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+        <span style={{ color: 'var(--pe-cyan-bright)', fontSize: '14px', fontWeight: 'bold' }}>🎯 Board {boardNumber}</span>
         {selectedGameId && game && game.status !== 'active' && (
           <button onClick={goToPicker} style={btn({ padding: '5px 10px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-warning)', fontSize: '11px', minHeight: '30px', borderColor: 'var(--pe-warning)' })}>
             Andere Partie
           </button>
         )}
-        <button onClick={onLogout} style={btn({ padding: '5px 10px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', fontSize: '11px', minHeight: '30px' })}>
-          Abmelden
-        </button>
       </div>
 
       {/* No game — picker */}
@@ -839,7 +912,9 @@ function PhoneLayout({ boardId, boardNumber, onLogout, selectedGameId, setSelect
 // ══════════════════════════════════════════════════════════════════════════
 export default function RefereePage() {
   const { addToast } = useToastStore();
-  const { logout } = useStore();
+  const { logout, token } = useStore();
+
+  if (!token) return <Navigate to="/referee" replace />;
   const { boardId: boardNumber } = useParams();
   const [resolvedBoardId, setResolvedBoardId] = useState(null);
   const [boardNotFound, setBoardNotFound] = useState(false);
@@ -918,21 +993,9 @@ export default function RefereePage() {
     finally { setSubmitting(false); }
   };
 
-  const onLogout = logout;
-
   if (boardNotFound || !resolvedBoardId) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--pe-bg)', display: 'flex', flexDirection: 'column', fontFamily: 'Verdana, Geneva, sans-serif' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--pe-bg-card)', borderBottom: '1px solid var(--pe-border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <img src="/logo.png" alt="Logo" style={{ height: '32px' }} onError={e => { e.target.style.display = 'none'; }} />
-            <span style={{ color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '15px' }}>Board {boardNumber}</span>
-          </div>
-          <button onClick={onLogout} style={{ background: 'none', border: '1px solid var(--pe-border)', color: 'var(--pe-text-muted)', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', fontSize: '12px', fontFamily: 'Verdana, Geneva, sans-serif' }}>
-            Abmelden
-          </button>
-        </div>
         {/* Content */}
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
           {boardNotFound ? (
@@ -956,7 +1019,7 @@ export default function RefereePage() {
   }
 
   const shared = {
-    boardId: resolvedBoardId, boardNumber, onLogout,
+    boardId: resolvedBoardId, boardNumber,
     selectedGameId, setSelectedGameId,
     liveData, fetchLive,
     modifier, setModifier,

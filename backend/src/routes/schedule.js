@@ -23,7 +23,8 @@ router.get('/', (req, res) => {
     `).all();
     res.json(entries);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[schedule]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

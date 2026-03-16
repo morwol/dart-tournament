@@ -6,6 +6,7 @@ import PlayerRegistrationPage from './pages/PlayerRegistrationPage';
 import NFCScanPage from './pages/NFCScanPage';
 import OrderPage from './pages/OrderPage';
 import AdminPage from './pages/AdminPage';
+import LoginSelectionPage from './pages/LoginSelectionPage';
 // NEU: Board-Ansicht importieren
 import CurrentGameView from './pages/CurrentGameView';
 import AppShell from './components/AppShell';
@@ -83,6 +84,7 @@ export default function App() {
             <Route path="/tournament/:id" element={<TournamentPage />} />
             <Route path="/tournament/:id/register" element={<PlayerRegistrationPage />} />
             <Route path="/gastronomy" element={<GastronomyPage />} />
+            <Route path="/login" element={<LoginSelectionPage />} />
             {/* AdminPage has its own AdminLogin gate — no ProtectedRoute needed */}
             <Route path="/admin" element={<AdminPage />} />
             {/* /admin/users → redirect to /admin?tab=users */}

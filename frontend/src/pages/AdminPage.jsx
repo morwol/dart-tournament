@@ -45,6 +45,17 @@ const inputStyle = {
   fontFamily: 'Verdana, Geneva, sans-serif',
 };
 
+const selectStyle = {
+  ...inputStyle,
+  appearance: 'none',
+  WebkitAppearance: 'none',
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235A7394' d='M6 8L1 3h10z'/%3E%3C%2Fsvg%3E")`,
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'right 10px center',
+  paddingRight: '30px',
+  cursor: 'pointer',
+};
+
 const btnSmall = {
   fontFamily: 'Verdana, Geneva, sans-serif',
   borderRadius: '8px',
@@ -75,7 +86,9 @@ function OverviewTab() {
 
   return (
     <div>
-      <h2 className="text-lg font-bold mb-4" style={{ color: 'var(--pe-cyan-bright)' }}>Übersicht{activeTournament ? ` — ${activeTournament.name}` : ''}</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Übersicht{activeTournament ? ` — ${activeTournament.name}` : ''}</h2>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
         <div className="p-4 rounded-xl" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
           <p className="text-sm" style={{ color: 'var(--pe-text-muted)' }}>Aktive Spiele</p>
@@ -126,6 +139,14 @@ function BoardsTab() {
 
   useEffect(() => { loadBoards(); }, [selectedTournamentId]);
 
+  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 768px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const handler = (e) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!selectedTournamentId) return;
@@ -144,8 +165,8 @@ function BoardsTab() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>Boards</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Boards</h2>
         <button onClick={() => setShowForm(!showForm)} disabled={!selectedTournamentId} className="px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50" style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
           {showForm ? 'Abbrechen' : '+ Neu'}
         </button>
@@ -156,7 +177,7 @@ function BoardsTab() {
         value={selectedTournamentId}
         onChange={(e) => setSelectedTournamentId(e.target.value)}
         className="w-full p-3 rounded-lg outline-none mb-4"
-        style={inputStyle}
+        style={selectStyle}
       >
         <option value="">-- Turnier auswählen --</option>
         {tournaments.map(t => (
@@ -183,47 +204,101 @@ function BoardsTab() {
         </form>
       )}
 
-      <div className="space-y-3">
-        {boards.map((b) => (
-          <div key={b.id} className="p-4 rounded-xl" style={{ background: 'var(--pe-bg-card)', border: `1px solid ${b.is_final ? 'var(--pe-warning)' : 'var(--pe-border)'}` }}>
-            <div className="flex justify-between items-center mb-3">
-              <div>
-                <span className="font-bold" style={{ color: 'var(--pe-text)' }}>Board {b.number}</span>
-                {b.name && <span className="ml-2 text-sm" style={{ color: 'var(--pe-text-sub)' }}>({b.name})</span>}
-                {b.is_final ? <span className="ml-2 text-xs font-bold" style={{ color: 'var(--pe-warning)' }}>★ FINAL</span> : null}
+      {isDesktop ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+          {boards.map((b) => {
+            const isFinalDisabled = !b.is_final && boards.some(x => x.is_final && x.id !== b.id);
+            return (
+              <div key={b.id} style={{ background: 'var(--pe-bg-card)', border: b.is_final ? '1px solid var(--pe-warning)' : '1px solid var(--pe-border)', borderRadius: '10px', padding: '12px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ fontSize: '22px' }}>🎯</div>
+                <div style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--pe-text)' }}>Board {b.number}</div>
+                {b.name && <div style={{ fontSize: '10px', color: 'var(--pe-text-muted)' }}>{b.name}</div>}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'stretch' }}>
+                  <span style={{ fontSize: '9px', padding: '2px 7px', borderRadius: '8px', background: b.current_game_id ? 'rgba(0,229,160,0.15)' : 'rgba(90,115,148,0.15)', color: b.current_game_id ? 'var(--pe-success)' : 'var(--pe-text-muted)', border: b.current_game_id ? '1px solid rgba(0,229,160,0.3)' : '1px solid var(--pe-border)' }}>
+                    {b.current_game_id ? '● Aktiv' : 'Frei'}
+                  </span>
+                  {b.is_final && (
+                    <span style={{ fontSize: '9px', padding: '2px 7px', borderRadius: '8px', background: 'rgba(255,176,32,0.15)', color: 'var(--pe-warning)', border: '1px solid rgba(255,176,32,0.3)' }}>★ Final</span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '4px', marginTop: 'auto' }}>
+                  <button
+                    disabled={isFinalDisabled}
+                    title={isFinalDisabled ? 'Es kann nur ein Final-Board geben' : ''}
+                    onClick={async () => {
+                      try {
+                        await api.put(`/boards/${b.id}/final`, { is_final: !b.is_final });
+                        loadBoards();
+                      } catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
+                    }}
+                    style={{ ...btnSmall, flex: 1, padding: '4px 6px', border: 'none', fontSize: '10px', cursor: isFinalDisabled ? 'not-allowed' : 'pointer', background: b.is_final ? 'var(--pe-warning)' : 'var(--pe-bg-elevated)', color: b.is_final ? '#000' : 'var(--pe-text-sub)', opacity: isFinalDisabled ? 0.4 : 1 }}
+                  >
+                    {b.is_final ? '★ Final' : 'Als Final markieren'}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`Board ${b.number} löschen?`)) return;
+                      try { await api.del(`/boards/${b.id}`); loadBoards(); }
+                      catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
+                    }}
+                    style={{ ...btnSmall, padding: '4px 8px', border: 'none', fontSize: '10px', color: 'var(--pe-danger)' }}
+                  >
+                    Löschen
+                  </button>
+                </div>
               </div>
-              <span className="text-xs" style={{ color: b.current_game_id ? 'var(--pe-success)' : 'var(--pe-text-muted)' }}>
-                {b.current_game_id ? 'Aktiv' : 'Frei'}
-              </span>
+            );
+          })}
+          {boards.length === 0 && selectedTournamentId && (
+            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--pe-text-muted)', fontSize: '13px', padding: '24px' }}>Keine Boards für dieses Turnier.</p>
+          )}
+          {!selectedTournamentId && (
+            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--pe-text-muted)', fontSize: '13px', padding: '24px' }}>Keine Turniere vorhanden.</p>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {boards.map((b) => (
+            <div key={b.id} className="p-4 rounded-xl" style={{ background: 'var(--pe-bg-card)', border: `1px solid ${b.is_final ? 'var(--pe-warning)' : 'var(--pe-border)'}` }}>
+              <div className="flex justify-between items-center mb-3">
+                <div>
+                  <span className="font-bold" style={{ color: 'var(--pe-text)' }}>Board {b.number}</span>
+                  {b.name && <span className="ml-2 text-sm" style={{ color: 'var(--pe-text-sub)' }}>({b.name})</span>}
+                  {b.is_final ? <span className="ml-2 text-xs font-bold" style={{ color: 'var(--pe-warning)' }}>★ FINAL</span> : null}
+                </div>
+                <span className="text-xs" style={{ color: b.current_game_id ? 'var(--pe-success)' : 'var(--pe-text-muted)' }}>
+                  {b.current_game_id ? 'Aktiv' : 'Frei'}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  disabled={!b.is_final && boards.some(x => x.is_final && x.id !== b.id)}
+                  onClick={async () => {
+                    try {
+                      await api.put(`/boards/${b.id}/final`, { is_final: !b.is_final });
+                      loadBoards();
+                    } catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
+                  }}
+                  title={!b.is_final && boards.some(x => x.is_final && x.id !== b.id) ? 'Es kann nur ein Final-Board geben' : ''}
+                  style={{ ...btnSmall, padding: '4px 12px', background: b.is_final ? 'var(--pe-warning)' : 'var(--pe-bg-elevated)', color: b.is_final ? '#000' : 'var(--pe-text-sub)', minHeight: '36px', flex: 1, opacity: (!b.is_final && boards.some(x => x.is_final && x.id !== b.id)) ? 0.4 : 1, cursor: (!b.is_final && boards.some(x => x.is_final && x.id !== b.id)) ? 'not-allowed' : 'pointer' }}
+                >
+                  {b.is_final ? '★ Final' : 'Als Final markieren'}
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!confirm(`Board ${b.number} löschen?`)) return;
+                    try { await api.del(`/boards/${b.id}`); loadBoards(); }
+                    catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
+                  }}
+                  style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', minHeight: '36px' }}
+                >
+                  Löschen
+                </button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                disabled={!b.is_final && boards.some(x => x.is_final && x.id !== b.id)}
-                onClick={async () => {
-                  try {
-                    await api.put(`/boards/${b.id}/final`, { is_final: !b.is_final });
-                    loadBoards();
-                  } catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
-                }}
-                title={!b.is_final && boards.some(x => x.is_final && x.id !== b.id) ? 'Es kann nur ein Final-Board geben' : ''}
-                style={{ ...btnSmall, padding: '4px 12px', background: b.is_final ? 'var(--pe-warning)' : 'var(--pe-bg-elevated)', color: b.is_final ? '#000' : 'var(--pe-text-sub)', minHeight: '36px', flex: 1, opacity: (!b.is_final && boards.some(x => x.is_final && x.id !== b.id)) ? 0.4 : 1, cursor: (!b.is_final && boards.some(x => x.is_final && x.id !== b.id)) ? 'not-allowed' : 'pointer' }}
-              >
-                {b.is_final ? '★ Final' : 'Als Final markieren'}
-              </button>
-              <button
-                onClick={async () => {
-                  if (!confirm(`Board ${b.number} löschen?`)) return;
-                  try { await api.del(`/boards/${b.id}`); loadBoards(); }
-                  catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
-                }}
-                style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', minHeight: '36px' }}
-              >
-                Löschen
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
     </div>
   );
@@ -247,8 +322,44 @@ function PlayersTab() {
   const [players, setPlayers] = useState([]);
   const [walkonStatuses, setWalkonStatuses] = useState({}); // { [playerId]: status string }
   const [showForm, setShowForm] = useState(false);
+
+  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 768px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const handler = (e) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
   const [form, setForm] = useState({ vorname: '', nickname: '', nachname: '', walk_on_song: '', walkon_start: 0, walkon_duration: 30 });
   const [editingPlayer, setEditingPlayer] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  useEffect(() => { setEditingPlayer(null); }, [isDesktop]);
+
+  // Poll every 3s for players whose walk-on is still downloading
+  useEffect(() => {
+    const downloading = Object.entries(walkonStatuses)
+      .filter(([, s]) => s === 'pending' || s === 'downloading')
+      .map(([id]) => Number(id));
+    if (downloading.length === 0) return;
+    const interval = setInterval(async () => {
+      const updates = {};
+      await Promise.all(downloading.map(async (id) => {
+        try {
+          const s = await api.get(`/walkon/${id}/status`);
+          updates[id] = s.status;
+          if (s.status === 'ready') {
+            addToast({ type: 'success', message: 'Walk-On bereit ✓' });
+            setEditingPlayer(prev => prev?.id === id ? null : prev);
+          } else if (s.status === 'error') {
+            addToast({ type: 'error', message: 'Walk-On Download fehlgeschlagen' });
+            setEditingPlayer(prev => prev?.id === id ? null : prev);
+          }
+        } catch { updates[id] = null; }
+      }));
+      setWalkonStatuses(prev => ({ ...prev, ...updates }));
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [walkonStatuses]);
 
   useEffect(() => {
     api.get('/tournaments').then((t) => {
@@ -314,9 +425,9 @@ function PlayersTab() {
   const handleEdit = async (e) => {
     e.preventDefault();
     if (!editingPlayer) return;
+    setIsSaving(true);
     try {
       await api.put(`/tournaments/${selectedTournament}/players/${editingPlayer.id}`, editingPlayer);
-      // Handle walkon: POST if URL set, DELETE if URL cleared
       if (editingPlayer.walk_on_song) {
         try {
           await api.post(`/walkon/${editingPlayer.id}`, {
@@ -324,25 +435,33 @@ function PlayersTab() {
             start: Number(editingPlayer.walkon_start) || 0,
             duration: Number(editingPlayer.walkon_duration) || 30,
           });
+          // Mark as pending immediately — polling effect takes over from here
+          setWalkonStatuses(prev => ({ ...prev, [editingPlayer.id]: 'pending' }));
+          addToast({ type: 'success', message: 'Gespeichert — Walk-On wird geladen…' });
+          // Keep card open so user sees the download progress
         } catch (err) {
-          console.warn('Walk-On Job konnte nicht gestartet werden:', err.message);
+          addToast({ type: 'error', message: 'Walk-On konnte nicht gestartet werden: ' + (err.message || '') });
+          setEditingPlayer(null);
         }
       } else {
         try {
           await api.del(`/walkon/${editingPlayer.id}`);
         } catch { /* ignore if no walkon exists */ }
+        addToast({ type: 'success', message: 'Spieler gespeichert' });
+        setEditingPlayer(null);
       }
-      setEditingPlayer(null);
       await loadPlayers();
     } catch (err) {
       addToast({ type: 'error', message: err.message || 'Spieler konnte nicht gespeichert werden' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>Spieler</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Spieler</h2>
         {!isActive && (
           <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
             {showForm ? 'Abbrechen' : '+ Neu'}
@@ -350,7 +469,7 @@ function PlayersTab() {
         )}
       </div>
 
-      <select value={selectedTournament} onChange={(e) => setSelectedTournament(e.target.value)} className="w-full p-3 rounded-lg outline-none mb-4" style={inputStyle}>
+      <select value={selectedTournament} onChange={(e) => setSelectedTournament(e.target.value)} className="w-full p-3 rounded-lg outline-none mb-4" style={selectStyle}>
         {tournaments.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.status})</option>)}
       </select>
 
@@ -397,7 +516,7 @@ function PlayersTab() {
         </form>
       )}
 
-      {editingPlayer && (
+      {editingPlayer && !isDesktop && (
         <form onSubmit={handleEdit} className="p-4 rounded-xl mb-4 space-y-3" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-cyan-bright)' }}>
           <p className="text-sm font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>Spieler bearbeiten</p>
           <input type="text" value={editingPlayer.vorname} onChange={(e) => setEditingPlayer({ ...editingPlayer, vorname: e.target.value })} placeholder="Vorname *" required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
@@ -430,53 +549,138 @@ function PlayersTab() {
             </p>
           )}
           <div className="flex gap-2">
-            <button type="submit" className="flex-1 py-2 rounded-lg font-bold" style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>Speichern</button>
+            <button type="submit" disabled={isSaving} className="flex-1 py-2 rounded-lg font-bold" style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif', opacity: isSaving ? 0.7 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>{isSaving ? 'Speichert…' : 'Speichern'}</button>
             <button type="button" onClick={() => setEditingPlayer(null)} className="px-4 py-2 rounded-lg" style={{ background: 'var(--pe-bg-elevated)', color: 'var(--pe-text-sub)', fontFamily: 'Verdana, Geneva, sans-serif' }}>Abbrechen</button>
           </div>
         </form>
       )}
 
-      <div className="space-y-2">
-        {players.map((p) => (
-          <div key={p.id} className="p-3 rounded-lg flex justify-between items-center" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
-            <div>
-              <span className="font-bold" style={{ color: 'var(--pe-text)' }}>{p.name}</span>
-              {(p.walkon_url || p.walkon_youtube) && (
-                <WalkonBadge status={walkonStatuses[p.id]} />
-              )}
-              <span className="ml-3 text-xs" style={{ color: 'var(--pe-text-muted)' }}>Seed: {p.seed || '—'}</span>
+      {isDesktop ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+          {players.map((p) => {
+            const isExpanded = editingPlayer?.id === p.id;
+            const hasWalkon = p.walkon_url || p.walkon_youtube;
+            const walkonStatus = walkonStatuses[p.id];
+            let walkonText = '♪ —';
+            let walkonColor = 'var(--pe-text-muted)';
+            if (hasWalkon) {
+              if (walkonStatus === 'ready')                                               { walkonText = '♪ ready';  walkonColor = 'var(--pe-success)'; }
+              else if (walkonStatus === 'downloading' || walkonStatus === 'pending')      { walkonText = '⏳ lädt';  walkonColor = 'var(--pe-warning)'; }
+              else if (walkonStatus === 'error')                                          { walkonText = '✗ Fehler'; walkonColor = 'var(--pe-danger)'; }
+              else                                                                        { walkonText = '♪ —';     walkonColor = 'var(--pe-text-muted)'; }
+            }
+            return (
+              <div key={p.id} style={{ background: 'var(--pe-bg-card)', border: `1px solid ${isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, borderRadius: '10px', padding: '12px' }}>
+                {/* Collapsed header — always visible */}
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  {/* Seed circle */}
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0, background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '13px', color: p.seed ? 'var(--pe-cyan-bright)' : 'var(--pe-text-muted)' }}>
+                    {p.seed ? `#${p.seed}` : '—'}
+                  </div>
+                  {/* Name + walk-on status */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--pe-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                    <div style={{ fontSize: '10px', color: walkonColor, marginTop: '2px' }}>{walkonText}</div>
+                  </div>
+                  {/* Edit / Close button */}
+                  <button
+                    onClick={() => isExpanded
+                      ? setEditingPlayer(null)
+                      : setEditingPlayer({ id: p.id, vorname: p.vorname || '', nickname: p.nickname || '', nachname: p.nachname || '', walk_on_song: p.walkon_url || p.walkon_youtube || '', walkon_start: p.walkon_start ?? 0, walkon_duration: p.walkon_duration ?? 30 })
+                    }
+                    style={{ ...btnSmall, fontSize: '11px', padding: '4px 8px', minHeight: '36px', border: isExpanded ? '1px solid var(--pe-cyan-bright)' : '1px solid var(--pe-border)', background: isExpanded ? 'rgba(0,184,255,0.1)' : 'var(--pe-bg-elevated)', color: isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)', flexShrink: 0 }}
+                  >
+                    {isExpanded ? '✕' : '✏️'}
+                  </button>
+                </div>
+                {/* Expanded accordion form */}
+                {isExpanded && (
+                  <form onSubmit={handleEdit} style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
+                      <input type="text" value={editingPlayer.vorname} onChange={e => setEditingPlayer({ ...editingPlayer, vorname: e.target.value })} placeholder="Vorname *" required style={{ ...inputStyle, padding: '6px 8px' }} />
+                      <input type="text" value={editingPlayer.nachname} onChange={e => setEditingPlayer({ ...editingPlayer, nachname: e.target.value })} placeholder="Nachname *" required style={{ ...inputStyle, padding: '6px 8px' }} />
+                    </div>
+                    <input type="text" value={editingPlayer.nickname} onChange={e => setEditingPlayer({ ...editingPlayer, nickname: e.target.value })} placeholder="Nickname *" required style={{ ...inputStyle, padding: '6px 8px' }} />
+                    <input type="url" value={editingPlayer.walk_on_song || ''} onChange={e => setEditingPlayer({ ...editingPlayer, walk_on_song: e.target.value })} placeholder="Walk-On URL (optional)" style={{ ...inputStyle, padding: '6px 8px' }} />
+                    {editingPlayer.walk_on_song && (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
+                        <input type="number" min="0" value={editingPlayer.walkon_start ?? 0} onChange={e => setEditingPlayer({ ...editingPlayer, walkon_start: e.target.value })} placeholder="Start (Sek.)" required style={{ ...inputStyle, padding: '6px 8px' }} />
+                        <input type="number" min="5" max="120" value={editingPlayer.walkon_duration ?? 30} onChange={e => setEditingPlayer({ ...editingPlayer, walkon_duration: e.target.value })} placeholder="Länge (Sek.)" required style={{ ...inputStyle, padding: '6px 8px' }} />
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      disabled={isActive}
+                      onClick={async () => {
+                        if (!confirm(`${p.name} löschen?`)) return;
+                        try { await api.del(`/tournaments/${selectedTournament}/players/${p.id}`); await loadPlayers(); }
+                        catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
+                      }}
+                      style={{ ...btnSmall, padding: '6px', fontSize: '10px', cursor: isActive ? 'not-allowed' : 'pointer', color: isActive ? 'var(--pe-text-muted)' : 'var(--pe-danger)', opacity: isActive ? 0.4 : 1 }}
+                    >
+                      Löschen
+                    </button>
+                    {walkonStatuses[p.id] === 'pending' || walkonStatuses[p.id] === 'downloading' ? (
+                      <div style={{ padding: '8px', textAlign: 'center', fontSize: '10px', color: 'var(--pe-warning)', background: 'rgba(255,176,32,0.08)', borderRadius: '6px', border: '1px solid rgba(255,176,32,0.2)' }}>
+                        ⏳ Walk-On wird heruntergeladen…
+                      </div>
+                    ) : (
+                      <button type="submit" disabled={isSaving} style={{ ...btnSmall, background: 'var(--pe-gradient)', color: '#fff', borderRadius: '6px', padding: '8px', fontSize: '10px', opacity: isSaving ? 0.7 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>
+                        {isSaving ? 'Speichert…' : 'Speichern'}
+                      </button>
+                    )}
+                  </form>
+                )}
+              </div>
+            );
+          })}
+          {players.length === 0 && (
+            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--pe-text-muted)', fontSize: '13px', padding: '24px' }}>Keine Spieler</p>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {players.map((p) => (
+            <div key={p.id} className="p-3 rounded-lg flex justify-between items-center" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
+              <div>
+                <span className="font-bold" style={{ color: 'var(--pe-text)' }}>{p.name}</span>
+                {(p.walkon_url || p.walkon_youtube) && (
+                  <WalkonBadge status={walkonStatuses[p.id]} />
+                )}
+                <span className="ml-3 text-xs" style={{ color: 'var(--pe-text-muted)' }}>Seed: {p.seed || '—'}</span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setEditingPlayer({
+                    id: p.id,
+                    vorname: p.vorname || '',
+                    nickname: p.nickname || '',
+                    nachname: p.nachname || '',
+                    walk_on_song: p.walkon_url || p.walkon_youtube || '',
+                    walkon_start: p.walkon_start ?? 0,
+                    walkon_duration: p.walkon_duration ?? 30,
+                  })}
+                  style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-cyan-bright)', minHeight: '36px' }}
+                >
+                  Bearbeiten
+                </button>
+                <button
+                  disabled={isActive}
+                  onClick={async () => {
+                    if (!confirm(`${p.name} löschen?`)) return;
+                    try { await api.del(`/tournaments/${selectedTournament}/players/${p.id}`); await loadPlayers(); }
+                    catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
+                  }}
+                  style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: isActive ? 'var(--pe-text-muted)' : 'var(--pe-danger)', minHeight: '36px', cursor: isActive ? 'not-allowed' : 'pointer', opacity: isActive ? 0.4 : 1 }}
+                >
+                  Löschen
+                </button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setEditingPlayer({
-                  id: p.id,
-                  vorname: p.vorname || '',
-                  nickname: p.nickname || '',
-                  nachname: p.nachname || '',
-                  walk_on_song: p.walkon_url || p.walkon_youtube || '',
-                  walkon_start: p.walkon_start ?? 0,
-                  walkon_duration: p.walkon_duration ?? 30,
-                })}
-                style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-cyan-bright)', minHeight: '36px' }}
-              >
-                Bearbeiten
-              </button>
-              <button
-                disabled={isActive}
-                onClick={async () => {
-                  if (!confirm(`${p.name} löschen?`)) return;
-                  try { await api.del(`/tournaments/${selectedTournament}/players/${p.id}`); await loadPlayers(); }
-                  catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
-                }}
-                style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: isActive ? 'var(--pe-text-muted)' : 'var(--pe-danger)', minHeight: '36px', cursor: isActive ? 'not-allowed' : 'pointer', opacity: isActive ? 0.4 : 1 }}
-              >
-                Löschen
-              </button>
-            </div>
-          </div>
-        ))}
-        {players.length === 0 && <p className="text-sm" style={{ color: 'var(--pe-text-muted)' }}>Keine Spieler</p>}
-      </div>
+          ))}
+          {players.length === 0 && <p className="text-sm" style={{ color: 'var(--pe-text-muted)' }}>Keine Spieler</p>}
+        </div>
+      )}
     </div>
   );
 }
@@ -527,12 +731,33 @@ function UsersTab() {
     catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen' }); }
   };
 
+  const handleReactivate = async (userId) => {
+    try { await api.put(`/users/${userId}/reactivate`, {}); loadUsers(); }
+    catch (err) { addToast({ type: 'error', message: err.message || 'Reaktivierung fehlgeschlagen' }); }
+  };
+
   const canSubmit = createForm.username.trim() && createForm.password && createForm.vorname.trim() && createForm.nickname.trim() && createForm.nachname.trim();
+
+  const ROLE_BADGE_STYLES = {
+    admin:      { color: 'var(--pe-danger)',   bg: 'rgba(255,69,96,0.15)',   border: 'rgba(255,69,96,0.3)' },
+    director:   { color: 'var(--pe-blue-mid)', bg: 'rgba(30,127,235,0.15)',  border: 'rgba(30,127,235,0.3)' },
+    referee:    { color: 'var(--pe-warning)',   bg: 'rgba(255,176,32,0.15)',  border: 'rgba(255,176,32,0.3)' },
+    gastronomy: { color: 'var(--pe-success)',   bg: 'rgba(0,229,160,0.15)',   border: 'rgba(0,229,160,0.3)' },
+  };
+
+  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 768px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const handler = (e) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  useEffect(() => { setEditId(null); }, [isDesktop]);
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>User</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>User</h2>
         <button onClick={() => { setShowCreate(!showCreate); setEditId(null); }} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
           {showCreate ? 'Abbrechen' : '+ Neu'}
         </button>
@@ -550,7 +775,7 @@ function UsersTab() {
           <input type="text" value={createForm.username} onChange={e => setCreateForm({ ...createForm, username: e.target.value })} placeholder="Benutzername (Login) *" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
           <input type="email" value={createForm.email} onChange={e => setCreateForm({ ...createForm, email: e.target.value })} placeholder="E-Mail (optional)" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
           <input type="password" value={createForm.password} onChange={e => setCreateForm({ ...createForm, password: e.target.value })} placeholder="Passwort *" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
-          <select value={createForm.role} onChange={e => setCreateForm({ ...createForm, role: e.target.value })} className="w-full p-3 rounded-lg outline-none" style={inputStyle}>
+          <select value={createForm.role} onChange={e => setCreateForm({ ...createForm, role: e.target.value })} className="w-full p-3 rounded-lg outline-none" style={selectStyle}>
             <option value="director">Turnierleitung</option>
             <option value="referee">Schiedsrichter</option>
             <option value="gastronomy">Gastronomie</option>
@@ -562,69 +787,154 @@ function UsersTab() {
         </form>
       )}
 
-      <div className="space-y-2">
-        {users.map((u) => (
-          <div key={u.id} className="rounded-xl overflow-hidden" style={{ background: 'var(--pe-bg-card)', border: `1px solid ${editId === u.id ? 'var(--pe-blue-mid)' : 'var(--pe-border)'}` }}>
-            {/* User-Zeile */}
-            <div className="p-3 flex justify-between items-center">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="min-w-0">
-                  <span className="font-bold" style={{ color: u.active ? 'var(--pe-text)' : 'var(--pe-text-muted)' }}>{u.display_name || u.username}</span>
-                  {u.display_name && <span className="ml-2 text-xs" style={{ color: 'var(--pe-text-muted)' }}>@{u.username}</span>}
-                  {!u.active && <span className="ml-2 text-xs" style={{ color: 'var(--pe-danger)' }}>inaktiv</span>}
+      {isDesktop ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+          {users.map((u) => {
+            const badge = ROLE_BADGE_STYLES[u.role] || { color: 'var(--pe-text-muted)', bg: 'rgba(90,115,148,0.15)', border: 'var(--pe-border)' };
+            const isExpanded = editId === u.id;
+            return (
+              <div key={u.id} style={{ background: 'var(--pe-bg-card)', border: `1px solid ${isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, borderRadius: '10px', padding: '12px', opacity: u.active ? 1 : 0.5 }}>
+                {/* Card header row */}
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                  {/* Avatar */}
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0, background: u.active ? 'var(--pe-gradient)' : 'var(--pe-bg-elevated)', border: u.active ? 'none' : '1px solid var(--pe-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px', color: u.active ? '#fff' : 'var(--pe-text-muted)' }}>
+                    {(u.vorname || u.username || '?')[0].toUpperCase()}
+                  </div>
+                  {/* Name + handle */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--pe-text)' }}>{u.display_name || u.username}</div>
+                    {u.display_name && <div style={{ fontSize: '10px', color: 'var(--pe-text-muted)' }}>@{u.username}</div>}
+                  </div>
+                  {/* Role badge */}
+                  <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '10px', flexShrink: 0, whiteSpace: 'nowrap', color: badge.color, background: badge.bg, border: `1px solid ${badge.border}` }}>
+                    {ROLE_LABELS[u.role] || u.role}
+                  </span>
+                  {/* Edit / Close button — hidden for inactive users */}
+                  {!!u.active && (
+                    <button
+                      onClick={() => isExpanded ? setEditId(null) : startEdit(u)}
+                      style={{ ...btnSmall, fontSize: '11px', padding: '3px 8px', minHeight: '28px', border: isExpanded ? `1px solid var(--pe-cyan-bright)` : '1px solid var(--pe-border)', background: isExpanded ? 'rgba(0,184,255,0.1)' : 'var(--pe-bg-elevated)', color: isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)', flexShrink: 0 }}
+                    >
+                      {isExpanded ? '✕' : '✏️'}
+                    </button>
+                  )}
+                  {/* Deactivate / Reactivate button (collapsed only) */}
+                  {!isExpanded && (u.active ? (
+                    <button
+                      onClick={() => handleDelete(u.id)}
+                      style={{ ...btnSmall, fontSize: '11px', padding: '3px 8px', minHeight: '28px', color: 'var(--pe-danger)', flexShrink: 0 }}
+                    >
+                      Deaktivieren
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleReactivate(u.id)}
+                      style={{ ...btnSmall, fontSize: '11px', padding: '3px 8px', minHeight: '28px', color: 'var(--pe-success)', border: '1px solid var(--pe-success)', flexShrink: 0 }}
+                    >
+                      Reaktivieren
+                    </button>
+                  ))}
                 </div>
-                <span className="text-xs px-2 py-1 rounded-full font-bold flex-shrink-0" style={{ color: ROLE_COLORS[u.role] || 'var(--pe-text-muted)', border: `1px solid ${ROLE_COLORS[u.role] || 'var(--pe-border)'}` }}>
-                  {ROLE_LABELS[u.role] || u.role}
-                </span>
-              </div>
-              <div className="flex gap-2 flex-shrink-0">
-                <button
-                  onClick={() => editId === u.id ? setEditId(null) : startEdit(u)}
-                  style={{ ...btnSmall, background: editId === u.id ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: editId === u.id ? '#fff' : 'var(--pe-text-sub)', padding: '5px 12px' }}
-                >
-                  {editId === u.id ? 'Abbrechen' : 'Bearbeiten'}
-                </button>
-                {u.active && (
-                  <button onClick={() => handleDelete(u.id)} style={{ ...btnSmall, background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', padding: '5px 12px' }}>
-                    Deaktivieren
-                  </button>
+                {/* Expanded accordion form */}
+                {isExpanded && (
+                  <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
+                      <input type="text" value={editForm.vorname} onChange={e => setEditForm({ ...editForm, vorname: e.target.value })} placeholder="Vorname" style={{ ...inputStyle, padding: '7px 10px', boxSizing: 'border-box' }} />
+                      <input type="text" value={editForm.nickname} onChange={e => setEditForm({ ...editForm, nickname: e.target.value })} placeholder="Nickname" style={{ ...inputStyle, padding: '7px 10px', boxSizing: 'border-box' }} />
+                      <input type="text" value={editForm.nachname} onChange={e => setEditForm({ ...editForm, nachname: e.target.value })} placeholder="Nachname" style={{ ...inputStyle, padding: '7px 10px', boxSizing: 'border-box' }} />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                      <select value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value })} style={{ ...selectStyle, padding: '7px 10px' }}>
+                        <option value="director">Turnierleitung</option>
+                        <option value="referee">Schiedsrichter</option>
+                        <option value="gastronomy">Gastronomie</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                      <input type="password" value={editForm.password} onChange={e => setEditForm({ ...editForm, password: e.target.value })} placeholder="Neues Passwort" style={{ ...inputStyle, padding: '7px 10px', boxSizing: 'border-box' }} />
+                    </div>
+                    <button onClick={() => handleSaveEdit(u.id)} style={{ ...btnSmall, background: 'var(--pe-gradient)', color: '#fff', border: 'none', borderRadius: '7px', padding: '9px', fontSize: '11px', width: '100%' }}>
+                      Speichern
+                    </button>
+                  </div>
                 )}
               </div>
-            </div>
-
-            {/* Inline-Edit-Bereich */}
-            {editId === u.id && (
-              <div className="p-4 space-y-3" style={{ borderTop: '1px solid var(--pe-border)', background: 'var(--pe-bg-elevated)' }}>
-                {/* Name — wie Spieler */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-                  <input type="text" value={editForm.vorname} onChange={e => setEditForm({ ...editForm, vorname: e.target.value })} placeholder="Vorname" style={{ ...inputStyle, padding: '10px 12px', width: '100%', boxSizing: 'border-box' }} />
-                  <input type="text" value={editForm.nickname} onChange={e => setEditForm({ ...editForm, nickname: e.target.value })} placeholder="Nickname" style={{ ...inputStyle, padding: '10px 12px', width: '100%', boxSizing: 'border-box' }} />
-                  <input type="text" value={editForm.nachname} onChange={e => setEditForm({ ...editForm, nachname: e.target.value })} placeholder="Nachname" style={{ ...inputStyle, padding: '10px 12px', width: '100%', boxSizing: 'border-box' }} />
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <div>
-                    <label className="text-xs font-bold block mb-1" style={{ color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rolle</label>
-                    <select value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value })} style={{ ...inputStyle, width: '100%', padding: '10px 12px' }}>
-                      <option value="director">Turnierleitung</option>
-                      <option value="referee">Schiedsrichter</option>
-                      <option value="gastronomy">Gastronomie</option>
-                      <option value="admin">Admin</option>
-                    </select>
+            );
+          })}
+          {users.length === 0 && (
+            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--pe-text-muted)', fontSize: '13px', padding: '24px' }}>Keine User</p>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {users.map((u) => (
+            <div key={u.id} className="rounded-xl overflow-hidden" style={{ background: 'var(--pe-bg-card)', border: `1px solid ${editId === u.id ? 'var(--pe-blue-mid)' : 'var(--pe-border)'}` }}>
+              {/* User-Zeile */}
+              <div className="p-3 flex justify-between items-center">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="min-w-0">
+                    <span className="font-bold" style={{ color: u.active ? 'var(--pe-text)' : 'var(--pe-text-muted)' }}>{u.display_name || u.username}</span>
+                    {u.display_name && <span className="ml-2 text-xs" style={{ color: 'var(--pe-text-muted)' }}>@{u.username}</span>}
+                    {!u.active && <span className="ml-2 text-xs" style={{ color: 'var(--pe-danger)' }}>inaktiv</span>}
                   </div>
-                  <div>
-                    <label className="text-xs font-bold block mb-1" style={{ color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Neues Passwort</label>
-                    <input type="password" value={editForm.password} onChange={e => setEditForm({ ...editForm, password: e.target.value })} placeholder="Leer = unverändert" style={{ ...inputStyle, width: '100%', padding: '10px 12px', boxSizing: 'border-box' }} />
-                  </div>
+                  <span className="text-xs px-2 py-1 rounded-full font-bold flex-shrink-0" style={{ color: ROLE_COLORS[u.role] || 'var(--pe-text-muted)', border: `1px solid ${ROLE_COLORS[u.role] || 'var(--pe-border)'}` }}>
+                    {ROLE_LABELS[u.role] || u.role}
+                  </span>
                 </div>
-                <button onClick={() => handleSaveEdit(u.id)} style={{ background: 'var(--pe-gradient)', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px 20px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', width: '100%', minHeight: '44px' }}>
-                  Änderungen speichern
-                </button>
+                <div className="flex gap-2 flex-shrink-0">
+                  {!!u.active && (
+                    <button
+                      onClick={() => editId === u.id ? setEditId(null) : startEdit(u)}
+                      style={{ ...btnSmall, background: editId === u.id ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: editId === u.id ? '#fff' : 'var(--pe-text-sub)', padding: '5px 12px' }}
+                    >
+                      {editId === u.id ? 'Abbrechen' : 'Bearbeiten'}
+                    </button>
+                  )}
+                  {u.active ? (
+                    <button onClick={() => handleDelete(u.id)} style={{ ...btnSmall, background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', padding: '5px 12px' }}>
+                      Deaktivieren
+                    </button>
+                  ) : (
+                    <button onClick={() => handleReactivate(u.id)} style={{ ...btnSmall, background: 'var(--pe-bg-elevated)', color: 'var(--pe-success)', border: '1px solid var(--pe-success)', padding: '5px 12px' }}>
+                      Reaktivieren
+                    </button>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
-        ))}
-        {users.length === 0 && <p className="text-sm" style={{ color: 'var(--pe-text-muted)' }}>Keine User</p>}
-      </div>
+
+              {/* Inline-Edit-Bereich */}
+              {editId === u.id && (
+                <div className="p-4 space-y-3" style={{ borderTop: '1px solid var(--pe-border)', background: 'var(--pe-bg-elevated)' }}>
+                  {/* Name — wie Spieler */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                    <input type="text" value={editForm.vorname} onChange={e => setEditForm({ ...editForm, vorname: e.target.value })} placeholder="Vorname" style={{ ...inputStyle, padding: '10px 12px', width: '100%', boxSizing: 'border-box' }} />
+                    <input type="text" value={editForm.nickname} onChange={e => setEditForm({ ...editForm, nickname: e.target.value })} placeholder="Nickname" style={{ ...inputStyle, padding: '10px 12px', width: '100%', boxSizing: 'border-box' }} />
+                    <input type="text" value={editForm.nachname} onChange={e => setEditForm({ ...editForm, nachname: e.target.value })} placeholder="Nachname" style={{ ...inputStyle, padding: '10px 12px', width: '100%', boxSizing: 'border-box' }} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div>
+                      <label className="text-xs font-bold block mb-1" style={{ color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rolle</label>
+                      <select value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value })} style={{ ...selectStyle, width: '100%', padding: '10px 12px' }}>
+                        <option value="director">Turnierleitung</option>
+                        <option value="referee">Schiedsrichter</option>
+                        <option value="gastronomy">Gastronomie</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold block mb-1" style={{ color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Neues Passwort</label>
+                      <input type="password" value={editForm.password} onChange={e => setEditForm({ ...editForm, password: e.target.value })} placeholder="Leer = unverändert" style={{ ...inputStyle, width: '100%', padding: '10px 12px', boxSizing: 'border-box' }} />
+                    </div>
+                  </div>
+                  <button onClick={() => handleSaveEdit(u.id)} style={{ background: 'var(--pe-gradient)', color: '#fff', border: 'none', borderRadius: '8px', padding: '12px 20px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', width: '100%', minHeight: '44px' }}>
+                    Änderungen speichern
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+          {users.length === 0 && <p className="text-sm" style={{ color: 'var(--pe-text-muted)' }}>Keine User</p>}
+        </div>
+      )}
     </div>
   );
 }
@@ -680,7 +990,9 @@ function GastroAdminTab() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Gastronomie</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Gastronomie</h2>
+      </div>
 
       {/* Umsatz-Kacheln */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px' }}>
@@ -708,7 +1020,7 @@ function GastroAdminTab() {
         {showForm && (
           <form onSubmit={handleCreate} style={{ padding: '16px', borderRadius: '12px', marginBottom: '12px', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Name *" required style={{ ...inputStyle, gridColumn: '1/-1' }} />
-            <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} style={inputStyle}>
+            <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} style={selectStyle}>
               <option value="drink">Getränk</option>
               <option value="food">Speise</option>
             </select>
@@ -854,8 +1166,8 @@ function MailingTab() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>Mailing</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Mailing</h2>
         <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
           {showForm ? 'Abbrechen' : '+ Template'}
         </button>
@@ -996,16 +1308,15 @@ function TournamentDirectorTab() {
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
         <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>
           Turnierleiter {activeTournament ? `— ${activeTournament.name}` : ''}
         </h2>
         <span style={{ color: 'var(--pe-text-muted)', fontSize: '12px' }}>Auto-Refresh 10s</span>
       </div>
 
-      {/* Status bar: drag hint OR tap-to-assign mode */}
-      <div style={{
-        visibility: (dragGameId || tapGameId) ? 'visible' : 'hidden',
+      {/* Status bar: drag hint OR tap-to-assign mode — only rendered when active */}
+      {(dragGameId || tapGameId) && <div style={{
         marginBottom: '10px', padding: '10px 14px', borderRadius: '8px',
         background: tapGameId ? 'rgba(0,229,160,0.1)' : 'rgba(0,184,255,0.1)',
         border: `1px solid ${tapGameId ? 'var(--pe-success)' : 'var(--pe-cyan-bright)'}`,
@@ -1020,7 +1331,7 @@ function TournamentDirectorTab() {
         {tapGameId && (
           <button onClick={() => setTapGameId(null)} style={{ background: 'none', border: 'none', color: 'var(--pe-success)', cursor: 'pointer', fontSize: '18px', lineHeight: 1, padding: '0 4px' }}>✕</button>
         )}
-      </div>
+      </div>}
 
       {/* Item 9: No active tournament message */}
       {!activeTournament && (
@@ -1507,7 +1818,7 @@ function TournamentExtendedTab() {
             ].map(({ key, label }) => (
               <div key={key} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '8px', alignItems: 'center', marginBottom: '10px' }}>
                 <div style={{ color: 'var(--pe-text-sub)', fontSize: '13px', fontWeight: 'bold' }}>{label}</div>
-                <select value={config[`${key}_format`]} onChange={e => setConfig({...config, [`${key}_format`]: e.target.value})} style={{ ...inputStyle, padding: '8px', fontSize: '13px' }}>
+                <select value={config[`${key}_format`]} onChange={e => setConfig({...config, [`${key}_format`]: e.target.value})} style={{ ...selectStyle, padding: '8px', fontSize: '13px' }}>
                   {FORMAT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -1545,7 +1856,7 @@ function TournamentExtendedTab() {
                     <button type="button" onClick={() => setPlayerForm({...playerForm, seed: String((parseInt(playerForm.seed) || 0) + 1)})} style={{ minHeight: '44px', minWidth: '36px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '6px', fontWeight: 'bold', fontSize: '18px', cursor: 'pointer', fontFamily: 'Verdana, Geneva, sans-serif' }}>+</button>
                   </div>
                 )}
-                  <button type="submit" disabled={!playerForm.vorname.trim() || !playerForm.nickname.trim() || !playerForm.nachname.trim()} style={{ flex: 1, padding: '10px 16px', borderRadius: '8px', background: 'var(--pe-blue-deep)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px', opacity: (!playerForm.vorname.trim() || !playerForm.nickname.trim() || !playerForm.nachname.trim()) ? 0.5 : 1 }}>+ Spieler hinzufügen</button>
+                  <button type="submit" disabled={!playerForm.vorname.trim() || !playerForm.nickname.trim() || !playerForm.nachname.trim()} style={{ flex: 1, padding: '10px 16px', borderRadius: '8px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px', fontSize: '13px', opacity: (!playerForm.vorname.trim() || !playerForm.nickname.trim() || !playerForm.nachname.trim()) ? 0.5 : 1 }}>+ Spieler hinzufügen</button>
                 </div>
               </form>
               {/* Mock */}
@@ -1657,7 +1968,7 @@ function TournamentExtendedTab() {
                             value={g.board_id || ''}
                             onClick={e => e.stopPropagation()}
                             onChange={e => assignGroupToBoard(g.id, e.target.value ? parseInt(e.target.value) : null)}
-                            style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '8px', padding: '6px 10px', fontSize: '13px', fontFamily: 'Verdana, Geneva, sans-serif', minHeight: '44px', marginRight: '10px', cursor: 'pointer' }}
+                            style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '8px', padding: '6px 10px', fontSize: '13px', fontFamily: 'Verdana, Geneva, sans-serif', minHeight: '44px', marginRight: '10px', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235A7394' d='M6 8L1 3h10z'/%3E%3C%2Fsvg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center', paddingRight: '30px' }}
                           >
                             <option value="">Kein Board</option>
                             {boards.map(b => <option key={b.id} value={b.id}>Board {b.number}{b.is_final ? ' ★' : ''}</option>)}
@@ -1710,7 +2021,7 @@ function TournamentExtendedTab() {
                       id="numGroupsSelect"
                       value={numGroups}
                       onChange={e => setNumGroups(Number(e.target.value))}
-                      style={{ flex: 1, padding: '10px 12px', borderRadius: '8px', background: 'var(--pe-bg-card)', color: 'var(--pe-text)', border: '1px solid var(--pe-border)', fontFamily: 'Verdana, Geneva, sans-serif', fontSize: '14px', minHeight: '44px', cursor: 'pointer' }}
+                      style={{ flex: 1, padding: '10px 12px', borderRadius: '8px', background: 'var(--pe-bg-card)', color: 'var(--pe-text)', border: '1px solid var(--pe-border)', fontFamily: 'Verdana, Geneva, sans-serif', fontSize: '14px', minHeight: '44px', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235A7394' d='M6 8L1 3h10z'/%3E%3C%2Fsvg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center', paddingRight: '30px' }}
                     >
                       {[2, 3, 4, 6, 8].map(n => (
                         <option key={n} value={n}>{n} Gruppen</option>
@@ -1751,9 +2062,9 @@ function TournamentExtendedTab() {
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px' }}>Turniere</h2>
-        <button onClick={() => { setWizardStep(1); setNewTournament(null); setCreateForm({ name: '', date: '', format: '501', checkout: 'double_out', use_seed: false }); }} style={{ padding: '10px 20px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Turniere</h2>
+        <button onClick={() => { setWizardStep(1); setNewTournament(null); setCreateForm({ name: '', date: '', format: '501', checkout: 'double_out', use_seed: false }); }} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
           + Neues Turnier
         </button>
       </div>
@@ -1828,7 +2139,7 @@ function TournamentExtendedTab() {
                     <span style={{ color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '13px' }}>Gruppe {g.name}</span>
                     <span style={{ color: 'var(--pe-text-muted)', fontSize: '11px', marginLeft: '8px' }}>{(g.standings||[]).length} Spieler</span>
                   </div>
-                  <select value={g.board_id || ''} onChange={e => assignGroupToBoard(g.id, e.target.value ? parseInt(e.target.value) : null)} style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+                  <select value={g.board_id || ''} onChange={e => assignGroupToBoard(g.id, e.target.value ? parseInt(e.target.value) : null)} style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', fontFamily: 'Verdana, Geneva, sans-serif', appearance: 'none', WebkitAppearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235A7394' d='M6 8L1 3h10z'/%3E%3C%2Fsvg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center', paddingRight: '24px' }}>
                     <option value="">Kein Board</option>
                     {boards.map(b => <option key={b.id} value={b.id}>Board {b.number}{b.is_final ? ' ★' : ''}</option>)}
                   </select>
@@ -1845,10 +2156,10 @@ function TournamentExtendedTab() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
             {selectedTournament.status === 'open' && (
               <>
-                <button onClick={() => { setWizardStep(3); }} style={{ padding: '12px 16px', borderRadius: '10px', background: 'var(--pe-blue-deep)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px', textAlign: 'left' }}>
+                <button onClick={() => { setWizardStep(3); }} style={{ padding: '12px 16px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', minHeight: '48px', textAlign: 'left' }}>
                   Spieler verwalten →
                 </button>
-                <button onClick={() => { setWizardStep(4); }} style={{ padding: '12px 16px', borderRadius: '10px', background: 'var(--pe-blue-mid)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px', textAlign: 'left' }}>
+                <button onClick={() => { setWizardStep(4); }} style={{ padding: '12px 16px', borderRadius: '10px', background: 'var(--pe-gradient)', color: '#fff', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', minHeight: '48px', textAlign: 'left' }}>
                   Auslosung →
                 </button>
               </>
@@ -1934,7 +2245,7 @@ function LogTab() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {/* Header + Controls */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
         <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>
           System-Log
           <span style={{ fontSize: '13px', color: 'var(--pe-text-muted)', marginLeft: '10px', fontWeight: 'normal' }}>
@@ -1942,10 +2253,10 @@ function LogTab() {
           </span>
         </h2>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <select value={filterCat} onChange={e => setFilterCat(e.target.value)} style={{ ...inputStyle, padding: '6px 10px', fontSize: '12px', minHeight: '36px' }}>
+          <select value={filterCat} onChange={e => setFilterCat(e.target.value)} style={{ ...selectStyle, padding: '6px 10px', fontSize: '12px', minHeight: '36px' }}>
             {categories.map(c => <option key={c} value={c}>{c || 'Alle Kategorien'}</option>)}
           </select>
-          <select value={filterAction} onChange={e => setFilterAction(e.target.value)} style={{ ...inputStyle, padding: '6px 10px', fontSize: '12px', minHeight: '36px' }}>
+          <select value={filterAction} onChange={e => setFilterAction(e.target.value)} style={{ ...selectStyle, padding: '6px 10px', fontSize: '12px', minHeight: '36px' }}>
             {actions.map(a => <option key={a} value={a}>{a || 'Alle Actions'}</option>)}
           </select>
           <button onClick={load} style={{ ...btnSmall, padding: '6px 14px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-text-sub)', minHeight: '36px' }}>
@@ -2085,7 +2396,9 @@ function SettingsTab() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Einstellungen</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Einstellungen</h2>
+      </div>
 
       {/* App-Daten */}
       <div style={sectionStyle}>
@@ -2188,7 +2501,9 @@ function HelpTab() {
 
   return (
     <div>
-      <h2 style={h2}>Bedienungsanleitung</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px' }}>
+        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Bedienungsanleitung</h2>
+      </div>
 
       {/* ── DASHBOARDS & URLs ── */}
       <div style={card}>
@@ -2362,7 +2677,7 @@ function AdminDashboard() {
   const setActiveTab = (tab) => setSearchParams({ tab }, { replace: true });
 
   return (
-    <div style={{ fontFamily: 'Verdana, Geneva, sans-serif', padding: '16px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ fontFamily: 'Verdana, Geneva, sans-serif', padding: '16px', maxWidth: '1200px', margin: '0 auto', minHeight: 'calc(100vh - 200px)' }}>
       {activeTab === 'overview'    && <OverviewTab />}
       {activeTab === 'director'    && <TournamentDirectorTab />}
       {activeTab === 'tournaments' && <TournamentExtendedTab />}

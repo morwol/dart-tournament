@@ -13,7 +13,14 @@ router.get('/', (req, res) => {
   } else {
     boards = db.prepare('SELECT * FROM boards ORDER BY number').all();
   }
-  res.json(boards);
+  // Enrich with current active game
+  const enriched = boards.map(b => {
+    const activeGame = db.prepare(
+      "SELECT id FROM games WHERE board_id = ? AND status IN ('active', 'bulloff') LIMIT 1"
+    ).get(b.id);
+    return { ...b, current_game_id: activeGame ? activeGame.id : null };
+  });
+  res.json(enriched);
 });
 
 // NEU: Scheibe anlegen (nur admin)
@@ -131,14 +138,15 @@ router.delete('/:id', requireAdmin, (req, res) => {
   const board = db.prepare('SELECT * FROM boards WHERE id = ?').get(req.params.id);
   if (!board) return res.status(404).json({ error: 'Scheibe nicht gefunden' });
 
-  // Schutz: Keine Löschung wenn aktives oder laufendes Spiel auf dieser Scheibe
-  const activeGame = db.prepare(
-    "SELECT id FROM games WHERE board_id = ? AND status IN ('bulloff', 'active', 'pending')"
+  // Schutz: Keine Löschung wenn ein Spiel aktiv/laufend auf dieser Scheibe
+  const runningGame = db.prepare(
+    "SELECT id FROM games WHERE board_id = ? AND status IN ('bulloff', 'active')"
   ).get(req.params.id);
-  if (activeGame) {
-    return res.status(409).json({ error: 'Scheibe kann nicht gelöscht werden – es sind noch Spiele zugewiesen. Bitte erst alle Spiele abschließen oder neu zuweisen.' });
+  if (runningGame) {
+    return res.status(409).json({ error: 'Scheibe kann nicht gelöscht werden – es läuft gerade ein Spiel. Bitte erst das Spiel abschließen oder im Turnierleiter-Tab freigeben.' });
   }
 
+  // Ausstehende Zuweisungen automatisch aufheben
   db.prepare('UPDATE games SET board_id = NULL WHERE board_id = ?').run(req.params.id);
   try { db.prepare('DELETE FROM schedule WHERE board_id = ?').run(req.params.id); } catch (_) {}
   db.prepare('DELETE FROM boards WHERE id = ?').run(req.params.id);
@@ -192,7 +200,8 @@ router.get('/:id/player-stats/:playerId', (req, res) => {
       fav_double_count: favDouble ? favDouble.cnt : 0,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[boards]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

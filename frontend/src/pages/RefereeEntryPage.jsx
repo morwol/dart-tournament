@@ -1,6 +1,6 @@
 // frontend/src/pages/RefereeEntryPage.jsx
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store';
 import { api } from '../api/client';
 import TopBar from '../components/TopBar';
@@ -35,7 +35,7 @@ function RefereeLogin({ onLogin }) {
     border: '1px solid var(--pe-border)',
     color: 'var(--pe-text)',
     fontFamily: 'Verdana, Geneva, sans-serif',
-    minHeight: '52px',
+    minHeight: '64px',
     borderRadius: '12px',
     padding: '0 16px',
     width: '100%',
@@ -97,7 +97,7 @@ function RefereeLogin({ onLogin }) {
               fontWeight: 'bold',
               fontSize: '16px',
               cursor: 'pointer',
-              minHeight: '56px',
+              minHeight: '64px',
               opacity: loading ? 0.6 : 1,
             }}
           >
@@ -220,6 +220,27 @@ function BoardPicker() {
           Keine Boards eingerichtet.
         </p>
       )}
+      {/* PWA escape hatch — no address bar in installed app */}
+      <div style={{ textAlign: 'center', marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--pe-border)' }}>
+        <Link
+          to="/"
+          style={{
+            color: 'var(--pe-text-muted)',
+            fontSize: '13px',
+            textDecoration: 'none',
+            fontFamily: 'Verdana, Geneva, sans-serif',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '64px',
+            padding: '12px 24px',
+          }}
+          onMouseEnter={e => e.currentTarget.style.color = 'var(--pe-text-sub)'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--pe-text-muted)'}
+        >
+          ← Zur Startseite
+        </Link>
+      </div>
     </div>
   );
 }

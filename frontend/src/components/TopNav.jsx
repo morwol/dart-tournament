@@ -4,38 +4,39 @@ import { useStore } from '../store';
 
 const TABS = {
   public: [
-    { label: 'Home',          path: '/',                     exact: true },
-    { label: 'Turnier',       path: '/',                     exact: true },
+    { icon: '🏠', label: 'Home',          path: '/',                        exact: true },
+    { icon: '👤', label: 'Anmelden',      path: '/login',                   exact: false },
   ],
   referee: [
-    { label: 'Meine Boards',  path: '/referee',              exact: false },
-    { label: 'Turnier',       path: '/',                     exact: true },
+    { icon: '📋', label: 'Meine Boards',  path: '/referee',                 exact: false },
+    { icon: '🏆', label: 'Turnier',       path: '/',                        exact: true },
   ],
   gastronomy: [
-    { label: 'Bestellungen',  path: '/gastronomy',           exact: false, noQuery: true },
-    { label: 'Kasse',         path: '/gastronomy?tab=kasse', exact: false },
-    { label: 'Produkte',      path: '/gastronomy?tab=products', exact: false },
-    { label: 'NFC',           path: '/nfc-scan',             exact: false },
+    { icon: '🛒', label: 'Bestellungen',  path: '/gastronomy',              exact: false, noQuery: true },
+    { icon: '💶', label: 'Kasse',         path: '/gastronomy?tab=kasse',    exact: false },
+    { icon: '📦', label: 'Produkte',      path: '/gastronomy?tab=products', exact: false },
+    { icon: '📡', label: 'NFC',           path: '/nfc-scan',                exact: false },
   ],
   admin: [
-    { label: 'Übersicht',     path: '/admin',                exact: false, noQuery: true },
-    { label: 'Turnierleiter', path: '/admin?tab=director',   exact: false },
-    { label: 'Turniere',      path: '/admin?tab=tournaments',exact: false },
-    { label: 'Spieler',       path: '/admin?tab=players',    exact: false },
-    { label: 'Boards',        path: '/admin?tab=boards',     exact: false },
-    { label: 'Gastro',        path: '/gastronomy',           exact: false, noQuery: true },
-    { label: 'User',          path: '/admin?tab=users',      exact: false },
-    { label: 'Mailing',       path: '/admin?tab=mailing',    exact: false },
-    { label: 'Settings',      path: '/admin?tab=settings',   exact: false },
-    { label: 'System-Log',    path: '/admin?tab=log',        exact: false },
-    { label: 'Hilfe',         path: '/admin?tab=help',       exact: false },
+    { icon: '🏠', label: 'Home',          path: '/',                        exact: true },
+    { icon: '📊', label: 'Übersicht',     path: '/admin',                   exact: false, noQuery: true },
+    { icon: '👑', label: 'Turnierleiter', path: '/admin?tab=director',      exact: false },
+    { icon: '🏆', label: 'Turniere',      path: '/admin?tab=tournaments',   exact: false },
+    { icon: '👥', label: 'Spieler',       path: '/admin?tab=players',       exact: false },
+    { icon: '🎯', label: 'Boards',        path: '/admin?tab=boards',        exact: false },
+    { icon: '🍽️', label: 'Gastro',        path: '/gastronomy',              exact: false, noQuery: true },
+    { icon: '👤', label: 'User',          path: '/admin?tab=users',         exact: false },
+    { icon: '📧', label: 'Mailing',       path: '/admin?tab=mailing',       exact: false },
+    { icon: '⚙️', label: 'Settings',      path: '/admin?tab=settings',      exact: false },
+    { icon: '📋', label: 'System-Log',    path: '/admin?tab=log',           exact: false },
+    { icon: '❓', label: 'Hilfe',          path: '/admin?tab=help',          exact: false },
   ],
   director: [
-    { label: 'Übersicht',     path: '/admin',                exact: false, noQuery: true },
-    { label: 'Turniere',      path: '/admin?tab=tournaments',exact: false },
-    { label: 'Spieler',       path: '/admin?tab=players',    exact: false },
-    { label: 'Boards',        path: '/admin?tab=boards',     exact: false },
-    { label: 'System-Log',    path: '/admin?tab=log',        exact: false },
+    { icon: '📊', label: 'Übersicht',     path: '/admin',                   exact: false, noQuery: true },
+    { icon: '🏆', label: 'Turniere',      path: '/admin?tab=tournaments',   exact: false },
+    { icon: '👥', label: 'Spieler',       path: '/admin?tab=players',       exact: false },
+    { icon: '🎯', label: 'Boards',        path: '/admin?tab=boards',        exact: false },
+    { icon: '📋', label: 'System-Log',    path: '/admin?tab=log',           exact: false },
   ],
 };
 
@@ -58,7 +59,7 @@ export default function TopNav() {
       background: 'var(--pe-bg-card)',
       borderBottom: '1px solid var(--pe-border)',
       display: 'flex', alignItems: 'stretch',
-      padding: '0 8px', height: '48px',
+      padding: '0 8px', height: '64px',
       flexShrink: 0, overflowX: 'auto',
       fontFamily: 'Verdana, Geneva, sans-serif',
       scrollbarWidth: 'none',
@@ -85,6 +86,7 @@ export default function TopNav() {
             onMouseEnter={e => { if (!active) e.currentTarget.style.color = 'var(--pe-text-sub)'; }}
             onMouseLeave={e => { if (!active) e.currentTarget.style.color = 'var(--pe-text-muted)'; }}
           >
+            {tab.icon && <span style={{ fontSize: '13px', marginRight: '4px' }}>{tab.icon}</span>}
             {tab.label}
           </button>
         );

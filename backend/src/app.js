@@ -30,7 +30,14 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  maxAge: 86400,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // NEU: Strengeres Rate-Limit für Login (Brute-Force Schutz)
@@ -75,6 +82,12 @@ app.use('/api/walkon', walkonRoutes);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Validate JWT_SECRET on startup
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+  console.error('FATAL: JWT_SECRET must be set and at least 32 characters long.');
+  process.exit(1);
+}
 
 // Initialize DB and start server
 initialize();
