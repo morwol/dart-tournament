@@ -19,20 +19,20 @@ export default function AppShell() {
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar isSubPage={isSubPage} title={title} />
 
-      {/* Desktop top nav — hidden on mobile, hidden on sub-pages */}
+      {/* Desktop top nav — only on root pages, hidden on mobile via CSS */}
       {!isSubPage && (
-        <div className="desktop-nav-only">
+        <div className="pe-topnav-wrap">
           <TopNav />
         </div>
       )}
 
-      <main className="pe-page-enter" style={{ flex: 1 }}>
+      <main style={{ flex: 1 }}>
         <Outlet />
       </main>
 
-      {/* Mobile bottom nav — hidden on desktop, hidden on sub-pages */}
+      {/* Mobile bottom nav — only on root pages, hidden on desktop via CSS */}
       {!isSubPage && (
-        <div className="mobile-nav-only">
+        <div className="pe-bottomnav-wrap">
           <BottomNav />
         </div>
       )}

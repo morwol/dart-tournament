@@ -3,89 +3,76 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../store';
 
 const TABS = {
-  public:     [
-    { label: 'Home',          path: '/' },
-    { label: 'Turnier',       path: '/' },
+  public: [
+    { label: 'Home',          path: '/',                     exact: true },
+    { label: 'Turnier',       path: '/',                     exact: true },
   ],
-  referee:    [
-    { label: 'Meine Boards',  path: '/referee' },
-    { label: 'Turnier',       path: '/' },
+  referee: [
+    { label: 'Meine Boards',  path: '/referee',              exact: false },
+    { label: 'Turnier',       path: '/',                     exact: true },
   ],
   gastronomy: [
-    { label: 'Bestellungen',  path: '/gastronomy' },
-    { label: 'Kasse',         path: '/gastronomy?tab=kasse' },
-    { label: 'Produkte',      path: '/gastronomy?tab=products' },
-    { label: 'NFC',           path: '/nfc-scan' },
+    { label: 'Bestellungen',  path: '/gastronomy',           exact: false, noQuery: true },
+    { label: 'Kasse',         path: '/gastronomy?tab=kasse', exact: false },
+    { label: 'Produkte',      path: '/gastronomy?tab=products', exact: false },
+    { label: 'NFC',           path: '/nfc-scan',             exact: false },
   ],
-  admin:      [
-    { label: 'Übersicht',     path: '/admin' },
-    { label: 'Turnierleiter', path: '/admin?tab=director' },
-    { label: 'Turniere',      path: '/admin?tab=tournaments' },
-    { label: 'Spieler',       path: '/admin?tab=players' },
-    { label: 'Boards',        path: '/admin?tab=boards' },
-    { label: 'Gastro',        path: '/gastronomy' },
-    { label: 'User',          path: '/admin?tab=users' },
-    { label: 'Mailing',       path: '/admin?tab=mailing' },
-    { label: 'Settings',      path: '/admin?tab=settings' },
-    { label: 'System-Log',    path: '/admin?tab=log' },
-    { label: 'Hilfe',         path: '/admin?tab=help' },
+  admin: [
+    { label: 'Übersicht',     path: '/admin',                exact: false, noQuery: true },
+    { label: 'Turnierleiter', path: '/admin?tab=director',   exact: false },
+    { label: 'Turniere',      path: '/admin?tab=tournaments',exact: false },
+    { label: 'Spieler',       path: '/admin?tab=players',    exact: false },
+    { label: 'Boards',        path: '/admin?tab=boards',     exact: false },
+    { label: 'Gastro',        path: '/gastronomy',           exact: false, noQuery: true },
+    { label: 'User',          path: '/admin?tab=users',      exact: false },
+    { label: 'Mailing',       path: '/admin?tab=mailing',    exact: false },
+    { label: 'Settings',      path: '/admin?tab=settings',   exact: false },
+    { label: 'System-Log',    path: '/admin?tab=log',        exact: false },
+    { label: 'Hilfe',         path: '/admin?tab=help',       exact: false },
   ],
-  director:   [
-    { label: 'Übersicht',     path: '/admin' },
-    { label: 'Turniere',      path: '/admin?tab=tournaments' },
-    { label: 'Spieler',       path: '/admin?tab=players' },
-    { label: 'Boards',        path: '/admin?tab=boards' },
-    { label: 'System-Log',    path: '/admin?tab=log' },
+  director: [
+    { label: 'Übersicht',     path: '/admin',                exact: false, noQuery: true },
+    { label: 'Turniere',      path: '/admin?tab=tournaments',exact: false },
+    { label: 'Spieler',       path: '/admin?tab=players',    exact: false },
+    { label: 'Boards',        path: '/admin?tab=boards',     exact: false },
+    { label: 'System-Log',    path: '/admin?tab=log',        exact: false },
   ],
 };
 
-// tabs param: the current role's tab list — needed to correctly detect query-variant tabs
-function isTabActive(tab, pathname, search, tabs) {
-  const [tabBase, tabQuery] = tab.path.split('?');
-  if (tabBase === '/') return pathname === '/' && !search;
-  if (tabQuery) return pathname.startsWith(tabBase) && search === '?' + tabQuery;
-  const hasQueryVariant = tabs.some(
-    t => { const [b, q] = t.path.split('?'); return q && b === tabBase && search === '?' + q; }
-  );
-  if (hasQueryVariant) return false;
-  return pathname.startsWith(tabBase);
+function isActive(tab, pathname, search) {
+  const [base, query] = tab.path.split('?');
+  if (tab.exact) return pathname === base;
+  if (query) return pathname === base && search === '?' + query;
+  if (tab.noQuery) return pathname === base && !search;
+  return pathname.startsWith(base);
 }
 
 export default function TopNav() {
-  const { role } = useStore();
+  const role = useStore(s => s.role);
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
   const tabs = TABS[role] ?? TABS.public;
 
   return (
-    <nav
-      aria-label="Hauptnavigation"
-      className="pe-scrollbar-hide"
-      style={{
-        background: 'var(--pe-bg-card)',
-        borderBottom: '1px solid var(--pe-border)',
-        display: 'flex',
-        alignItems: 'stretch',
-        gap: 0,
-        padding: '0 8px',
-        height: '48px',
-        flexShrink: 0,
-        overflowX: 'auto',
-        fontFamily: 'Verdana, Geneva, sans-serif',
-      }}
-    >
+    <nav aria-label="Hauptnavigation" style={{
+      background: 'var(--pe-bg-card)',
+      borderBottom: '1px solid var(--pe-border)',
+      display: 'flex', alignItems: 'stretch',
+      padding: '0 8px', height: '48px',
+      flexShrink: 0, overflowX: 'auto',
+      fontFamily: 'Verdana, Geneva, sans-serif',
+      scrollbarWidth: 'none',
+    }}>
       {tabs.map((tab) => {
-        const active = isTabActive(tab, pathname, search, tabs);
+        const active = isActive(tab, pathname, search);
         return (
           <button
-            key={tab.path + tab.label}
+            key={tab.label}
             onClick={() => navigate(tab.path)}
             aria-current={active ? 'page' : undefined}
             style={{
-              padding: '0 14px',
-              height: '100%',
-              background: 'none',
-              border: 'none',
+              padding: '0 14px', height: '100%',
+              background: 'none', border: 'none',
               borderBottom: active ? '2px solid var(--pe-cyan-bright)' : '2px solid transparent',
               cursor: 'pointer',
               fontSize: '12px',
