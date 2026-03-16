@@ -2362,7 +2362,7 @@ function AdminDashboard() {
   const setActiveTab = (tab) => setSearchParams({ tab }, { replace: true });
 
   return (
-    <div style={{ fontFamily: 'Verdana, Geneva, sans-serif', padding: '16px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ fontFamily: 'Verdana, Geneva, sans-serif', padding: '16px', maxWidth: '1200px', margin: '0 auto', minHeight: 'calc(100vh - 200px)' }}>
       {activeTab === 'overview'    && <OverviewTab />}
       {activeTab === 'director'    && <TournamentDirectorTab />}
       {activeTab === 'tournaments' && <TournamentExtendedTab />}

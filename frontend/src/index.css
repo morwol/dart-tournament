@@ -20,6 +20,12 @@
   --pe-danger: #FF4560;
 }
 
+html {
+  /* Always reserve scrollbar gutter — prevents horizontal layout shift
+     when content height changes between tabs */
+  scrollbar-gutter: stable;
+}
+
 body {
   background: var(--pe-bg);
   color: var(--pe-text);
