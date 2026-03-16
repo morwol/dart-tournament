@@ -110,6 +110,16 @@ router.put('/:id', requireAdmin, async (req, res) => {
   res.json(updated);
 });
 
+// User reaktivieren (nur admin, active=1)
+router.put('/:id/reactivate', requireAdmin, (req, res) => {
+  const user = db.prepare('SELECT username, role FROM users WHERE id = ?').get(req.params.id);
+  if (!user) return res.status(404).json({ error: 'User nicht gefunden' });
+
+  db.prepare('UPDATE users SET active = 1 WHERE id = ?').run(req.params.id);
+  auditLog(req, 'user', 'UPDATE', `User "${user.username}" (${user.role}) reaktiviert`, req.params.id);
+  res.json({ message: 'User reaktiviert' });
+});
+
 // User deaktivieren (nur admin, active=0)
 router.delete('/:id', requireAdmin, (req, res) => {
   const user = db.prepare('SELECT username, role FROM users WHERE id = ?').get(req.params.id);

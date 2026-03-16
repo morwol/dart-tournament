@@ -677,6 +677,11 @@ function UsersTab() {
     catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen' }); }
   };
 
+  const handleReactivate = async (userId) => {
+    try { await api.put(`/users/${userId}/reactivate`, {}); loadUsers(); }
+    catch (err) { addToast({ type: 'error', message: err.message || 'Reaktivierung fehlgeschlagen' }); }
+  };
+
   const canSubmit = createForm.username.trim() && createForm.password && createForm.vorname.trim() && createForm.nickname.trim() && createForm.nachname.trim();
 
   const ROLE_BADGE_STYLES = {
@@ -750,22 +755,31 @@ function UsersTab() {
                   <span style={{ fontSize: '9px', padding: '2px 7px', borderRadius: '10px', flexShrink: 0, whiteSpace: 'nowrap', color: badge.color, background: badge.bg, border: `1px solid ${badge.border}` }}>
                     {ROLE_LABELS[u.role] || u.role}
                   </span>
-                  {/* Edit / Close button */}
-                  <button
-                    onClick={() => isExpanded ? setEditId(null) : startEdit(u)}
-                    style={{ ...btnSmall, fontSize: '11px', padding: '4px 8px', minHeight: '36px', border: isExpanded ? `1px solid var(--pe-cyan-bright)` : '1px solid var(--pe-border)', background: isExpanded ? 'rgba(0,184,255,0.1)' : 'var(--pe-bg-elevated)', color: isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)', flexShrink: 0 }}
-                  >
-                    {isExpanded ? '✕' : '✏️'}
-                  </button>
-                  {/* Deactivate button (collapsed only, active users only) */}
-                  {!isExpanded && u.active && (
+                  {/* Edit / Close button — hidden for inactive users */}
+                  {u.active && (
+                    <button
+                      onClick={() => isExpanded ? setEditId(null) : startEdit(u)}
+                      style={{ ...btnSmall, fontSize: '11px', padding: '4px 8px', minHeight: '36px', border: isExpanded ? `1px solid var(--pe-cyan-bright)` : '1px solid var(--pe-border)', background: isExpanded ? 'rgba(0,184,255,0.1)' : 'var(--pe-bg-elevated)', color: isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)', flexShrink: 0 }}
+                    >
+                      {isExpanded ? '✕' : '✏️'}
+                    </button>
+                  )}
+                  {/* Deactivate / Reactivate button (collapsed only) */}
+                  {!isExpanded && (u.active ? (
                     <button
                       onClick={() => handleDelete(u.id)}
                       style={{ ...btnSmall, fontSize: '11px', padding: '4px 8px', minHeight: '36px', color: 'var(--pe-danger)', flexShrink: 0 }}
                     >
                       Deaktivieren
                     </button>
-                  )}
+                  ) : (
+                    <button
+                      onClick={() => handleReactivate(u.id)}
+                      style={{ ...btnSmall, fontSize: '11px', padding: '4px 8px', minHeight: '36px', color: 'var(--pe-success)', border: '1px solid var(--pe-success)', flexShrink: 0 }}
+                    >
+                      Reaktivieren
+                    </button>
+                  ))}
                 </div>
                 {/* Expanded accordion form */}
                 {isExpanded && (
@@ -813,15 +827,21 @@ function UsersTab() {
                   </span>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
-                  <button
-                    onClick={() => editId === u.id ? setEditId(null) : startEdit(u)}
-                    style={{ ...btnSmall, background: editId === u.id ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: editId === u.id ? '#fff' : 'var(--pe-text-sub)', padding: '5px 12px' }}
-                  >
-                    {editId === u.id ? 'Abbrechen' : 'Bearbeiten'}
-                  </button>
                   {u.active && (
+                    <button
+                      onClick={() => editId === u.id ? setEditId(null) : startEdit(u)}
+                      style={{ ...btnSmall, background: editId === u.id ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: editId === u.id ? '#fff' : 'var(--pe-text-sub)', padding: '5px 12px' }}
+                    >
+                      {editId === u.id ? 'Abbrechen' : 'Bearbeiten'}
+                    </button>
+                  )}
+                  {u.active ? (
                     <button onClick={() => handleDelete(u.id)} style={{ ...btnSmall, background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', padding: '5px 12px' }}>
                       Deaktivieren
+                    </button>
+                  ) : (
+                    <button onClick={() => handleReactivate(u.id)} style={{ ...btnSmall, background: 'var(--pe-bg-elevated)', color: 'var(--pe-success)', border: '1px solid var(--pe-success)', padding: '5px 12px' }}>
+                      Reaktivieren
                     </button>
                   )}
                 </div>
