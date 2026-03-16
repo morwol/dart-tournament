@@ -62,7 +62,7 @@ function EmergencyLogout() {
         onClick={() => setOpen(o => !o)}
         aria-label="Menü öffnen"
         style={{
-          width: '44px', height: '44px',
+          width: '64px', height: '64px',
           borderRadius: '50%',
           background: 'var(--pe-bg-elevated)',
           border: '1px solid var(--pe-border)',
