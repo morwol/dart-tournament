@@ -13,7 +13,14 @@ router.get('/', (req, res) => {
   } else {
     boards = db.prepare('SELECT * FROM boards ORDER BY number').all();
   }
-  res.json(boards);
+  // Enrich with current active game
+  const enriched = boards.map(b => {
+    const activeGame = db.prepare(
+      "SELECT id FROM games WHERE board_id = ? AND status IN ('active', 'bulloff') LIMIT 1"
+    ).get(b.id);
+    return { ...b, current_game_id: activeGame ? activeGame.id : null };
+  });
+  res.json(enriched);
 });
 
 // NEU: Scheibe anlegen (nur admin)
