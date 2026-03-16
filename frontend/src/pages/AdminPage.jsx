@@ -126,6 +126,14 @@ function BoardsTab() {
 
   useEffect(() => { loadBoards(); }, [selectedTournamentId]);
 
+  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 768px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const handler = (e) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!selectedTournamentId) return;
@@ -183,47 +191,101 @@ function BoardsTab() {
         </form>
       )}
 
-      <div className="space-y-3">
-        {boards.map((b) => (
-          <div key={b.id} className="p-4 rounded-xl" style={{ background: 'var(--pe-bg-card)', border: `1px solid ${b.is_final ? 'var(--pe-warning)' : 'var(--pe-border)'}` }}>
-            <div className="flex justify-between items-center mb-3">
-              <div>
-                <span className="font-bold" style={{ color: 'var(--pe-text)' }}>Board {b.number}</span>
-                {b.name && <span className="ml-2 text-sm" style={{ color: 'var(--pe-text-sub)' }}>({b.name})</span>}
-                {b.is_final ? <span className="ml-2 text-xs font-bold" style={{ color: 'var(--pe-warning)' }}>★ FINAL</span> : null}
+      {isDesktop ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', maxWidth: '900px' }}>
+          {boards.map((b) => {
+            const isFinalDisabled = !b.is_final && boards.some(x => x.is_final && x.id !== b.id);
+            return (
+              <div key={b.id} style={{ background: 'var(--pe-bg-card)', border: b.is_final ? '1px solid var(--pe-warning)' : '1px solid var(--pe-border)', borderRadius: '10px', padding: '12px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ fontSize: '22px' }}>🎯</div>
+                <div style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--pe-text)' }}>Board {b.number}</div>
+                {b.name && <div style={{ fontSize: '10px', color: 'var(--pe-text-muted)' }}>{b.name}</div>}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'stretch' }}>
+                  <span style={{ fontSize: '9px', padding: '2px 7px', borderRadius: '8px', background: b.current_game_id ? 'rgba(0,229,160,0.15)' : 'rgba(90,115,148,0.15)', color: b.current_game_id ? 'var(--pe-success)' : 'var(--pe-text-muted)', border: b.current_game_id ? '1px solid rgba(0,229,160,0.3)' : '1px solid var(--pe-border)' }}>
+                    {b.current_game_id ? '● Aktiv' : 'Frei'}
+                  </span>
+                  {b.is_final && (
+                    <span style={{ fontSize: '9px', padding: '2px 7px', borderRadius: '8px', background: 'rgba(255,176,32,0.15)', color: 'var(--pe-warning)', border: '1px solid rgba(255,176,32,0.3)' }}>★ Final</span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '4px', marginTop: 'auto' }}>
+                  <button
+                    disabled={isFinalDisabled}
+                    title={isFinalDisabled ? 'Es kann nur ein Final-Board geben' : ''}
+                    onClick={async () => {
+                      try {
+                        await api.put(`/boards/${b.id}/final`, { is_final: !b.is_final });
+                        loadBoards();
+                      } catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
+                    }}
+                    style={{ flex: 1, padding: '4px 6px', borderRadius: '6px', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '10px', cursor: isFinalDisabled ? 'not-allowed' : 'pointer', background: b.is_final ? 'var(--pe-warning)' : 'var(--pe-bg-elevated)', color: b.is_final ? '#000' : 'var(--pe-text-sub)', opacity: isFinalDisabled ? 0.4 : 1 }}
+                  >
+                    {b.is_final ? '★ Final' : 'Als Final markieren'}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`Board ${b.number} löschen?`)) return;
+                      try { await api.del(`/boards/${b.id}`); loadBoards(); }
+                      catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
+                    }}
+                    style={{ padding: '4px 8px', borderRadius: '6px', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '10px', cursor: 'pointer', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)' }}
+                  >
+                    Löschen
+                  </button>
+                </div>
               </div>
-              <span className="text-xs" style={{ color: b.current_game_id ? 'var(--pe-success)' : 'var(--pe-text-muted)' }}>
-                {b.current_game_id ? 'Aktiv' : 'Frei'}
-              </span>
+            );
+          })}
+          {boards.length === 0 && selectedTournamentId && (
+            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--pe-text-muted)', fontSize: '13px', padding: '24px' }}>Keine Boards für dieses Turnier.</p>
+          )}
+          {!selectedTournamentId && (
+            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--pe-text-muted)', fontSize: '13px', padding: '24px' }}>Keine Turniere vorhanden.</p>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {boards.map((b) => (
+            <div key={b.id} className="p-4 rounded-xl" style={{ background: 'var(--pe-bg-card)', border: `1px solid ${b.is_final ? 'var(--pe-warning)' : 'var(--pe-border)'}` }}>
+              <div className="flex justify-between items-center mb-3">
+                <div>
+                  <span className="font-bold" style={{ color: 'var(--pe-text)' }}>Board {b.number}</span>
+                  {b.name && <span className="ml-2 text-sm" style={{ color: 'var(--pe-text-sub)' }}>({b.name})</span>}
+                  {b.is_final ? <span className="ml-2 text-xs font-bold" style={{ color: 'var(--pe-warning)' }}>★ FINAL</span> : null}
+                </div>
+                <span className="text-xs" style={{ color: b.current_game_id ? 'var(--pe-success)' : 'var(--pe-text-muted)' }}>
+                  {b.current_game_id ? 'Aktiv' : 'Frei'}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  disabled={!b.is_final && boards.some(x => x.is_final && x.id !== b.id)}
+                  onClick={async () => {
+                    try {
+                      await api.put(`/boards/${b.id}/final`, { is_final: !b.is_final });
+                      loadBoards();
+                    } catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
+                  }}
+                  title={!b.is_final && boards.some(x => x.is_final && x.id !== b.id) ? 'Es kann nur ein Final-Board geben' : ''}
+                  style={{ ...btnSmall, padding: '4px 12px', background: b.is_final ? 'var(--pe-warning)' : 'var(--pe-bg-elevated)', color: b.is_final ? '#000' : 'var(--pe-text-sub)', minHeight: '36px', flex: 1, opacity: (!b.is_final && boards.some(x => x.is_final && x.id !== b.id)) ? 0.4 : 1, cursor: (!b.is_final && boards.some(x => x.is_final && x.id !== b.id)) ? 'not-allowed' : 'pointer' }}
+                >
+                  {b.is_final ? '★ Final' : 'Als Final markieren'}
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!confirm(`Board ${b.number} löschen?`)) return;
+                    try { await api.del(`/boards/${b.id}`); loadBoards(); }
+                    catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
+                  }}
+                  style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', minHeight: '36px' }}
+                >
+                  Löschen
+                </button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                disabled={!b.is_final && boards.some(x => x.is_final && x.id !== b.id)}
-                onClick={async () => {
-                  try {
-                    await api.put(`/boards/${b.id}/final`, { is_final: !b.is_final });
-                    loadBoards();
-                  } catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
-                }}
-                title={!b.is_final && boards.some(x => x.is_final && x.id !== b.id) ? 'Es kann nur ein Final-Board geben' : ''}
-                style={{ ...btnSmall, padding: '4px 12px', background: b.is_final ? 'var(--pe-warning)' : 'var(--pe-bg-elevated)', color: b.is_final ? '#000' : 'var(--pe-text-sub)', minHeight: '36px', flex: 1, opacity: (!b.is_final && boards.some(x => x.is_final && x.id !== b.id)) ? 0.4 : 1, cursor: (!b.is_final && boards.some(x => x.is_final && x.id !== b.id)) ? 'not-allowed' : 'pointer' }}
-              >
-                {b.is_final ? '★ Final' : 'Als Final markieren'}
-              </button>
-              <button
-                onClick={async () => {
-                  if (!confirm(`Board ${b.number} löschen?`)) return;
-                  try { await api.del(`/boards/${b.id}`); loadBoards(); }
-                  catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
-                }}
-                style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', minHeight: '36px' }}
-              >
-                Löschen
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
     </div>
   );
