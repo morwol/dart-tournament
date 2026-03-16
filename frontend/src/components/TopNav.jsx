@@ -5,6 +5,7 @@ import { useStore } from '../store';
 const TABS = {
   public: [
     { icon: '🏠', label: 'Home',          path: '/',                        exact: true },
+    { icon: '📜', label: 'Archiv',        path: '/history',                 exact: false },
     { icon: '👤', label: 'Anmelden',      path: '/login',                   exact: false },
   ],
   referee: [
@@ -29,6 +30,8 @@ const TABS = {
     { icon: '📧', label: 'Mailing',       path: '/admin?tab=mailing',       exact: false },
     { icon: '⚙️', label: 'Settings',      path: '/admin?tab=settings',      exact: false },
     { icon: '📋', label: 'System-Log',    path: '/admin?tab=log',           exact: false },
+    { icon: '📈', label: 'Reports',       path: '/admin/reports',           exact: false },
+    { icon: '📜', label: 'Archiv',        path: '/history',                 exact: false },
     { icon: '❓', label: 'Hilfe',          path: '/admin?tab=help',          exact: false },
   ],
   director: [
@@ -37,6 +40,7 @@ const TABS = {
     { icon: '👥', label: 'Spieler',       path: '/admin?tab=players',       exact: false },
     { icon: '🎯', label: 'Boards',        path: '/admin?tab=boards',        exact: false },
     { icon: '📋', label: 'System-Log',    path: '/admin?tab=log',           exact: false },
+    { icon: '📜', label: 'Archiv',        path: '/history',                 exact: false },
   ],
 };
 

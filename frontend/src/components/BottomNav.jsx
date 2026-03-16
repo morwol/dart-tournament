@@ -4,8 +4,9 @@ import { useStore } from '../store';
 
 const TABS = {
   public: [
-    { icon: '🏠', label: 'Home',       path: '/',       exact: true },
-    { icon: '👤', label: 'Anmelden',   path: '/login',  exact: false },
+    { icon: '🏠', label: 'Home',       path: '/',        exact: true },
+    { icon: '📜', label: 'Archiv',     path: '/history', exact: false },
+    { icon: '👤', label: 'Anmelden',   path: '/login',   exact: false },
   ],
   referee: [
     { icon: '📋', label: 'Boards',     path: '/referee',             exact: false },
