@@ -21,7 +21,6 @@ function RefereeLogin({ onLogin }) {
         setError('Keine Berechtigung für den Referee-Bereich.');
         return;
       }
-      localStorage.setItem('token', data.token);
       onLogin(data.token);
     } catch (err) {
       setError(err.message || 'Login fehlgeschlagen');

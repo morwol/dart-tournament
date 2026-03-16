@@ -23,7 +23,6 @@ function GastronomyLogin({ onLogin }) {
         setError('Keine Berechtigung für die Gastronomie.');
         return;
       }
-      localStorage.setItem('token', data.token);
       onLogin(data.token);
     } catch (err) {
       setError(err.message || 'Login fehlgeschlagen');
@@ -90,8 +89,7 @@ const btnStyle = {
 
 export default function GastronomyPage() {
   const { addToast } = useToastStore();
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const { setToken: storeSetToken } = useStore();
+  const { token, setToken: storeSetToken } = useStore();
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   // view state: initialized from URL, and kept in sync reactively via useEffect below
@@ -282,8 +280,7 @@ export default function GastronomyPage() {
   }, [token, view, loadRegister]);
 
   const handleLogin = (newToken) => {
-    setToken(newToken);         // local state: drives the login gate in this component
-    storeSetToken(newToken);    // Zustand: updates role → AppShell nav re-renders with correct tabs
+    storeSetToken(newToken);    // Zustand: updates role + localStorage → AppShell nav re-renders with correct tabs
   };
 
   if (!token) return <GastronomyLogin onLogin={handleLogin} />;
