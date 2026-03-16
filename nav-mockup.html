@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DartEvent — Navigation Redesign Mockup</title>
+<style>
+:root {
+  --pe-blue-deep:   #1A4FD6;
+  --pe-blue-mid:    #1E7FEB;
+  --pe-cyan-bright: #00B8FF;
+  --pe-cyan-light:  #5DD5FF;
+  --pe-gradient:    linear-gradient(135deg, #5DD5FF, #1E7FEB, #1A4FD6);
+  --pe-bg:          #090E1A;
+  --pe-bg-card:     #101829;
+  --pe-bg-elevated: #172035;
+  --pe-border:      #1E3154;
+  --pe-text:        #FFFFFF;
+  --pe-text-sub:    #A8BDD6;
+  --pe-text-muted:  #5A7394;
+  --pe-success:     #00E5A0;
+  --pe-warning:     #FFB020;
+  --pe-danger:      #FF4560;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #04070F;
+  color: var(--pe-text);
+  font-family: Verdana, Geneva, sans-serif;
+  min-height: 100vh;
+  padding: 24px 16px 48px;
+}
+
+/* ─── PAGE LAYOUT ─── */
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.logo-pill {
+  height: 44px;
+  padding: 0 20px;
+  background: var(--pe-gradient);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  font-size: 15px;
+  font-weight: bold;
+}
+.page-header h1 { font-size: 20px; color: var(--pe-text); }
+.page-header p  { font-size: 12px; color: var(--pe-text-muted); margin-top: 3px; }
+
+/* ─── CONTROL PANEL ─── */
+.controls {
+  background: var(--pe-bg-card);
+  border: 1px solid var(--pe-border);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+.controls-title {
+  font-size: 10px;
+  color: var(--pe-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 14px;
+}
+.ctrl-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.ctrl-row:last-child { margin-bottom: 0; }
+.ctrl-label {
+  font-size: 11px;
+  color: var(--pe-text-muted);
+  min-width: 56px;
+}
+.ctrl-btn {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--pe-border);
+  background: var(--pe-bg-elevated);
+  color: var(--pe-text-sub);
+  font-family: Verdana, Geneva, sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 120ms;
+}
+.ctrl-btn:hover:not(.active) { color: var(--pe-text); border-color: var(--pe-text-muted); }
+.ctrl-btn.active {
+  background: var(--pe-blue-deep);
+  color: var(--pe-text);
+  border-color: var(--pe-blue-mid);
+}
+
+/* ─── FRAMES WRAPPER ─── */
+.frames {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+/* ─── MOBILE FRAME ─── */
+.frame-wrap { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.frame-label {
+  font-size: 10px;
+  color: var(--pe-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+.mobile-frame {
+  width: 390px;
+  height: 844px;
+  background: var(--pe-bg);
+  border-radius: 50px;
+  border: 10px solid #111827;
+  box-shadow: 0 0 0 2px #1e2a40, 0 40px 100px rgba(0,0,0,0.85), inset 0 0 0 1px #0a1220;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+/* notch */
+.mobile-frame::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 30px;
+  background: #111827;
+  border-radius: 0 0 20px 20px;
+  z-index: 20;
+}
+
+/* ─── DESKTOP FRAME ─── */
+.desktop-frame {
+  background: var(--pe-bg);
+  border-radius: 14px;
+  border: 2px solid var(--pe-border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 560px;
+  flex: 1;
+  min-width: 600px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+
+/* ─── TOPBAR ─── */
+.topbar {
+  height: 64px;
+  background: var(--pe-bg-elevated);
+  border-bottom: 1px solid var(--pe-border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 10px;
+  flex-shrink: 0;
+  z-index: 5;
+}
+.topbar-logo {
+  height: 30px;
+  padding: 0 12px;
+  background: var(--pe-gradient);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+.topbar-back {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pe-text-sub);
+  font-size: 20px;
+  cursor: pointer;
+  border-radius: 8px;
+  margin-left: -8px;
+}
+.topbar-spacer { flex: 1; }
+.topbar-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--pe-text);
+}
+.role-pill {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: bold;
+}
+.topbar-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--pe-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* ─── DESKTOP TOP NAV ─── */
+.desktop-topnav {
+  background: var(--pe-bg-card);
+  border-bottom: 1px solid var(--pe-border);
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 0 8px;
+  height: 48px;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+.desktop-navitem {
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--pe-text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 120ms;
+  height: 100%;
+}
+.desktop-navitem.active {
+  color: var(--pe-cyan-bright);
+  border-bottom-color: var(--pe-cyan-bright);
+}
+.desktop-navitem:hover:not(.active) { color: var(--pe-text-sub); }
+
+/* ─── MOBILE BOTTOM NAV ─── */
+.mobile-bottomnav {
+  height: 82px;
+  background: var(--pe-bg-elevated);
+  border-top: 1px solid var(--pe-border);
+  display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+.mobile-navitem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  position: relative;
+  padding-bottom: 10px;
+}
+.mobile-navitem.active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: var(--pe-cyan-bright);
+  border-radius: 0 0 3px 3px;
+}
+.mobile-navitem.active .m-icon { color: var(--pe-cyan-bright); }
+.mobile-navitem.active .m-label { color: var(--pe-cyan-bright); }
+.mobile-navitem:not(.active) .m-icon { color: var(--pe-text-muted); }
+.mobile-navitem:not(.active) .m-label { color: var(--pe-text-muted); }
+.m-icon { font-size: 22px; line-height: 1; }
+.m-label { font-size: 10px; font-weight: bold; }
+
+/* ─── CONTENT AREA ─── */
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  background: var(--pe-bg);
+  scrollbar-width: none;
+}
+.content-area::-webkit-scrollbar { display: none; }
+.content-pb { padding-bottom: 100px; }
+
+/* ─── MOCK CARDS ─── */
+.mock-card {
+  background: var(--pe-bg-card);
+  border: 1px solid var(--pe-border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 10px;
+}
+.mock-card h3 { font-size: 15px; color: var(--pe-text); margin-bottom: 6px; }
+.mock-card p  { font-size: 12px; color: var(--pe-text-sub); line-height: 1.5; }
+.shimmer {
+  height: 13px;
+  border-radius: 6px;
+  background: var(--pe-bg-elevated);
+  margin-bottom: 8px;
+}
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+/* ─── REFEREE BOARD ─── */
+.ref-board {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--pe-bg);
+  position: relative;
+}
+.ref-no-nav-tag {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 9px;
+  color: var(--pe-warning);
+  background: rgba(255,176,32,0.1);
+  border: 1px solid rgba(255,176,32,0.3);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-weight: bold;
+  z-index: 5;
+}
+.ref-scores {
+  background: var(--pe-bg-card);
+  border-bottom: 1px solid var(--pe-border);
+  padding: 16px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+.ref-score-block { text-align: center; }
+.ref-player-name { font-size: 11px; color: var(--pe-text-muted); margin-bottom: 4px; }
+.ref-score-big {
+  font-size: 52px;
+  font-weight: bold;
+  background: var(--pe-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+}
+.ref-score-big.dim {
+  background: none;
+  -webkit-text-fill-color: var(--pe-text-muted);
+}
+.ref-score-label { font-size: 10px; color: var(--pe-text-muted); text-transform: uppercase; margin-top: 4px; }
+.ref-turn-bar {
+  padding: 8px 16px;
+  background: var(--pe-bg-elevated);
+  border-bottom: 1px solid var(--pe-border);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+.ref-turn-label { font-size: 11px; color: var(--pe-text-muted); }
+.ref-turn-name  { font-size: 13px; font-weight: bold; color: var(--pe-cyan-bright); }
+.numpad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 14px;
+  flex: 1;
+}
+.np-btn {
+  background: var(--pe-bg-elevated);
+  border: 1px solid var(--pe-border);
+  border-radius: 12px;
+  color: var(--pe-text);
+  font-size: 22px;
+  font-weight: bold;
+  font-family: Verdana, Geneva, sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60px;
+}
+.np-btn.confirm { background: var(--pe-blue-deep); border-color: var(--pe-blue-mid); }
+.np-btn.undo    { background: rgba(255,69,96,0.12); border-color: var(--pe-danger); color: var(--pe-danger); }
+.ref-exit {
+  text-align: center;
+  padding: 8px 0 16px;
+  font-size: 10px;
+  color: var(--pe-text-muted);
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+/* ─── LOGIN SCREEN ─── */
+.login-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  background: var(--pe-bg);
+}
+.login-logo {
+  height: 52px;
+  padding: 0 24px;
+  background: var(--pe-gradient);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+.login-title { font-size: 18px; color: var(--pe-text); margin-bottom: 4px; }
+.login-sub   { font-size: 12px; color: var(--pe-text-muted); margin-bottom: 28px; }
+.login-form  { width: 100%; max-width: 340px; display: flex; flex-direction: column; gap: 12px; }
+.fake-input  {
+  background: var(--pe-bg-elevated);
+  border: 1px solid var(--pe-border);
+  border-radius: 10px;
+  height: 52px;
+  padding: 0 16px;
+  color: var(--pe-text-muted);
+  font-family: Verdana, Geneva, sans-serif;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+.fake-btn {
+  background: var(--pe-gradient);
+  border: none;
+  border-radius: 10px;
+  height: 56px;
+  color: white;
+  font-family: Verdana, Geneva, sans-serif;
+  font-weight: bold;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* ─── BOARD PICKER ─── */
+.board-card {
+  background: var(--pe-bg-card);
+  border: 1px solid var(--pe-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: border-color 120ms;
+}
+.board-card:hover { border-color: var(--pe-cyan-bright); }
+.board-num  { font-size: 17px; font-weight: bold; color: var(--pe-text); }
+.board-name { font-size: 11px; color: var(--pe-text-muted); margin-top: 2px; }
+
+/* ─── NOTE BOX ─── */
+.note-box {
+  background: rgba(0,184,255,0.07);
+  border: 1px solid rgba(0,184,255,0.2);
+  border-radius: 14px;
+  padding: 18px 20px;
+  max-width: 900px;
+}
+.note-box h4 {
+  font-size: 10px;
+  color: var(--pe-cyan-bright);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 8px;
+}
+.note-box p {
+  font-size: 13px;
+  color: var(--pe-text-sub);
+  line-height: 1.7;
+}
+
+@media (max-width: 860px) {
+  .desktop-frame { min-width: 0; }
+  .frames { flex-direction: column; align-items: stretch; }
+  .frame-wrap { align-items: center; }
+}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="logo-pill">DartEvent</div>
+  <div>
+    <h1>Navigation Redesign — Mockup v1</h1>
+    <p>Interaktiv · Rolle + Screen wählbar · PE Corporate Design</p>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <p class="controls-title">Steuerung</p>
+  <div class="ctrl-row">
+    <span class="ctrl-label">Rolle</span>
+    <button class="ctrl-btn active" id="r-public"    onclick="setRole('public')">Öffentlich</button>
+    <button class="ctrl-btn"        id="r-referee"   onclick="setRole('referee')">Referee</button>
+    <button class="ctrl-btn"        id="r-gastronomy"onclick="setRole('gastronomy')">Gastro</button>
+    <button class="ctrl-btn"        id="r-admin"     onclick="setRole('admin')">Admin</button>
+    <button class="ctrl-btn"        id="r-director"  onclick="setRole('director')">Director</button>
+  </div>
+  <div class="ctrl-row">
+    <span class="ctrl-label">Screen</span>
+    <button class="ctrl-btn active" id="s-home"          onclick="setScreen('home')">Home</button>
+    <button class="ctrl-btn"        id="s-subpage"       onclick="setScreen('subpage')">Sub-Page ←</button>
+    <button class="ctrl-btn"        id="s-ref-login"     onclick="setScreen('ref-login')">Referee Login</button>
+    <button class="ctrl-btn"        id="s-ref-picker"    onclick="setScreen('ref-picker')">Board Picker</button>
+    <button class="ctrl-btn"        id="s-ref-board"     onclick="setScreen('ref-board')">Board (Score)</button>
+  </div>
+</div>
+
+<!-- Frames -->
+<div class="frames">
+
+  <!-- Mobile -->
+  <div class="frame-wrap">
+    <span class="frame-label">📱 Mobile · 390px</span>
+    <div class="mobile-frame" id="mob"></div>
+  </div>
+
+  <!-- Desktop -->
+  <div class="frame-wrap" style="align-items:stretch;flex:1;">
+    <span class="frame-label">🖥️ Desktop</span>
+    <div class="desktop-frame" id="dsk"></div>
+  </div>
+
+</div>
+
+<!-- Design Notes -->
+<div class="note-box">
+  <h4>Design-Entscheidung zu dieser Ansicht</h4>
+  <p id="design-note">–</p>
+</div>
+
+<script>
+// ──────────────────────────────────────────────
+//  DATA
+// ──────────────────────────────────────────────
+const ROLES = {
+  public: {
+    pill: null,
+    mobileNav: [
+      { icon:'🏠', label:'Home' },
+      { icon:'🎯', label:'Turnier' },
+    ],
+    desktopNav: [
+      { icon:'🏠', label:'Home' },
+      { icon:'🎯', label:'Turnier' },
+    ],
+  },
+  referee: {
+    pill: { label:'Referee', bg:'rgba(255,176,32,0.15)', color:'var(--pe-warning)', border:'rgba(255,176,32,0.3)' },
+    mobileNav: [
+      { icon:'📋', label:'Boards' },
+      { icon:'🏆', label:'Turnier' },
+    ],
+    desktopNav: [
+      { icon:'📋', label:'Meine Boards' },
+      { icon:'🏆', label:'Turnier' },
+    ],
+  },
+  gastronomy: {
+    pill: { label:'Gastro', bg:'rgba(0,229,160,0.15)', color:'var(--pe-success)', border:'rgba(0,229,160,0.3)' },
+    mobileNav: [
+      { icon:'🛒', label:'Bestellung' },
+      { icon:'💶', label:'Kasse' },
+      { icon:'📡', label:'NFC' },
+    ],
+    desktopNav: [
+      { icon:'🛒', label:'Bestellungen' },
+      { icon:'💶', label:'Kasse' },
+      { icon:'📦', label:'Produkte' },
+      { icon:'📡', label:'NFC' },
+    ],
+  },
+  admin: {
+    pill: { label:'Admin', bg:'rgba(0,184,255,0.15)', color:'var(--pe-cyan-bright)', border:'rgba(0,184,255,0.3)' },
+    mobileNav: [
+      { icon:'📊', label:'Übersicht' },
+      { icon:'🏆', label:'Turniere' },
+      { icon:'🎯', label:'Boards' },
+      { icon:'⚙️', label:'Admin' },
+    ],
+    desktopNav: [
+      { icon:'📊', label:'Übersicht' },
+      { icon:'🏆', label:'Turniere' },
+      { icon:'👥', label:'Spieler' },
+      { icon:'🎯', label:'Boards' },
+      { icon:'🍽️', label:'Gastro' },
+      { icon:'👤', label:'User' },
+      { icon:'📧', label:'Mailing' },
+      { icon:'⚙️', label:'Settings' },
+    ],
+  },
+  director: {
+    pill: { label:'Director', bg:'rgba(0,184,255,0.15)', color:'var(--pe-cyan-bright)', border:'rgba(0,184,255,0.3)' },
+    mobileNav: [
+      { icon:'📊', label:'Übersicht' },
+      { icon:'🏆', label:'Turniere' },
+      { icon:'👥', label:'Spieler' },
+      { icon:'🎯', label:'Boards' },
+    ],
+    desktopNav: [
+      { icon:'📊', label:'Übersicht' },
+      { icon:'🏆', label:'Turniere' },
+      { icon:'👥', label:'Spieler' },
+      { icon:'🎯', label:'Boards' },
+      { icon:'📋', label:'System-Log' },
+    ],
+  },
+};
+
+const NOTES = {
+  public: {
+    home:      'Öffentliche Ansicht — kein Login nötig. TopBar: nur Logo, kein Avatar/Pill (kein User eingeloggt). Mobile: Bottom-Nav mit 2 Items. Desktop: Top-Nav unterhalb TopBar. Inhalte: Turnier-Card, Spielerliste, Boards, Bracket.',
+    subpage:   'Sub-Page (z.B. Turnier-Detail, Anmeldung): TopBar zeigt ← Zurück + Seitentitel zentriert. Bottom-Nav bleibt auf Mobile sichtbar. Desktop: Top-Nav bleibt, Kontext klar durch aktiven Tab.',
+    'ref-login':  'Nicht anwendbar für die Öffentlich-Rolle.',
+    'ref-picker': 'Nicht anwendbar für die Öffentlich-Rolle.',
+    'ref-board':  'Nicht anwendbar für die Öffentlich-Rolle.',
+  },
+  referee: {
+    home:      'Referee-Rolle — Boards-Übersicht nach Login. Gleicher AppShell wie alle anderen: TopBar mit Logo + Referee-Pill + Avatar. Mobile: Bottom-Nav mit "Boards" + "Turnier". Desktop: Top-Nav. KEIN eigener interner Header in der Page.',
+    subpage:   'Sub-Pages für Referee: TopBar mit ← Zurück. Bottom-Nav bleibt. Nur relevant falls Referee Turnier-Details ansehen will.',
+    'ref-login':  '⚡ STANDALONE — kein AppShell, kein TopBar, kein Nav. Nur Logo + Login-Formular. Einstiegspunkt /referee — dort landet der Referee zuerst. Nach erfolgreichem Login → Board Picker.',
+    'ref-picker': 'Board-Picker nach Login: Minimale Shell — TopBar (Logo + Avatar), KEIN Bottom-Nav, KEINE Top-Nav. Nur Liste der Boards. Wahl eines Boards → /referee/:boardId.',
+    'ref-board':  '🔴 ABSOLUT KEIN HEADER, KEIN NAV — volle Bildschirmfläche für Score-Eingabe! Referee verlässt diesen Screen nie. Einziger Ausweg: kleiner diskreter "verlassen"-Link ganz unten (opacity 50%, kaum sichtbar). Kein Chrome das ablenkt.',
+  },
+  gastronomy: {
+    home:      'Gastro-Ansicht: AppShell TopBar mit Logo + Gastro-Pill + Avatar. Mobile: Bottom-Nav mit 3 Items (Bestellung | Kasse | NFC). Desktop: 4 Items (+Produkte). KEIN doppelter interner Header mehr — der aktuelle GastronomyPage-eigene Header wird entfernt. Navigation NUR via AppShell.',
+    subpage:   'Sub-Pages für Gastro: TopBar mit ← Zurück. Bottom-Nav bleibt sichtbar.',
+    'ref-login':  'Nicht anwendbar für Gastro.',
+    'ref-picker': 'Nicht anwendbar für Gastro.',
+    'ref-board':  'Nicht anwendbar für Gastro.',
+  },
+  admin: {
+    home:      'Admin-Übersicht: AppShell TopBar mit Logo + Admin-Pill + Avatar. Mobile: Bottom-Nav mit 4 Items (die wichtigsten). Desktop: Top-Nav mit allen 8 Tabs — scrollbar wenn nötig. AdminPage verliert ihre eigene Sidebar und wird in die AppShell integriert. Einheitliches Layout!',
+    subpage:   'Sub-Pages im Admin (z.B. Turnier-Detail): TopBar mit ← Zurück. Desktop Top-Nav bleibt, aktiver Tab markiert.',
+    'ref-login':  'Nicht anwendbar für Admin.',
+    'ref-picker': 'Nicht anwendbar für Admin.',
+    'ref-board':  'Nicht anwendbar für Admin.',
+  },
+  director: {
+    home:      'Director: Teilmenge der Admin-Tabs. Kein Zugriff auf User/Mailing/Settings. Mobile: 4 Items. Desktop: 5 Items. Gleicher AppShell wie alle anderen — nur Nav-Tabs unterschiedlich.',
+    subpage:   'Wie Admin.',
+    'ref-login':  'Nicht anwendbar.',
+    'ref-picker': 'Nicht anwendbar.',
+    'ref-board':  'Nicht anwendbar.',
+  },
+};
+
+// ──────────────────────────────────────────────
+//  STATE
+// ──────────────────────────────────────────────
+let role   = 'public';
+let screen = 'home';
+
+// ──────────────────────────────────────────────
+//  HELPERS
+// ──────────────────────────────────────────────
+function topBar(isSubPage, title='', roleKey) {
+  const r    = ROLES[roleKey];
+  const pill = r.pill;
+  const init = roleKey === 'public' ? '' : roleKey[0].toUpperCase();
+
+  const pillHtml = pill
+    ? `<span class="role-pill" style="background:${pill.bg};color:${pill.color};border:1px solid ${pill.border};">${pill.label}</span>`
+    : '';
+  const avatarHtml = roleKey !== 'public'
+    ? `<div class="topbar-avatar">${init}</div>`
+    : '';
+
+  if (isSubPage) return `
+    <div class="topbar">
+      <div class="topbar-back">←</div>
+      <div class="topbar-spacer" style="text-align:center;"><span class="topbar-title">${title}</span></div>
+      ${pillHtml}${avatarHtml}
+    </div>`;
+
+  return `
+    <div class="topbar">
+      <div class="topbar-logo">DartEvent</div>
+      <div class="topbar-spacer"></div>
+      ${pillHtml}${avatarHtml}
+    </div>`;
+}
+
+function mobileNav(roleKey, activeIdx) {
+  const items = ROLES[roleKey].mobileNav
+    .map((it, i) => `
+      <div class="mobile-navitem ${i===activeIdx?'active':''}">
+        <span class="m-icon">${it.icon}</span>
+        <span class="m-label">${it.label}</span>
+      </div>`)
+    .join('');
+  return `<div class="mobile-bottomnav">${items}</div>`;
+}
+
+function desktopNav(roleKey, activeIdx) {
+  const items = ROLES[roleKey].desktopNav
+    .map((it, i) => `
+      <div class="desktop-navitem ${i===activeIdx?'active':''}">
+        <span style="font-size:14px;">${it.icon}</span>${it.label}
+      </div>`)
+    .join('');
+  return `<div class="desktop-topnav">${items}</div>`;
+}
+
+function homeContent(roleKey) {
+  if (roleKey === 'gastronomy') return `
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button style="flex:1;min-height:52px;background:var(--pe-blue-deep);border:none;border-radius:10px;color:white;font-family:Verdana;font-weight:bold;font-size:13px;">Bestellung</button>
+      <button style="flex:1;min-height:52px;background:var(--pe-bg-elevated);border:1px solid var(--pe-border);border-radius:10px;color:var(--pe-text-sub);font-family:Verdana;font-size:13px;">Kasse</button>
+    </div>
+    <div class="mock-card" style="text-align:center;padding:28px 16px;">
+      <div style="font-size:36px;margin-bottom:8px;">📡</div>
+      <p>NFC scannen oder Gast auswählen</p>
+    </div>
+    <div class="mock-card"><div class="shimmer" style="width:70%;"></div><div class="shimmer" style="width:50%;"></div></div>
+    <div class="mock-card"><div class="shimmer" style="width:80%;"></div><div class="shimmer" style="width:45%;"></div></div>
+  `;
+  if (roleKey === 'admin' || roleKey === 'director') return `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div class="mock-card" style="text-align:center;padding:14px 8px;">
+        <div style="font-size:26px;font-weight:bold;color:var(--pe-cyan-bright);">3</div>
+        <div style="font-size:10px;color:var(--pe-text-muted);text-transform:uppercase;margin-top:3px;">Boards aktiv</div>
+      </div>
+      <div class="mock-card" style="text-align:center;padding:14px 8px;">
+        <div style="font-size:26px;font-weight:bold;color:var(--pe-success);">12</div>
+        <div style="font-size:10px;color:var(--pe-text-muted);text-transform:uppercase;margin-top:3px;">Spieler</div>
+      </div>
+    </div>
+    <div class="mock-card"><h3 style="margin-bottom:8px;">Laufende Spiele</h3><div class="shimmer" style="width:80%;"></div><div class="shimmer" style="width:60%;"></div></div>
+    <div class="mock-card"><div class="shimmer" style="width:65%;"></div><div class="shimmer" style="width:45%;"></div></div>
+    <div class="mock-card"><div class="shimmer" style="width:75%;"></div><div class="shimmer" style="width:55%;"></div></div>
+  `;
+  // public / referee
+  return `
+    <div class="mock-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <div>
+          <h3>Frühjahrsturnier 2026</h3>
+          <p style="margin-top:4px;font-size:11px;">15.03.2026 · 501 · Double Out</p>
+        </div>
+        <span class="badge" style="background:rgba(0,229,160,0.15);color:var(--pe-success);border:1px solid var(--pe-success);white-space:nowrap;">Aktiv</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;">
+        <div>
+          <div style="font-size:26px;font-weight:bold;color:var(--pe-cyan-bright);">12</div>
+          <div style="font-size:10px;color:var(--pe-text-muted);text-transform:uppercase;">Spieler</div>
+        </div>
+        <button style="padding:10px 20px;background:var(--pe-blue-deep);border:none;border-radius:10px;color:white;font-family:Verdana;font-weight:bold;font-size:13px;min-height:48px;cursor:pointer;">Beitreten</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:12px;">
+      <button style="flex:1;min-height:38px;background:var(--pe-blue-deep);border:none;border-radius:8px;color:white;font-family:Verdana;font-size:11px;font-weight:bold;cursor:pointer;">Spieler</button>
+      <button style="flex:1;min-height:38px;background:var(--pe-bg-elevated);border:1px solid var(--pe-border);border-radius:8px;color:var(--pe-text-sub);font-family:Verdana;font-size:11px;cursor:pointer;">Scheiben</button>
+      <button style="flex:1;min-height:38px;background:var(--pe-bg-elevated);border:1px solid var(--pe-border);border-radius:8px;color:var(--pe-text-sub);font-family:Verdana;font-size:11px;cursor:pointer;">Bracket</button>
+    </div>
+    <div class="mock-card"><div class="shimmer" style="width:75%;"></div><div class="shimmer" style="width:55%;"></div></div>
+    <div class="mock-card"><div class="shimmer" style="width:60%;"></div><div class="shimmer" style="width:80%;"></div></div>
+    <div class="mock-card"><div class="shimmer" style="width:70%;"></div><div class="shimmer" style="width:45%;"></div></div>
+  `;
+}
+
+function subpageContent() {
+  return `
+    <div class="mock-card">
+      <h3>Turnier-Detail</h3>
+      <p style="margin-top:6px;">TopBar zeigt ← Zurück + Seitentitel. Bottom-Nav (Mobile) und Top-Nav (Desktop) bleiben sichtbar. Nutzer weiß immer wo er ist.</p>
+    </div>
+    <div class="mock-card"><div class="shimmer" style="width:80%;"></div><div class="shimmer" style="width:60%;"></div></div>
+    <div class="mock-card"><div class="shimmer" style="width:65%;"></div><div class="shimmer" style="width:50%;"></div></div>
+  `;
+}
+
+function refLoginScreen() {
+  return `
+    <div class="login-screen">
+      <div class="login-logo">DartEvent</div>
+      <div class="login-title">Referee Login</div>
+      <div class="login-sub">Melde dich mit deinen Referee-Zugangsdaten an</div>
+      <div class="login-form">
+        <div class="fake-input">Benutzername</div>
+        <div class="fake-input" style="letter-spacing:3px;">••••••••</div>
+        <div class="fake-btn">Anmelden</div>
+      </div>
+    </div>
+  `;
+}
+
+function refPickerContent() {
+  return `
+    <div class="content-area" style="padding-bottom:24px;">
+      <p style="font-size:10px;color:var(--pe-text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;">Board auswählen</p>
+      <div class="board-card">
+        <div><div class="board-num">Board 1</div><div class="board-name">Hauptscheibe</div></div>
+        <span class="badge" style="background:rgba(0,229,160,0.15);color:var(--pe-success);border:1px solid var(--pe-success);">Aktiv</span>
+      </div>
+      <div class="board-card">
+        <div><div class="board-num">Board 2</div><div class="board-name">Nebenraum</div></div>
+        <span class="badge" style="background:rgba(255,176,32,0.15);color:var(--pe-warning);border:1px solid var(--pe-warning);">Warten</span>
+      </div>
+      <div class="board-card">
+        <div><div class="board-num">Board 3</div><div class="board-name"> </div></div>
+        <span class="badge" style="background:rgba(90,115,148,0.15);color:var(--pe-text-muted);border:1px solid var(--pe-text-muted);">Frei</span>
+      </div>
+    </div>
+  `;
+}
+
+function refBoardContent() {
+  return `
+    <div class="ref-board">
+      <div class="ref-no-nav-tag">KEIN HEADER · KEIN NAV</div>
+      <div class="ref-scores">
+        <div class="ref-score-block">
+          <div class="ref-player-name">Müller</div>
+          <div class="ref-score-big">342</div>
+          <div class="ref-score-label">verbleibend</div>
+        </div>
+        <div style="font-size:20px;color:var(--pe-text-muted);font-weight:bold;align-self:center;">VS</div>
+        <div class="ref-score-block">
+          <div class="ref-player-name">Schmidt</div>
+          <div class="ref-score-big dim">287</div>
+          <div class="ref-score-label">verbleibend</div>
+        </div>
+      </div>
+      <div class="ref-turn-bar">
+        <span class="ref-turn-label">Eingabe für:</span>
+        <span class="ref-turn-name">Müller</span>
+      </div>
+      <div class="numpad">
+        ${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="np-btn">${n}</button>`).join('')}
+        <button class="np-btn undo">↩</button>
+        <button class="np-btn">0</button>
+        <button class="np-btn confirm">✓</button>
+      </div>
+      <div class="ref-exit">← Turnier verlassen</div>
+    </div>
+  `;
+}
+
+// ──────────────────────────────────────────────
+//  RENDER
+// ──────────────────────────────────────────────
+function render() {
+  renderMobile();
+  renderDesktop();
+  renderNote();
+}
+
+function renderMobile() {
+  const el = document.getElementById('mob');
+
+  if (screen === 'ref-login') {
+    el.innerHTML = refLoginScreen();
+    return;
+  }
+  if (screen === 'ref-picker') {
+    el.innerHTML = topBar(false, '', role) + refPickerContent();
+    return;
+  }
+  if (screen === 'ref-board') {
+    el.innerHTML = refBoardContent();
+    return;
+  }
+
+  const isSub  = screen === 'subpage';
+  const inner  = isSub ? subpageContent() : homeContent(role);
+  el.innerHTML = `
+    ${topBar(isSub, 'Turnier-Detail', role)}
+    <div class="content-area content-pb" style="flex:1;">${inner}</div>
+    ${mobileNav(role, 0)}
+  `;
+}
+
+function renderDesktop() {
+  const el = document.getElementById('dsk');
+
+  if (screen === 'ref-login') {
+    el.innerHTML = `<div style="display:flex;flex-direction:column;flex:1;">${refLoginScreen()}</div>`;
+    return;
+  }
+  if (screen === 'ref-picker') {
+    el.innerHTML = `
+      ${topBar(false, '', role)}
+      <div style="flex:1;padding:24px;background:var(--pe-bg);">
+        <p style="font-size:10px;color:var(--pe-text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;">Board auswählen</p>
+        <div style="max-width:440px;">
+          <div class="board-card"><div><div class="board-num">Board 1</div><div class="board-name">Hauptscheibe</div></div><span class="badge" style="background:rgba(0,229,160,0.15);color:var(--pe-success);border:1px solid var(--pe-success);">Aktiv</span></div>
+          <div class="board-card"><div><div class="board-num">Board 2</div><div class="board-name">Nebenraum</div></div><span class="badge" style="background:rgba(255,176,32,0.15);color:var(--pe-warning);border:1px solid var(--pe-warning);">Warten</span></div>
+          <div class="board-card"><div><div class="board-num">Board 3</div></div><span class="badge" style="background:rgba(90,115,148,0.15);color:var(--pe-text-muted);border:1px solid var(--pe-text-muted);">Frei</span></div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+  if (screen === 'ref-board') {
+    el.innerHTML = `<div style="display:flex;flex-direction:column;flex:1;position:relative;">${refBoardContent()}</div>`;
+    return;
+  }
+
+  const isSub = screen === 'subpage';
+  const inner = isSub ? subpageContent() : homeContent(role);
+  el.innerHTML = `
+    ${topBar(isSub, 'Turnier-Detail', role)}
+    ${desktopNav(role, 0)}
+    <div class="content-area" style="padding:20px 24px;">
+      <div style="max-width:760px;margin:0 auto;">${inner}</div>
+    </div>
+  `;
+}
+
+function renderNote() {
+  document.getElementById('design-note').textContent =
+    (NOTES[role] || {})[screen] || '–';
+}
+
+// ──────────────────────────────────────────────
+//  CONTROLS
+// ──────────────────────────────────────────────
+function setRole(r) {
+  role = r;
+  document.querySelectorAll('[id^="r-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById('r-' + r).classList.add('active');
+  render();
+}
+
+function setScreen(s) {
+  screen = s;
+  document.querySelectorAll('[id^="s-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById('s-' + s).classList.add('active');
+  render();
+}
+
+// ──────────────────────────────────────────────
+//  INIT
+// ──────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
