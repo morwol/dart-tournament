@@ -793,7 +793,7 @@ function PlayersTab() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
           {players.map((p) => {
             const isExpanded = editingPlayer?.id === p.id;
-            const effectiveWalkonStatus = walkonStatuses[p.id] ?? p.walkon_status;
+            const effectiveWalkonStatus = walkonStatuses[p.id] ?? p.walkon_status ?? (p.has_walkon ? 'ready' : null);
             return (
               <div key={p.id} style={{ background: 'var(--pe-bg-card)', border: `1px solid ${isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, borderRadius: '10px', padding: '12px' }}>
                 {/* Collapsed header — always visible */}
@@ -877,7 +877,7 @@ function PlayersTab() {
                 <span className="font-bold" style={{ color: 'var(--pe-text)' }}>{p.name}</span>
                 {(p.has_walkon || p.walkon_youtube) && (
                   <WalkonBadge
-                    status={walkonStatuses[p.id] ?? p.walkon_status}
+                    status={walkonStatuses[p.id] ?? p.walkon_status ?? (p.has_walkon ? 'ready' : null)}
                     title={p.walkon_title}
                     artist={p.walkon_artist}
                   />
