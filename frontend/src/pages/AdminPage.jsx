@@ -218,7 +218,7 @@ function BoardsTab() {
                         loadBoards();
                       } catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
                     }}
-                    style={{ flex: 1, padding: '4px 6px', borderRadius: '6px', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '10px', cursor: isFinalDisabled ? 'not-allowed' : 'pointer', background: b.is_final ? 'var(--pe-warning)' : 'var(--pe-bg-elevated)', color: b.is_final ? '#000' : 'var(--pe-text-sub)', opacity: isFinalDisabled ? 0.4 : 1 }}
+                    style={{ ...btnSmall, flex: 1, padding: '4px 6px', border: 'none', fontSize: '10px', cursor: isFinalDisabled ? 'not-allowed' : 'pointer', background: b.is_final ? 'var(--pe-warning)' : 'var(--pe-bg-elevated)', color: b.is_final ? '#000' : 'var(--pe-text-sub)', opacity: isFinalDisabled ? 0.4 : 1 }}
                   >
                     {b.is_final ? '★ Final' : 'Als Final markieren'}
                   </button>
@@ -228,7 +228,7 @@ function BoardsTab() {
                       try { await api.del(`/boards/${b.id}`); loadBoards(); }
                       catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
                     }}
-                    style={{ padding: '4px 8px', borderRadius: '6px', border: 'none', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '10px', cursor: 'pointer', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)' }}
+                    style={{ ...btnSmall, padding: '4px 8px', border: 'none', fontSize: '10px', color: 'var(--pe-danger)' }}
                   >
                     Löschen
                   </button>
