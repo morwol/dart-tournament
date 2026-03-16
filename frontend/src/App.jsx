@@ -16,6 +16,7 @@ import Toaster from './components/Toaster';
 const RefereePage = lazy(() => import('./pages/RefereePage'));
 const GastronomyPage = lazy(() => import('./pages/GastronomyPage'));
 const CancelRegistrationPage = lazy(() => import('./pages/CancelRegistrationPage'));
+const RefereeEntryPage = lazy(() => import('./pages/RefereeEntryPage'));
 
 // NEU: Protected Route mit Rollenprüfung
 function ProtectedRoute({ element, roles }) {
@@ -76,18 +77,32 @@ export default function App() {
       <Suspense fallback={<LazyFallback />}>
         <ThemeLoader />
         <Routes>
-          {/* ── Shell routes: persistent TopBar + RoleTabs ── */}
+          {/* ── Shell routes: TopBar + role nav ── */}
           <Route element={<AppShell />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/tournament/:id" element={<TournamentPage />} />
             <Route path="/tournament/:id/register" element={<PlayerRegistrationPage />} />
-            <Route path="/referee/:boardId" element={<RefereePage />} />
             <Route path="/gastronomy" element={<GastronomyPage />} />
+            <Route
+              path="/admin"
+              element={<ProtectedRoute element={<AdminPage />} roles={['admin', 'director']} />}
+            />
+            {/* /admin/users → redirect to /admin?tab=users */}
+            <Route
+              path="/admin/users"
+              element={
+                <ProtectedRoute
+                  element={<Navigate to="/admin?tab=users" replace />}
+                  roles={['admin', 'director']}
+                />
+              }
+            />
+            {/* /referee: TopBar only, no nav (AppShell suppresses via useMatch) */}
+            <Route path="/referee" element={<RefereeEntryPage />} />
           </Route>
 
           {/* ── Standalone routes: no shell ── */}
-          <Route path="/admin/users" element={<ProtectedRoute element={<AdminPage tab="users" />} roles={['admin', 'director']} />} />
-          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/referee/:boardId" element={<RefereePage />} />
           <Route path="/board/:boardId" element={<CurrentGameView />} />
           <Route path="/nfc" element={<NFCScanPage />} />
           <Route path="/nfc-scan" element={<NFCScanPage />} />
