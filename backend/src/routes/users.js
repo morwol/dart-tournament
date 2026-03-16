@@ -41,7 +41,8 @@ router.post('/', requireAdmin, async (req, res) => {
   const display_name = `${vn} "${nn}" ${na}`;
 
   try {
-    const password_hash = await bcrypt.hash(password, 10);
+    const rounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
+    const password_hash = await bcrypt.hash(password, rounds);
     const result = db.prepare(
       'INSERT INTO users (username, password_hash, role, email, display_name, vorname, nickname, nachname, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).run(username, password_hash, role, email || null, display_name, vn, nn, na, req.user.id);
@@ -76,7 +77,8 @@ router.put('/:id', requireAdmin, async (req, res) => {
     updates.push('username = ?'); params.push(username);
   }
   if (password) {
-    const password_hash = await bcrypt.hash(password, 10);
+    const rounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
+    const password_hash = await bcrypt.hash(password, rounds);
     updates.push('password_hash = ?'); params.push(password_hash);
   }
   if (role !== undefined) {

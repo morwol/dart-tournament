@@ -1,6 +1,10 @@
 const express = require('express');
 const { db } = require('../db/db');
 const { verifyToken, requireAuth } = require('../middleware/auth');
+const { isBust: checkBust, validateThrow } = require('../gamelogic/scoring');
+const { getCheckoutSuggestions } = require('../gamelogic/checkout');
+const { advanceBracket } = require('../gamelogic/bracket');
+const { isValidBulloffScore, resolveBulloff } = require('../gamelogic/bulloff');
 
 const router = express.Router();
 
@@ -22,164 +26,6 @@ function parseSegment(segment) {
     case 'T': return { score: num * 3, multiplier: 3, base: num, isDouble: false };
     default: return null;
   }
-}
-
-// Checkout-Tabelle: haeufigste Checkout-Kombinationen
-const CHECKOUTS = {
-  170: ['T20 T20 Bull'],
-  167: ['T20 T19 Bull'],
-  164: ['T20 T18 Bull'],
-  161: ['T20 T17 Bull'],
-  160: ['T20 T20 D20'],
-  158: ['T20 T20 D19'],
-  157: ['T20 T19 D20'],
-  156: ['T20 T20 D18'],
-  155: ['T20 T19 D19'],
-  154: ['T20 T18 D20'],
-  153: ['T20 T19 D18'],
-  152: ['T20 T20 D16'],
-  151: ['T20 T17 D20'],
-  150: ['T20 T18 D18'],
-  149: ['T20 T19 D16'],
-  148: ['T20 T16 D20'],
-  147: ['T20 T17 D18'],
-  146: ['T20 T18 D16'],
-  145: ['T20 T15 D20'],
-  144: ['T20 T18 D15'],
-  143: ['T20 T17 D16'],
-  142: ['T20 T14 D20'],
-  141: ['T20 T19 D12'],
-  140: ['T20 T20 D10'],
-  139: ['T20 T13 D20'],
-  138: ['T20 T18 D12'],
-  137: ['T20 T15 D16'],
-  136: ['T20 T20 D8'],
-  135: ['T20 T17 D12'],
-  134: ['T20 T14 D16'],
-  133: ['T20 T19 D8'],
-  132: ['T20 T16 D12'],
-  131: ['T20 T13 D16'],
-  130: ['T20 T18 D8'],
-  129: ['T19 T16 D12'],
-  128: ['T18 T14 D16'],
-  127: ['T20 T17 D8'],
-  126: ['T19 T15 D12'],
-  125: ['T20 T15 D10', 'T18 T13 D16'],
-  124: ['T20 T16 D8'],
-  123: ['T19 T16 D9'],
-  122: ['T18 T18 D7'],
-  121: ['T20 T11 D14'],
-  120: ['T20 20 D20'],
-  119: ['T19 T12 D13'],
-  118: ['T20 18 D20'],
-  117: ['T20 17 D20'],
-  116: ['T20 16 D20'],
-  115: ['T20 15 D20'],
-  114: ['T20 14 D20'],
-  113: ['T20 13 D20'],
-  112: ['T20 12 D20'],
-  111: ['T20 11 D20'],
-  110: ['T20 10 D20'],
-  109: ['T20 9 D20'],
-  108: ['T20 16 D16'],
-  107: ['T19 10 D20'],
-  106: ['T20 6 D20'],
-  105: ['T20 5 D20'],
-  104: ['T18 10 D20'],
-  103: ['T20 3 D20'],
-  102: ['T20 10 D16'],
-  101: ['T20 1 D20'],
-  100: ['T20 D20'],
-  99: ['T19 10 D16'],
-  98: ['T20 D19'],
-  97: ['T19 D20'],
-  96: ['T20 D18'],
-  95: ['T19 D19'],
-  94: ['T18 D20'],
-  93: ['T19 D18'],
-  92: ['T20 D16'],
-  91: ['T17 D20'],
-  90: ['T18 D18'],
-  89: ['T19 D16'],
-  88: ['T16 D20'],
-  87: ['T17 D18'],
-  86: ['T18 D16'],
-  85: ['T15 D20'],
-  84: ['T20 D12'],
-  83: ['T17 D16'],
-  82: ['T14 D20'],
-  81: ['T19 D12'],
-  80: ['T20 D10'],
-  79: ['T13 D20'],
-  78: ['T18 D12'],
-  77: ['T15 D16'],
-  76: ['T20 D8'],
-  75: ['T17 D12'],
-  74: ['T14 D16'],
-  73: ['T19 D8'],
-  72: ['T16 D12'],
-  71: ['T13 D16'],
-  70: ['T18 D8'],
-  69: ['T19 D6'],
-  68: ['T20 D4'],
-  67: ['T17 D8'],
-  66: ['T10 D18'],
-  65: ['T19 D4'],
-  64: ['T16 D8'],
-  63: ['T13 D12'],
-  62: ['T10 D16'],
-  61: ['T15 D8'],
-  60: ['20 D20'],
-  59: ['19 D20'],
-  58: ['18 D20'],
-  57: ['17 D20'],
-  56: ['16 D20'],
-  55: ['15 D20'],
-  54: ['14 D20'],
-  53: ['13 D20'],
-  52: ['12 D20'],
-  51: ['11 D20'],
-  50: ['Bull'],
-  49: ['9 D20'],
-  48: ['8 D20'],
-  47: ['7 D20'],
-  46: ['6 D20'],
-  45: ['5 D20'],
-  44: ['4 D20'],
-  43: ['3 D20'],
-  42: ['10 D16'],
-  41: ['9 D16'],
-  40: ['D20'],
-  39: ['7 D16'],
-  38: ['D19'],
-  36: ['D18'],
-  34: ['D17'],
-  32: ['D16'],
-  30: ['D15'],
-  28: ['D14'],
-  26: ['D13'],
-  24: ['D12'],
-  22: ['D11'],
-  20: ['D10'],
-  18: ['D9'],
-  16: ['D8'],
-  14: ['D7'],
-  12: ['D6'],
-  10: ['D5'],
-  8: ['D4'],
-  6: ['D3'],
-  4: ['D2'],
-  2: ['D1'],
-};
-
-function getCheckoutSuggestions(remaining, checkout) {
-  if (remaining > 170 || remaining < 2) return [];
-  if (checkout === 'single_out' && remaining <= 60) {
-    // For single out, any single field finish is also valid
-    const suggestions = CHECKOUTS[remaining] || [];
-    return suggestions;
-  }
-  return CHECKOUTS[remaining] || [];
 }
 
 // Gibt alle aktiven Wuerfe fuer ein Spiel zurueck (ohne bulloff, ohne rueckgaengig gemachte)
@@ -271,7 +117,8 @@ router.get('/', (req, res) => {
     const games = db.prepare(query).all(...params);
     res.json(games);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[games]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -338,7 +185,8 @@ router.get('/:id', (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[games]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -361,7 +209,7 @@ router.post('/:id/bulloff', verifyToken, (req, res) => {
     const p1s = Number(player1_score);
     const p2s = Number(player2_score);
 
-    if (![0, 25, 50].includes(p1s) || ![0, 25, 50].includes(p2s)) {
+    if (!isValidBulloffScore(p1s) || !isValidBulloffScore(p2s)) {
       return res.status(400).json({ error: 'Ungültiger Ausbull-Wert – erlaubt: MISS (0), Bull (25) oder D-Bull (50)' });
     }
 
@@ -375,8 +223,9 @@ router.post('/:id/bulloff', verifyToken, (req, res) => {
       .run(game.id, game.player2_id, p2s, game.start_score || 501);
 
     let winnerId;
+    const bullResult = resolveBulloff(p1s, p2s);
 
-    if (p1s === p2s) {
+    if (bullResult === 'tie') {
       if (p1s === 0 && winner_id) {
         // Both MISS — referee picked who was closer
         const wid = Number(winner_id);
@@ -391,13 +240,14 @@ router.post('/:id/bulloff', verifyToken, (req, res) => {
         return res.json({ status: 'bulloff', bull_winner_id: null, message: 'Gleichstand — erneut werfen!' });
       }
     } else {
-      winnerId = p1s > p2s ? game.player1_id : game.player2_id;
+      winnerId = bullResult === 'p1' ? game.player1_id : game.player2_id;
     }
 
     db.prepare("UPDATE games SET bull_winner_id = ?, status = 'active' WHERE id = ?").run(winnerId, game.id);
     return res.json({ status: 'active', bull_winner_id: winnerId });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[games]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -422,7 +272,7 @@ router.post('/:id/throw', verifyToken, (req, res) => {
       return res.status(400).json({ error: 'Dieser Spieler ist nicht Teil des Spiels' });
     }
 
-    if (typeof score !== 'number' || score < 0 || score > 180) {
+    if (!validateThrow(score)) {
       return res.status(400).json({ error: 'Ungültige Punktzahl – muss zwischen 0 und 180 liegen' });
     }
 
@@ -440,24 +290,7 @@ router.post('/:id/throw', verifyToken, (req, res) => {
 
     let actualScore = score;
     let actualRemaining = newRemaining;
-    let isBust = false;
-
-    if (checkoutMode === 'double_out') {
-      // Bust conditions for double out:
-      // 1. remaining goes below 0
-      // 2. remaining equals 1 (can't finish with a double from 1)
-      // 3. remaining equals 0 but is_double is not true
-      if (newRemaining < 0 || newRemaining === 1) {
-        isBust = true;
-      } else if (newRemaining === 0 && !is_double) {
-        isBust = true;
-      }
-    } else {
-      // Single out: bust only if remaining goes below 0
-      if (newRemaining < 0) {
-        isBust = true;
-      }
-    }
+    let isBust = checkBust(currentRemaining, score, checkoutMode, is_double);
 
     if (isBust) {
       actualScore = 0;
@@ -472,7 +305,7 @@ router.post('/:id/throw', verifyToken, (req, res) => {
     // Check for game over (checkout)
     if (!isBust && newRemaining === 0) {
       db.prepare('UPDATE games SET status = ?, winner_id = ? WHERE id = ?').run('finished', player_id, game.id);
-      advanceBracket(game);
+      advanceBracket(db, game);
 
       return res.json({
         status: 'finished',
@@ -494,7 +327,8 @@ router.post('/:id/throw', verifyToken, (req, res) => {
       message: isBust ? 'Bust! Runde ungueltig.' : undefined,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[games]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -516,7 +350,7 @@ router.post('/:id/finish', verifyToken, (req, res) => {
     }
 
     db.prepare('UPDATE games SET status = ?, winner_id = ? WHERE id = ?').run('finished', winner_id, game.id);
-    advanceBracket(game);
+    advanceBracket(db, game);
 
     res.json({
       status: 'finished',
@@ -524,48 +358,10 @@ router.post('/:id/finish', verifyToken, (req, res) => {
       message: `Spiel manuell beendet. Gewinner: Spieler ${winner_id}.`,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[games]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
-
-// Advance bracket: check if all games in current round are finished, then generate next round
-function advanceBracket(game) {
-  const roundGames = db.prepare(
-    'SELECT * FROM games WHERE tournament_id = ? AND round = ?'
-  ).all(game.tournament_id, game.round);
-
-  const allFinished = roundGames.every(g => g.status === 'finished');
-  if (!allFinished) return;
-
-  const winners = roundGames.map(g => g.winner_id).filter(Boolean);
-
-  if (winners.length <= 1) {
-    // Tournament is finished
-    db.prepare('UPDATE tournaments SET status = ? WHERE id = ?').run('finished', game.tournament_id);
-    return;
-  }
-
-  // Generate next round games (pair winners)
-  const nextRound = game.round + 1;
-  const tournament = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(game.tournament_id);
-  const startScore = tournament ? (tournament.format === '301' ? 301 : 501) : 501;
-
-  for (let i = 0; i < winners.length; i += 2) {
-    const p1 = winners[i];
-    const p2 = winners[i + 1] || null;
-
-    if (p2) {
-      db.prepare(
-        'INSERT INTO games (tournament_id, round, player1_id, player2_id, status, start_score) VALUES (?, ?, ?, ?, ?, ?)'
-      ).run(game.tournament_id, nextRound, p1, p2, 'pending', startScore);
-    } else {
-      // Odd player gets a bye — auto-advance
-      db.prepare(
-        'INSERT INTO games (tournament_id, round, player1_id, player2_id, status, start_score, winner_id) VALUES (?, ?, ?, NULL, ?, ?, ?)'
-      ).run(game.tournament_id, nextRound, p1, 'finished', startScore, p1);
-    }
-  }
-}
 
 // NEU: Segment-basierte Wurf-Eingabe (T20, D16, S5, BULL, D-BULL, MISS)
 router.post('/:id/throw-segment', requireAuth, (req, res) => {
@@ -598,16 +394,7 @@ router.post('/:id/throw-segment', requireAuth, (req, res) => {
     const currentRemaining = getRemaining(game.id, player_id);
     const newRemaining = currentRemaining - parsed.score;
 
-    let isBust = false;
-    if (checkoutMode === 'double_out') {
-      if (newRemaining < 0 || newRemaining === 1) {
-        isBust = true;
-      } else if (newRemaining === 0 && !parsed.isDouble) {
-        isBust = true;
-      }
-    } else {
-      if (newRemaining < 0) isBust = true;
-    }
+    const isBust = checkBust(currentRemaining, parsed.score, checkoutMode, parsed.isDouble);
 
     const actualScore = isBust ? 0 : parsed.score;
     const actualRemaining = isBust ? currentRemaining : newRemaining;
@@ -620,7 +407,7 @@ router.post('/:id/throw-segment', requireAuth, (req, res) => {
     // Pruefen ob Spiel gewonnen
     if (!isBust && newRemaining === 0) {
       db.prepare('UPDATE games SET status = ?, winner_id = ? WHERE id = ?').run('finished', player_id, game.id);
-      advanceBracket(game);
+      advanceBracket(db, game);
       return res.json({
         throw_id: result.lastInsertRowid,
         segment: segment.toUpperCase(),
@@ -649,7 +436,8 @@ router.post('/:id/throw-segment', requireAuth, (req, res) => {
       checkout_suggestions: checkoutSuggestions,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[games]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -689,7 +477,8 @@ router.delete('/:id/throw/:throwId', requireAuth, (req, res) => {
       player2_remaining: p2Remaining,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[games]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -771,7 +560,8 @@ router.get('/:id/live', (req, res) => {
       current_round_throws: currentRoundThrows,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[games]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -810,7 +600,8 @@ router.post('/:id/skip', requireAuth, (req, res) => {
     const updated = db.prepare('SELECT * FROM games WHERE id = ?').get(req.params.id);
     res.json(updated);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[games]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

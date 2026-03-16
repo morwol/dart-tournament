@@ -182,7 +182,8 @@ function initialize() {
   if (adminExists.count === 0) {
     const username = process.env.ADMIN_USERNAME || 'admin';
     const password = process.env.ADMIN_PASSWORD || 'admin';
-    const hash = bcrypt.hashSync(password, 10);
+    const rounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
+    const hash = bcrypt.hashSync(password, rounds);
     db.prepare('INSERT INTO admins (username, password_hash) VALUES (?, ?)').run(username, hash);
     console.log(`Default admin "${username}" created.`);
   }

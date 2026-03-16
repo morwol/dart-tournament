@@ -16,7 +16,7 @@ router.get('/:id/players', (req, res) => {
 
   const players = db.prepare(`
     SELECT p.id, p.name, p.vorname, p.nickname, p.nachname, p.walkon_youtube,
-           tr.seed, tr.registered_at, tr.cancel_token, tr.id as registration_id
+           tr.seed, tr.registered_at, tr.id as registration_id
     FROM players p
     JOIN tournament_registrations tr ON tr.player_id = p.id
     WHERE tr.tournament_id = ?

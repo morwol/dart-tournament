@@ -200,7 +200,8 @@ router.get('/:id/player-stats/:playerId', (req, res) => {
       fav_double_count: favDouble ? favDouble.cnt : 0,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[boards]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
