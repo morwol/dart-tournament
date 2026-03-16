@@ -514,6 +514,7 @@ function PlayersTab() {
       setAddMode(null);
       setSearchQuery('');
       setSearchResults([]);
+      setConfirmPlayer(null);
       await loadPlayers();
     } catch (err) {
       addToast({ type: 'error', message: err.message || 'Spieler konnte nicht angelegt werden' });
