@@ -693,6 +693,7 @@ function UsersTab() {
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
+  useEffect(() => { setEditId(null); }, [isDesktop]);
 
   return (
     <div>
