@@ -4,12 +4,16 @@ const fs = require('fs');
 const bcrypt = require('bcryptjs');
 
 const dbPath = process.env.DB_PATH || './data/dartevent.db';
-const absoluteDbPath = path.resolve(__dirname, '../../', dbPath);
+const absoluteDbPath = dbPath === ':memory:'
+  ? ':memory:'
+  : path.resolve(__dirname, '../../', dbPath);
 
-// Ensure data directory exists
-const dbDir = path.dirname(absoluteDbPath);
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
+// Ensure data directory exists (skip for in-memory DB)
+if (absoluteDbPath !== ':memory:') {
+  const dbDir = path.dirname(absoluteDbPath);
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+  }
 }
 
 const db = new Database(absoluteDbPath);
@@ -86,6 +90,8 @@ function initialize() {
     "ALTER TABLE users ADD COLUMN nickname TEXT",
     "ALTER TABLE users ADD COLUMN nachname TEXT",
     "ALTER TABLE players ADD COLUMN walkon_file TEXT",
+    "ALTER TABLE players ADD COLUMN walkon_title TEXT",
+    "ALTER TABLE players ADD COLUMN walkon_artist TEXT",
     "ALTER TABLE players ADD COLUMN walkon_start INTEGER DEFAULT 0",
     "ALTER TABLE players ADD COLUMN walkon_duration INTEGER DEFAULT 30",
     "ALTER TABLE guests ADD COLUMN active BOOLEAN DEFAULT 1",
