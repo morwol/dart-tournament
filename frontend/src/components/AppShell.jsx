@@ -7,8 +7,14 @@ import TopNav from './TopNav';
 function useSubPage() {
   const registerMatch = useMatch('/tournament/:id/register');
   const tournamentMatch = useMatch('/tournament/:id');
+  const historyDetailMatch = useMatch('/history/:id');
+  const playerProfileMatch = useMatch('/players/:id');
+  const adminReportsMatch = useMatch('/admin/reports');
   if (registerMatch) return { isSubPage: true, title: 'Anmelden' };
   if (tournamentMatch) return { isSubPage: true, title: 'Turnier-Detail' };
+  if (historyDetailMatch) return { isSubPage: true, title: 'Tournament Detail' };
+  if (playerProfileMatch) return { isSubPage: true, title: 'Player Profile' };
+  if (adminReportsMatch) return { isSubPage: true, title: 'Gastro Reports' };
   return { isSubPage: false, title: '' };
 }
 

@@ -18,6 +18,10 @@ const RefereePage = lazy(() => import('./pages/RefereePage'));
 const GastronomyPage = lazy(() => import('./pages/GastronomyPage'));
 const CancelRegistrationPage = lazy(() => import('./pages/CancelRegistrationPage'));
 const RefereeEntryPage = lazy(() => import('./pages/RefereeEntryPage'));
+const TournamentHistoryPage = lazy(() => import('./pages/TournamentHistoryPage'));
+const TournamentDetailPage = lazy(() => import('./pages/TournamentDetailPage'));
+const PlayerProfilePage = lazy(() => import('./pages/PlayerProfilePage'));
+const AdminReportsPage = lazy(() => import('./pages/AdminReportsPage'));
 
 // NEU: Protected Route mit Rollenprüfung
 function ProtectedRoute({ element, roles }) {
@@ -89,6 +93,10 @@ export default function App() {
             <Route path="/admin" element={<AdminPage />} />
             {/* /admin/users → redirect to /admin?tab=users */}
             <Route path="/admin/users" element={<Navigate to="/admin?tab=users" replace />} />
+            <Route path="/admin/reports" element={<ProtectedRoute element={<AdminReportsPage />} roles={['admin', 'gastronomy']} />} />
+            <Route path="/history" element={<TournamentHistoryPage />} />
+            <Route path="/history/:id" element={<TournamentDetailPage />} />
+            <Route path="/players/:id" element={<PlayerProfilePage />} />
           </Route>
 
           {/* ── Standalone routes: no shell ── */}

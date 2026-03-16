@@ -18,6 +18,13 @@
   --pe-success: #00E5A0;
   --pe-warning: #FFB020;
   --pe-danger: #FF4560;
+  --pe-font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --pe-font-display: 'Barlow Condensed', 'Inter', sans-serif;
+}
+
+/* Display font utility — used for stats, numbers, headings */
+.pe-font-display {
+  font-family: var(--pe-font-display);
 }
 
 html {
