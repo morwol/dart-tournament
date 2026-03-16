@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useStore } from '../store';
 import { api } from '../api/client';
 import { useToastStore } from '../store/toasts';
@@ -2327,189 +2327,38 @@ function HelpTab() {
   );
 }
 
-// NEU: tab prop für URL-basierte Tab-Auswahl (z.B. /admin/users)
-export default function AdminPage({ tab }) {
+export default function AdminPage() {
   const { token } = useStore();
   if (!token) return <AdminLogin />;
-  return <AdminDashboard tab={tab} />;
+  return <AdminDashboard />;
 }
 
-function AdminDashboard({ tab }) {
-  const { logout } = useStore();
+function AdminDashboard() {
   const token = useStore(s => s.token);
 
   const payload = parseJwt(token);
   const userRole = payload?.role || 'admin';
   const visibleTabs = ALL_TABS.filter(t => t.roles.includes(userRole));
 
-  // Ensure requested tab is visible for this role; fallback to first visible
-  const resolvedDefault = visibleTabs.find(t => t.id === (tab || 'overview'))
-    ? (tab || 'overview')
-    : visibleTabs[0]?.id || 'overview';
-
-  const [activeTab, setActiveTab] = useState(resolvedDefault);
-  const [showMobileTiles, setShowMobileTiles] = useState(true);
-  const [userPopoverOpen, setUserPopoverOpen] = useState(false);
-
-  const selectTab = (id) => { setActiveTab(id); setShowMobileTiles(false); };
-
-  const ROLE_LABEL = { admin: 'Admin', director: 'Turnierleitung', referee: 'Schiedsrichter', gastronomy: 'Gastronomie' };
+  const [searchParams] = useSearchParams();
+  // Keep role-based guard: if URL names a tab not visible for this role, fall back to 'overview'
+  const activeTab = visibleTabs.find(t => t.id === (searchParams.get('tab') || 'overview'))
+    ? (searchParams.get('tab') || 'overview')
+    : 'overview';
 
   return (
-    <div className="min-h-screen" style={{ fontFamily: 'Verdana, Geneva, sans-serif' }} onClick={() => setUserPopoverOpen(false)}>
-      {/* Header */}
-      <div style={{ background: 'var(--pe-gradient)', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', color: '#fff', textDecoration: 'none', fontSize: '18px', flexShrink: 0 }}>&#8592;</Link>
-          <img src="/logo.jpeg" alt="DartEvent" style={{ height: '40px' }} />
-          <div>
-            <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '18px' }}>
-              {userRole === 'director' ? 'Turnierleiter' : 'Admin Dashboard'}
-            </span>
-          </div>
-        </div>
-
-        {/* User Context Button */}
-        <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
-          <button
-            onClick={() => setUserPopoverOpen(o => !o)}
-            style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: '10px', padding: '8px 14px', cursor: 'pointer', color: '#fff', fontFamily: 'Verdana, Geneva, sans-serif' }}
-          >
-            {/* Avatar */}
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: ROLE_COLORS[userRole] || 'var(--pe-blue-mid)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px', color: '#fff', flexShrink: 0 }}>
-              {(payload?.username || '?')[0].toUpperCase()}
-            </div>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontWeight: 'bold', fontSize: '14px', lineHeight: 1.2 }}>{payload?.username || '—'}</div>
-              <div style={{ fontSize: '11px', color: ROLE_COLORS[userRole] || 'rgba(255,255,255,0.7)', lineHeight: 1.2 }}>{ROLE_LABEL[userRole] || userRole}</div>
-            </div>
-            <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', marginLeft: '2px' }}>▼</span>
-          </button>
-
-          {/* Popover */}
-          {userPopoverOpen && (
-            <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, minWidth: '220px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', zIndex: 1000, overflow: 'hidden' }}>
-              {/* User Info */}
-              <div style={{ padding: '16px', borderBottom: '1px solid var(--pe-border)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: ROLE_COLORS[userRole] || 'var(--pe-blue-mid)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px', color: '#fff', flexShrink: 0 }}>
-                    {(payload?.username || '?')[0].toUpperCase()}
-                  </div>
-                  <div>
-                    <div style={{ color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '15px' }}>{payload?.username || '—'}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--pe-text-muted)' }}>{payload?.display_name || ''}</div>
-                  </div>
-                </div>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', padding: '4px 10px' }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: ROLE_COLORS[userRole] || 'var(--pe-blue-mid)' }} />
-                  <span style={{ fontSize: '12px', color: ROLE_COLORS[userRole] || 'var(--pe-text-sub)', fontWeight: 'bold' }}>{ROLE_LABEL[userRole] || userRole}</span>
-                </div>
-              </div>
-              {/* Logout */}
-              <div style={{ padding: '8px' }}>
-                <button
-                  onClick={() => { setUserPopoverOpen(false); logout(); }}
-                  style={{ width: '100%', padding: '10px 14px', background: 'transparent', color: 'var(--pe-danger)', border: 'none', borderRadius: '8px', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px' }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,69,96,0.12)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
-                  <span>&#x2192;</span> Abmelden
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Body: Sidebar + Content */}
-      <div style={{ display: 'flex', minHeight: 'calc(100vh - 64px)' }}>
-        {/* Sidebar (Desktop ≥1024px) */}
-        <div className="sidebar-desktop" style={{ width: '220px', flexShrink: 0, background: 'var(--pe-bg-card)', borderRight: '1px solid var(--pe-border)', padding: '16px 0', display: 'none' }}>
-          {visibleTabs.map(t => (
-            <button key={t.id} onClick={() => selectTab(t.id)} style={{ width: '100%', padding: '14px 20px', textAlign: 'left', background: activeTab === t.id ? 'var(--pe-bg-elevated)' : 'transparent', color: activeTab === t.id ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)', border: 'none', borderLeft: activeTab === t.id ? '3px solid var(--pe-cyan-bright)' : '3px solid transparent', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <t.Icon size={18} color={activeTab === t.id ? 'var(--pe-cyan-bright)' : t.color} strokeWidth={2} />
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Main area */}
-        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-
-          {/* Mobile: Kachel-Grid */}
-          <div
-            className="mobile-tiles-grid"
-            style={{ display: showMobileTiles ? 'grid' : 'none', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '16px', overflowY: 'auto' }}
-          >
-            {visibleTabs.map(t => (
-              <button
-                key={t.id}
-                onClick={() => selectTab(t.id)}
-                style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  gap: '10px', padding: '20px 12px', minHeight: '120px',
-                  background: 'var(--pe-bg-card)',
-                  border: '1px solid var(--pe-border)',
-                  borderRadius: '16px',
-                  cursor: 'pointer',
-                  fontFamily: 'Verdana, Geneva, sans-serif',
-                  transition: 'border-color 0.15s, background 0.15s',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = t.color; e.currentTarget.style.background = 'var(--pe-bg-elevated)'; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--pe-border)'; e.currentTarget.style.background = 'var(--pe-bg-card)'; }}
-              >
-                <div style={{
-                  width: '56px', height: '56px', borderRadius: '14px',
-                  background: t.color + '1A',
-                  border: `1.5px solid ${t.color}44`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
-                  <t.Icon size={26} color={t.color} strokeWidth={1.75} />
-                </div>
-                <span style={{ color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '13px', textAlign: 'center', lineHeight: 1.3 }}>
-                  {t.label}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          {/* Mobile: Back-Bar + Content */}
-          <div
-            className="content-area"
-            style={{ display: showMobileTiles ? 'none' : 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}
-          >
-            {/* Mobile Back-Button */}
-            <div className="mobile-back-bar" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 16px', background: 'var(--pe-bg-card)', borderBottom: '1px solid var(--pe-border)', flexShrink: 0 }}>
-              <button
-                onClick={() => setShowMobileTiles(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', borderRadius: '10px', padding: '0 16px', color: 'var(--pe-text-sub)', fontFamily: 'Verdana, Geneva, sans-serif', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', minHeight: '48px' }}
-              >
-                &#8592; Menü
-              </button>
-              <span style={{ color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '16px' }}>
-                {visibleTabs.find(t => t.id === activeTab)?.label}
-              </span>
-            </div>
-
-            {/* Content */}
-            <div style={{ flex: 1, padding: '16px', maxWidth: '1400px', overflowY: 'auto' }}>
-              {activeTab === 'overview'    && <OverviewTab />}
-              {activeTab === 'director'    && <TournamentDirectorTab />}
-              {activeTab === 'tournaments' && <TournamentExtendedTab />}
-              {activeTab === 'players'     && <PlayersTab />}
-              {activeTab === 'boards'      && <BoardsTab />}
-              {activeTab === 'users'       && <UsersTab />}
-              {activeTab === 'gastro'      && <GastroAdminTab />}
-              {activeTab === 'mailing'     && <MailingTab />}
-              {activeTab === 'settings'    && <SettingsTab />}
-              {activeTab === 'log'         && <LogTab />}
-              {activeTab === 'help'        && <HelpTab />}
-            </div>
-          </div>
-
-        </div>
-      </div>
+    <div style={{ fontFamily: 'Verdana, Geneva, sans-serif', padding: '16px', maxWidth: '1200px', margin: '0 auto' }}>
+      {activeTab === 'overview'    && <OverviewTab />}
+      {activeTab === 'director'    && <TournamentDirectorTab />}
+      {activeTab === 'tournaments' && <TournamentExtendedTab />}
+      {activeTab === 'players'     && <PlayersTab />}
+      {activeTab === 'boards'      && <BoardsTab />}
+      {activeTab === 'users'       && <UsersTab />}
+      {activeTab === 'gastro'      && <GastroAdminTab />}
+      {activeTab === 'mailing'     && <MailingTab />}
+      {activeTab === 'settings'    && <SettingsTab />}
+      {activeTab === 'log'         && <LogTab />}
+      {activeTab === 'help'        && <HelpTab />}
     </div>
   );
 }
