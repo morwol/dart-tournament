@@ -1263,9 +1263,8 @@ function TournamentDirectorTab() {
         <span style={{ color: 'var(--pe-text-muted)', fontSize: '12px' }}>Auto-Refresh 10s</span>
       </div>
 
-      {/* Status bar: drag hint OR tap-to-assign mode */}
-      <div style={{
-        visibility: (dragGameId || tapGameId) ? 'visible' : 'hidden',
+      {/* Status bar: drag hint OR tap-to-assign mode — only rendered when active */}
+      {(dragGameId || tapGameId) && <div style={{
         marginBottom: '10px', padding: '10px 14px', borderRadius: '8px',
         background: tapGameId ? 'rgba(0,229,160,0.1)' : 'rgba(0,184,255,0.1)',
         border: `1px solid ${tapGameId ? 'var(--pe-success)' : 'var(--pe-cyan-bright)'}`,
@@ -1280,7 +1279,7 @@ function TournamentDirectorTab() {
         {tapGameId && (
           <button onClick={() => setTapGameId(null)} style={{ background: 'none', border: 'none', color: 'var(--pe-success)', cursor: 'pointer', fontSize: '18px', lineHeight: 1, padding: '0 4px' }}>✕</button>
         )}
-      </div>
+      </div>}
 
       {/* Item 9: No active tournament message */}
       {!activeTournament && (
