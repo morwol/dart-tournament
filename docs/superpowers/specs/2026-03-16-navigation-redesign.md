@@ -110,6 +110,22 @@ Affected pages:
 
 ---
 
+## Login Redirect (Role-Based)
+
+After successful login, the app redirects each role to their home page:
+
+| Role | Redirect target |
+|---|---|
+| `referee` | `/referee/` |
+| `gastronomy` | `/gastronomy/` |
+| `admin` | `/admin/` |
+| `director` | `/admin/` |
+| public (no role) | `/` |
+
+This is required because the app is a PWA — there is no address bar, users cannot type URLs manually.
+
+---
+
 ## Referee Flow
 
 ```
@@ -118,6 +134,7 @@ Affected pages:
        └─ Login success:
             - localStorage.setItem('token', token)
             - useStore().login(token)   ← sets role in Zustand
+            - navigate('/referee/')
             → board picker view (same page, state toggle)
                   Each board card shows:
                     - Board number + name
@@ -125,12 +142,19 @@ Affected pages:
                     - Assigned referee name if occupied → card blocked (red, not clickable)
                     - "Frei" (cyan) if no referee assigned
                   Tap free board → navigate to /referee/:boardId
+                  "Zur Startseite →" link at bottom of page (leads to /)
+                    - Required for PWA: no address bar → user needs in-app escape hatch
 
 /referee/:boardId  (fully standalone — no AppShell, no TopBar, no nav)
   Current component: RefereePage.jsx — login gate removed, token state cleaned up:
     - Remove `const [token, setToken] = useState(...)` and early return guard
     - Remove `<RefereeLogin>` component (moved to RefereeEntryPage)
     - Replace `onLogout={() => setToken(null)}` prop with `useStore().logout()`
+  Emergency logout button (always visible, non-intrusive):
+    - Fixed position: top-right corner, `position: fixed, top: 12px, right: 12px, zIndex: 200`
+    - Small ⚙ icon button, 44px tap target
+    - Opens small dropdown with only "Abmelden" (red, same style as TopBar dropdown)
+    - Purpose: PWA has no address bar — referee must have an in-app logout option even in scoring mode
   ├─ Player cards (side by side):
   │    Active: cyan border, gradient score, "Anwurf" badge + "▶ Am Zug" badge
   │    Inactive: 45% opacity, muted score
