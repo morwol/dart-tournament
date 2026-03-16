@@ -48,6 +48,17 @@ export default function TournamentManager() {
     fontFamily: 'Verdana, Geneva, sans-serif',
   };
 
+  const selectStyle = {
+    ...inputStyle,
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235A7394' d='M6 8L1 3h10z'/%3E%3C%2Fsvg%3E")`,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 10px center',
+    paddingRight: '30px',
+    cursor: 'pointer',
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
@@ -83,7 +94,7 @@ export default function TournamentManager() {
               value={form.format}
               onChange={(e) => setForm({ ...form, format: e.target.value })}
               className="p-3 rounded-lg outline-none"
-              style={inputStyle}
+              style={selectStyle}
             >
               <option value="501">501</option>
               <option value="301">301</option>
@@ -92,7 +103,7 @@ export default function TournamentManager() {
               value={form.checkout}
               onChange={(e) => setForm({ ...form, checkout: e.target.value })}
               className="p-3 rounded-lg outline-none"
-              style={inputStyle}
+              style={selectStyle}
             >
               <option value="double_out">Double Out</option>
               <option value="single_out">Single Out</option>

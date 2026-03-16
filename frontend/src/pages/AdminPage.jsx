@@ -45,6 +45,17 @@ const inputStyle = {
   fontFamily: 'Verdana, Geneva, sans-serif',
 };
 
+const selectStyle = {
+  ...inputStyle,
+  appearance: 'none',
+  WebkitAppearance: 'none',
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235A7394' d='M6 8L1 3h10z'/%3E%3C%2Fsvg%3E")`,
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'right 10px center',
+  paddingRight: '30px',
+  cursor: 'pointer',
+};
+
 const btnSmall = {
   fontFamily: 'Verdana, Geneva, sans-serif',
   borderRadius: '8px',
@@ -166,7 +177,7 @@ function BoardsTab() {
         value={selectedTournamentId}
         onChange={(e) => setSelectedTournamentId(e.target.value)}
         className="w-full p-3 rounded-lg outline-none mb-4"
-        style={inputStyle}
+        style={selectStyle}
       >
         <option value="">-- Turnier auswählen --</option>
         {tournaments.map(t => (
@@ -423,7 +434,7 @@ function PlayersTab() {
         )}
       </div>
 
-      <select value={selectedTournament} onChange={(e) => setSelectedTournament(e.target.value)} className="w-full p-3 rounded-lg outline-none mb-4" style={inputStyle}>
+      <select value={selectedTournament} onChange={(e) => setSelectedTournament(e.target.value)} className="w-full p-3 rounded-lg outline-none mb-4" style={selectStyle}>
         {tournaments.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.status})</option>)}
       </select>
 
@@ -723,7 +734,7 @@ function UsersTab() {
           <input type="text" value={createForm.username} onChange={e => setCreateForm({ ...createForm, username: e.target.value })} placeholder="Benutzername (Login) *" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
           <input type="email" value={createForm.email} onChange={e => setCreateForm({ ...createForm, email: e.target.value })} placeholder="E-Mail (optional)" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
           <input type="password" value={createForm.password} onChange={e => setCreateForm({ ...createForm, password: e.target.value })} placeholder="Passwort *" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
-          <select value={createForm.role} onChange={e => setCreateForm({ ...createForm, role: e.target.value })} className="w-full p-3 rounded-lg outline-none" style={inputStyle}>
+          <select value={createForm.role} onChange={e => setCreateForm({ ...createForm, role: e.target.value })} className="w-full p-3 rounded-lg outline-none" style={selectStyle}>
             <option value="director">Turnierleitung</option>
             <option value="referee">Schiedsrichter</option>
             <option value="gastronomy">Gastronomie</option>
@@ -792,7 +803,7 @@ function UsersTab() {
                       <input type="text" value={editForm.nachname} onChange={e => setEditForm({ ...editForm, nachname: e.target.value })} placeholder="Nachname" style={{ ...inputStyle, padding: '7px 10px', boxSizing: 'border-box' }} />
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                      <select value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value })} style={{ ...inputStyle, padding: '7px 10px' }}>
+                      <select value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value })} style={{ ...selectStyle, padding: '7px 10px' }}>
                         <option value="director">Turnierleitung</option>
                         <option value="referee">Schiedsrichter</option>
                         <option value="gastronomy">Gastronomie</option>
@@ -861,7 +872,7 @@ function UsersTab() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                     <div>
                       <label className="text-xs font-bold block mb-1" style={{ color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rolle</label>
-                      <select value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value })} style={{ ...inputStyle, width: '100%', padding: '10px 12px' }}>
+                      <select value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value })} style={{ ...selectStyle, width: '100%', padding: '10px 12px' }}>
                         <option value="director">Turnierleitung</option>
                         <option value="referee">Schiedsrichter</option>
                         <option value="gastronomy">Gastronomie</option>
@@ -968,7 +979,7 @@ function GastroAdminTab() {
         {showForm && (
           <form onSubmit={handleCreate} style={{ padding: '16px', borderRadius: '12px', marginBottom: '12px', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Name *" required style={{ ...inputStyle, gridColumn: '1/-1' }} />
-            <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} style={inputStyle}>
+            <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} style={selectStyle}>
               <option value="drink">Getränk</option>
               <option value="food">Speise</option>
             </select>
@@ -1766,7 +1777,7 @@ function TournamentExtendedTab() {
             ].map(({ key, label }) => (
               <div key={key} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '8px', alignItems: 'center', marginBottom: '10px' }}>
                 <div style={{ color: 'var(--pe-text-sub)', fontSize: '13px', fontWeight: 'bold' }}>{label}</div>
-                <select value={config[`${key}_format`]} onChange={e => setConfig({...config, [`${key}_format`]: e.target.value})} style={{ ...inputStyle, padding: '8px', fontSize: '13px' }}>
+                <select value={config[`${key}_format`]} onChange={e => setConfig({...config, [`${key}_format`]: e.target.value})} style={{ ...selectStyle, padding: '8px', fontSize: '13px' }}>
                   {FORMAT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -1916,7 +1927,7 @@ function TournamentExtendedTab() {
                             value={g.board_id || ''}
                             onClick={e => e.stopPropagation()}
                             onChange={e => assignGroupToBoard(g.id, e.target.value ? parseInt(e.target.value) : null)}
-                            style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '8px', padding: '6px 10px', fontSize: '13px', fontFamily: 'Verdana, Geneva, sans-serif', minHeight: '44px', marginRight: '10px', cursor: 'pointer' }}
+                            style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '8px', padding: '6px 10px', fontSize: '13px', fontFamily: 'Verdana, Geneva, sans-serif', minHeight: '44px', marginRight: '10px', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235A7394' d='M6 8L1 3h10z'/%3E%3C%2Fsvg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center', paddingRight: '30px' }}
                           >
                             <option value="">Kein Board</option>
                             {boards.map(b => <option key={b.id} value={b.id}>Board {b.number}{b.is_final ? ' ★' : ''}</option>)}
@@ -1969,7 +1980,7 @@ function TournamentExtendedTab() {
                       id="numGroupsSelect"
                       value={numGroups}
                       onChange={e => setNumGroups(Number(e.target.value))}
-                      style={{ flex: 1, padding: '10px 12px', borderRadius: '8px', background: 'var(--pe-bg-card)', color: 'var(--pe-text)', border: '1px solid var(--pe-border)', fontFamily: 'Verdana, Geneva, sans-serif', fontSize: '14px', minHeight: '44px', cursor: 'pointer' }}
+                      style={{ flex: 1, padding: '10px 12px', borderRadius: '8px', background: 'var(--pe-bg-card)', color: 'var(--pe-text)', border: '1px solid var(--pe-border)', fontFamily: 'Verdana, Geneva, sans-serif', fontSize: '14px', minHeight: '44px', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235A7394' d='M6 8L1 3h10z'/%3E%3C%2Fsvg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center', paddingRight: '30px' }}
                     >
                       {[2, 3, 4, 6, 8].map(n => (
                         <option key={n} value={n}>{n} Gruppen</option>
@@ -2087,7 +2098,7 @@ function TournamentExtendedTab() {
                     <span style={{ color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '13px' }}>Gruppe {g.name}</span>
                     <span style={{ color: 'var(--pe-text-muted)', fontSize: '11px', marginLeft: '8px' }}>{(g.standings||[]).length} Spieler</span>
                   </div>
-                  <select value={g.board_id || ''} onChange={e => assignGroupToBoard(g.id, e.target.value ? parseInt(e.target.value) : null)} style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+                  <select value={g.board_id || ''} onChange={e => assignGroupToBoard(g.id, e.target.value ? parseInt(e.target.value) : null)} style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', fontFamily: 'Verdana, Geneva, sans-serif', appearance: 'none', WebkitAppearance: 'none', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235A7394' d='M6 8L1 3h10z'/%3E%3C%2Fsvg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center', paddingRight: '24px' }}>
                     <option value="">Kein Board</option>
                     {boards.map(b => <option key={b.id} value={b.id}>Board {b.number}{b.is_final ? ' ★' : ''}</option>)}
                   </select>
@@ -2201,10 +2212,10 @@ function LogTab() {
           </span>
         </h2>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <select value={filterCat} onChange={e => setFilterCat(e.target.value)} style={{ ...inputStyle, padding: '6px 10px', fontSize: '12px', minHeight: '36px' }}>
+          <select value={filterCat} onChange={e => setFilterCat(e.target.value)} style={{ ...selectStyle, padding: '6px 10px', fontSize: '12px', minHeight: '36px' }}>
             {categories.map(c => <option key={c} value={c}>{c || 'Alle Kategorien'}</option>)}
           </select>
-          <select value={filterAction} onChange={e => setFilterAction(e.target.value)} style={{ ...inputStyle, padding: '6px 10px', fontSize: '12px', minHeight: '36px' }}>
+          <select value={filterAction} onChange={e => setFilterAction(e.target.value)} style={{ ...selectStyle, padding: '6px 10px', fontSize: '12px', minHeight: '36px' }}>
             {actions.map(a => <option key={a} value={a}>{a || 'Alle Actions'}</option>)}
           </select>
           <button onClick={load} style={{ ...btnSmall, padding: '6px 14px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-text-sub)', minHeight: '36px' }}>
