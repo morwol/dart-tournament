@@ -18,6 +18,7 @@ const TABS = {
     { icon: '📡', label: 'NFC',           path: '/nfc-scan',                exact: false },
   ],
   admin: [
+    { icon: '🏠', label: 'Home',          path: '/',                        exact: true },
     { icon: '📊', label: 'Übersicht',     path: '/admin',                   exact: false, noQuery: true },
     { icon: '👑', label: 'Turnierleiter', path: '/admin?tab=director',      exact: false },
     { icon: '🏆', label: 'Turniere',      path: '/admin?tab=tournaments',   exact: false },
