@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { useToastStore } from '../store/toasts';
+import { useStore } from '../store';
 
 const NUMBERS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];
 const MOD = { Single: 'S', Double: 'D', Triple: 'T' };
@@ -38,49 +39,6 @@ const btn = (extra = {}) => ({
   border: '1px solid var(--pe-border)',
   ...extra,
 });
-
-// ── Login ──────────────────────────────────────────────────────────────────
-function RefereeLogin({ onLogin }) {
-  const [form, setForm] = useState({ username: '', password: '' });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const submit = async (e) => {
-    e.preventDefault();
-    setLoading(true); setError('');
-    try {
-      const data = await api.post('/auth/login', form);
-      if (!['admin', 'referee'].includes(data.user?.role)) {
-        setError('Keine Berechtigung für Schiedsrichter-Modus.'); return;
-      }
-      localStorage.setItem('token', data.token);
-      onLogin(data.token);
-    } catch (err) { setError(err.message || 'Login fehlgeschlagen'); }
-    finally { setLoading(false); }
-  };
-
-  return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', fontFamily: 'Verdana, Geneva, sans-serif' }}>
-      <div style={{ width: '100%', maxWidth: '360px' }}>
-        <img src="/logo.jpeg" alt="" style={{ height: '56px', display: 'block', margin: '0 auto 24px' }} />
-        <h1 style={{ textAlign: 'center', background: 'var(--pe-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 'bold', fontSize: '20px', marginBottom: '24px' }}>
-          Schiedsrichter Login
-        </h1>
-        <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <input type="text" value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} placeholder="Benutzername"
-            style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif', borderRadius: '10px', padding: '0 14px', outline: 'none', minHeight: '56px', width: '100%', boxSizing: 'border-box' }} />
-          <input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="Passwort"
-            style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif', borderRadius: '10px', padding: '0 14px', outline: 'none', minHeight: '56px', width: '100%', boxSizing: 'border-box' }} />
-          {error && <p style={{ color: 'var(--pe-danger)', fontSize: '14px', textAlign: 'center' }}>{error}</p>}
-          <button type="submit" disabled={loading || !form.username || !form.password}
-            style={btn({ background: 'var(--pe-gradient)', color: '#fff', minHeight: '56px', border: 'none', fontSize: '16px', opacity: loading ? 0.6 : 1 })}>
-            {loading ? 'Anmelden...' : 'Anmelden'}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
 
 // ── Bulloff Panel ──────────────────────────────────────────────────────────
 function BulloffPanel({ gameId, player1, player2, onDone, isTablet }) {
@@ -881,8 +839,8 @@ function PhoneLayout({ boardId, boardNumber, token, onLogout, selectedGameId, se
 // ══════════════════════════════════════════════════════════════════════════
 export default function RefereePage() {
   const { addToast } = useToastStore();
+  const { logout } = useStore();
   const { boardId: boardNumber } = useParams();
-  const [token, setToken] = useState(localStorage.getItem('token'));
   const [resolvedBoardId, setResolvedBoardId] = useState(null);
   const [boardNotFound, setBoardNotFound] = useState(false);
   const [selectedGameId, setSelectedGameId] = useState(null);
@@ -890,8 +848,6 @@ export default function RefereePage() {
   const [modifier, setModifier] = useState('Single');
   const [submitting, setSubmitting] = useState(false);
   const isTablet = useTabletLandscape();
-
-  if (!token) return <RefereeLogin onLogin={setToken} />;
 
   // Resolve board number → internal board ID for the active tournament
   useEffect(() => {
@@ -962,7 +918,7 @@ export default function RefereePage() {
     finally { setSubmitting(false); }
   };
 
-  const onLogout = () => { localStorage.removeItem('token'); setToken(null); };
+  const onLogout = logout;
 
   if (boardNotFound || !resolvedBoardId) {
     return (
