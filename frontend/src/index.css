@@ -101,3 +101,20 @@ body {
   from { opacity: 1; }
   to   { opacity: 0; }
 }
+
+/* Desktop top nav: visible only on ≥768px */
+.desktop-nav-only { display: none; }
+@media (min-width: 768px) {
+  .desktop-nav-only { display: block; }
+}
+
+/* Mobile bottom nav: visible only on <768px */
+.mobile-nav-only { display: block; }
+@media (min-width: 768px) {
+  .mobile-nav-only { display: none; }
+}
+
+/* Mobile content padding clears the fixed bottom nav */
+@media (max-width: 767px) {
+  main { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+}
