@@ -162,7 +162,133 @@ router.get('/', (req, res) => {
   res.json(players);
 });
 
-// GET /api/players/:id — Spielerprofil mit Turnierhistorie
+// GET /api/players/:id/stats — Career stats across all tournaments
+router.get('/:id/stats', (req, res) => {
+  try {
+    const playerId = parseInt(req.params.id, 10);
+    if (!playerId || playerId <= 0) {
+      return res.status(400).json({ error: 'Invalid player ID' });
+    }
+
+    const player = db.prepare(
+      'SELECT id, name, vorname, nickname, nachname, registered_at FROM players WHERE id = ?'
+    ).get(playerId);
+    if (!player) {
+      return res.status(404).json({ error: 'Player not found' });
+    }
+
+    const totalGames = db.prepare(`
+      SELECT COUNT(*) AS cnt FROM games
+      WHERE status = 'finished' AND (player1_id = ? OR player2_id = ?)
+    `).get(playerId, playerId).cnt;
+
+    const totalWins = db.prepare(`
+      SELECT COUNT(*) AS cnt FROM games
+      WHERE status = 'finished' AND winner_id = ?
+    `).get(playerId).cnt;
+
+    const totalLosses = totalGames - totalWins;
+
+    // All active throws (non-bulloff, non-undone)
+    const allThrows = db.prepare(`
+      SELECT t.score, t.remaining, t.segment
+      FROM throws t
+      JOIN games g ON t.game_id = g.id
+      WHERE t.player_id = ? AND t.is_bulloff = 0
+        AND t.undo_of IS NULL
+        AND t.id NOT IN (
+          SELECT COALESCE(undo_of, 0) FROM throws WHERE undo_of IS NOT NULL
+        )
+      ORDER BY t.id ASC
+    `).all(playerId);
+
+    const totalScore = allThrows.reduce((s, t) => s + t.score, 0);
+    const throwCount = allThrows.length;
+    const threeDartAvg = throwCount >= 3
+      ? Math.round((totalScore / throwCount) * 3 * 100) / 100
+      : null;
+
+    let oneEighties = 0;
+    for (let i = 0; i + 2 < throwCount; i += 3) {
+      if (allThrows[i].score + allThrows[i + 1].score + allThrows[i + 2].score === 180) {
+        oneEighties++;
+      }
+    }
+
+    const checkouts = allThrows.filter(t => t.remaining === 0);
+    const highestCheckout = checkouts.length > 0
+      ? Math.max(...checkouts.map(c => c.score))
+      : null;
+    const checkoutPct = totalWins > 0
+      ? Math.round((checkouts.length / totalWins) * 100 * 100) / 100
+      : null;
+
+    const bestLeg = db.prepare(`
+      SELECT g.id AS game_id, COUNT(t.id) AS throw_count
+      FROM games g
+      JOIN throws t ON t.game_id = g.id AND t.player_id = ? AND t.is_bulloff = 0
+        AND t.undo_of IS NULL
+        AND t.id NOT IN (
+          SELECT COALESCE(undo_of, 0) FROM throws WHERE undo_of IS NOT NULL AND game_id = g.id
+        )
+      WHERE g.status = 'finished' AND g.winner_id = ?
+      GROUP BY g.id
+      ORDER BY throw_count ASC
+      LIMIT 1
+    `).get(playerId, playerId);
+
+    const tournamentsPlayed = db.prepare(`
+      SELECT COUNT(DISTINCT tr.tournament_id) AS cnt
+      FROM tournament_registrations tr WHERE tr.player_id = ?
+    `).get(playerId).cnt;
+
+    const tournamentWins = db.prepare(`
+      SELECT COUNT(DISTINCT g.tournament_id) AS cnt
+      FROM games g
+      WHERE g.status = 'finished' AND g.winner_id = ?
+        AND g.round = (
+          SELECT MAX(g2.round) FROM games g2
+          WHERE g2.tournament_id = g.tournament_id AND g2.status = 'finished'
+        )
+    `).get(playerId).cnt;
+
+    const tournamentHistory = db.prepare(`
+      SELECT
+        t.id, t.name, t.date, t.format, t.status AS tournament_status,
+        COUNT(CASE WHEN g.winner_id = ? THEN 1 END) AS wins,
+        COUNT(CASE WHEN g.status = 'finished' AND (g.player1_id = ? OR g.player2_id = ?) AND g.winner_id != ? THEN 1 END) AS losses
+      FROM tournament_registrations tr
+      JOIN tournaments t ON tr.tournament_id = t.id
+      LEFT JOIN games g ON g.tournament_id = t.id AND (g.player1_id = ? OR g.player2_id = ?) AND g.status = 'finished'
+      WHERE tr.player_id = ?
+      GROUP BY t.id
+      ORDER BY t.date DESC, t.created_at DESC
+    `).all(playerId, playerId, playerId, playerId, playerId, playerId, playerId);
+
+    res.json({
+      player,
+      career: {
+        tournaments_played: tournamentsPlayed,
+        tournament_wins: tournamentWins,
+        games_played: totalGames,
+        wins: totalWins,
+        losses: totalLosses,
+        win_rate: totalGames > 0 ? Math.round((totalWins / totalGames) * 100 * 100) / 100 : null,
+        three_dart_avg: threeDartAvg,
+        one_eighties: oneEighties,
+        checkout_pct: checkoutPct,
+        highest_checkout: highestCheckout,
+        best_leg: bestLeg ? bestLeg.throw_count : null,
+      },
+      tournament_history: tournamentHistory,
+    });
+  } catch (err) {
+    console.error('[players/stats]', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/players/:id/profile — Spielerprofil mit Turnierhistorie
 router.get('/:id/profile', (req, res) => {
   const player = db.prepare('SELECT * FROM players WHERE id = ?').get(req.params.id);
   if (!player) return res.status(404).json({ error: 'Spieler nicht gefunden' });
