@@ -81,12 +81,15 @@ export default function NFCScanner({ onScan, scanning }) {
               onClick={() => setNfcStatus('idle')}
               style={{
                 marginTop: '1rem',
+                minHeight: '64px',
+                padding: '0 20px',
                 color: 'var(--pe-cyan-bright)',
-                background: 'none',
-                border: 'none',
+                background: 'var(--pe-bg-elevated)',
+                border: '1px solid var(--pe-cyan-bright)',
+                borderRadius: '12px',
                 cursor: 'pointer',
-                textDecoration: 'underline',
                 fontFamily: 'Verdana, Geneva, sans-serif',
+                fontWeight: 'bold',
                 fontSize: '0.875rem',
               }}
             >
