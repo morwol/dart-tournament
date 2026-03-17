@@ -9,13 +9,6 @@ const stations = [
     accent: 'var(--pe-cyan-bright)',
   },
   {
-    id: 'kitchen',
-    emoji: '🍳',
-    label: 'Küche',
-    description: 'Küchen-Tickets verwalten',
-    accent: 'var(--pe-warning)',
-  },
-  {
     id: 'register',
     emoji: '💳',
     label: 'Kasse',
@@ -74,8 +67,8 @@ export default function StationSelector({ onSelect }) {
         }
         @media (min-width: 768px) {
           .station-grid {
-            grid-template-columns: repeat(3, 1fr);
-            max-width: 720px;
+            grid-template-columns: repeat(2, 1fr);
+            max-width: 480px;
           }
         }
       `}</style>
