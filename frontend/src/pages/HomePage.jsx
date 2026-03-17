@@ -14,6 +14,7 @@ const statusColors = {
 export default function HomePage() {
   const [tournaments, setTournaments] = useState([]);
   const [activeTournament, setActiveTournament] = useState(null);
+  const [pastTournaments, setPastTournaments] = useState([]);
   const [players, setPlayers] = useState([]);
   const [boards, setBoards] = useState([]);
   const [boardGames, setBoardGames] = useState({});
@@ -36,9 +37,7 @@ export default function HomePage() {
       const allTournaments = await api.get('/tournaments');
       setTournaments(allTournaments);
 
-      // NEU: Aktives Turnier finden (oder das neueste)
-      const active = allTournaments.find((t) => t.status === 'active')
-        || allTournaments[0];
+      const active = allTournaments.find((t) => t.status === 'active') || null;
 
       if (active) {
         setActiveTournament(active);
@@ -73,6 +72,14 @@ export default function HomePage() {
           setGroups(groupData.groups?.length > 0 ? groupData.groups : null);
         } catch {
           setGroups(null);
+        }
+      } else {
+        // Kein aktives Turnier — vergangene Turniere laden
+        try {
+          const history = await api.get('/history');
+          setPastTournaments(history);
+        } catch {
+          // ignore
         }
       }
     } catch {
@@ -110,29 +117,55 @@ export default function HomePage() {
         {loading ? (
           <p style={{ color: 'var(--pe-text-sub)', textAlign: 'center' }}>Lade Turniere...</p>
         ) : !activeTournament ? (
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ color: 'var(--pe-text-sub)', marginBottom: 24 }}>Keine Turniere vorhanden.</p>
-            <Link
-              to="/history"
-              className="pe-card-interactive"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '16px 24px',
-                borderRadius: 12,
-                background: 'var(--pe-bg-card)',
-                border: '1px solid var(--pe-border)',
-                textDecoration: 'none',
-                minHeight: 64,
-                color: 'var(--pe-text)',
-                fontSize: 15,
-                fontWeight: 'bold',
-              }}
-            >
-              <span style={{ fontSize: 22 }}>📜</span>
-              Turnier-Archiv
-            </Link>
+          <div>
+            <h2 style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: 1, margin: '8px 0 14px' }}>
+              Vergangene Turniere
+            </h2>
+            {pastTournaments.length === 0 ? (
+              <p style={{ color: 'var(--pe-text-sub)', textAlign: 'center', marginTop: 48 }}>
+                Noch keine abgeschlossenen Turniere vorhanden.
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {pastTournaments.map((t) => (
+                  <Link
+                    key={t.id}
+                    to={`/history/${t.id}`}
+                    className="pe-card-interactive"
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '14px 16px',
+                      borderRadius: 12,
+                      background: 'var(--pe-bg-card)',
+                      border: '1px solid var(--pe-border)',
+                      textDecoration: 'none',
+                      minHeight: 64,
+                      gap: 12,
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 'bold', color: 'var(--pe-text)', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {t.name}
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--pe-text-muted)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {t.date && <span>{t.date}</span>}
+                        {t.format && <span>· {t.format}</span>}
+                        <span>· {t.player_count} Spieler</span>
+                        {t.games_played != null && <span>· {t.games_played} Spiele</span>}
+                      </div>
+                    </div>
+                    {t.winner_name && (
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontSize: 11, color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Sieger</div>
+                        <div style={{ fontSize: 14, fontWeight: 'bold', color: 'var(--pe-cyan-bright)' }}>{t.winner_name}</div>
+                      </div>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           <>
