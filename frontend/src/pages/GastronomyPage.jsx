@@ -6,6 +6,7 @@ import NFCScanner from '../components/nfc/NFCScanner';
 import GuestHeader from '../components/gastro/GuestHeader';
 import OpenOrdersPanel from '../components/gastro/OpenOrdersPanel';
 import RegisterView from '../components/gastro/RegisterView';
+import ProductGrid from '../components/gastro/ProductGrid';
 import { useToastStore } from '../store/toasts';
 import { useStore } from '../store';
 
@@ -459,12 +460,10 @@ export default function GastronomyPage() {
   // Station-based category restriction: bar=drink, kueche=food, kasse=all
   const stationCategory = station === 'bar' ? 'drink' : station === 'kueche' ? 'food' : null;
 
-  const filteredProducts = products.filter((p) => {
+  // Station-level filtering only; ProductGrid handles the categoryFilter tab internally
+  const stationFilteredProducts = products.filter((p) => {
     if (!p.available) return false;
-    // Apply station restriction first
     if (stationCategory && p.category !== stationCategory) return false;
-    // Then apply manual tab filter (but only if it makes sense given the station)
-    if (productFilter !== 'all' && p.category !== productFilter) return false;
     return true;
   });
 
@@ -636,40 +635,14 @@ export default function GastronomyPage() {
                   <OpenOrdersPanel items={guestOpenOrders.items} total={guestOpenOrders.total} />
                 )}
 
-                {/* Kategorien-Tabs */}
-                <div className="flex gap-2 mb-3">
-                  {[{ id: 'all', label: 'Alle' }, { id: 'drink', label: 'Getränke' }, { id: 'food', label: 'Speisen' }].map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => setProductFilter(cat.id)}
-                      style={{
-                        ...btnStyle,
-                        padding: '8px 16px',
-                        minHeight: '64px',
-                        background: productFilter === cat.id ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)',
-                        color: productFilter === cat.id ? 'var(--pe-text)' : 'var(--pe-text-sub)',
-                      }}
-                    >
-                      {cat.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Produkt-Buttons */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3" style={{ opacity: isBlocked ? 0.4 : 1, pointerEvents: isBlocked ? 'none' : undefined }}>
-                  {filteredProducts.map((product) => (
-                    <button
-                      key={product.id}
-                      onClick={() => addToCart(product)}
-                      disabled={isBlocked}
-                      className="flex flex-col items-center justify-center p-3"
-                      style={{ ...btnStyle, minHeight: '80px', background: 'var(--pe-bg-card)', color: 'var(--pe-text)' }}
-                    >
-                      <span className="text-sm font-bold mb-1">{product.name}</span>
-                      <span className="text-xs" style={{ color: 'var(--pe-cyan-bright)' }}>{parseFloat(product.price).toFixed(2)} €</span>
-                    </button>
-                  ))}
-                </div>
+                {/* Product grid with category filter */}
+                <ProductGrid
+                  products={stationFilteredProducts}
+                  onAddToCart={addToCart}
+                  isBlocked={isBlocked}
+                  categoryFilter={productFilter}
+                  onCategoryChange={setProductFilter}
+                />
               </div>
 
               {/* NEU: Rechte Seite — Warenkorb (nur Bestellen, kein Abrechnen) */}
