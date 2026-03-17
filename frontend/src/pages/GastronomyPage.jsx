@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
-import NFCScanner from '../components/nfc/NFCScanner';
+import GuestSelector from '../components/gastro/GuestSelector';
 import GuestHeader from '../components/gastro/GuestHeader';
 import OpenOrdersPanel from '../components/gastro/OpenOrdersPanel';
 import RegisterView from '../components/gastro/RegisterView';
@@ -254,7 +254,6 @@ export default function GastronomyPage() {
 
   // NEU: Bestellungs-Ansicht State
   const [guest, setGuest] = useState(null);
-  const [guestSearch, setGuestSearch] = useState('');
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
   const [productFilter, setProductFilter] = useState('all');
@@ -560,60 +559,16 @@ export default function GastronomyPage() {
       {view === 'order' && (
         <div className="max-w-5xl mx-auto">
           {!guest && (
-            <>
-              {/* NFC-Scan */}
-              <NFCScanner onScan={handleNFCScan} scanning={scanning} />
-
-              {/* Gäste-Liste (Fallback ohne NFC) */}
-              <div style={{ marginTop: '12px', padding: '12px', borderRadius: '10px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)' }}>
-                <p style={{ color: 'var(--pe-text-sub)', fontSize: '13px', marginBottom: '8px', fontWeight: 'bold' }}>GAST AUSWÄHLEN</p>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                  <input
-                    type="text"
-                    value={guestSearch}
-                    onChange={(e) => setGuestSearch(e.target.value)}
-                    placeholder="Name suchen..."
-                    style={{ flex: 1, padding: '10px 14px', borderRadius: '8px', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', fontFamily: 'var(--pe-font-body)', minHeight: '64px', outline: 'none' }}
-                  />
-                  <button
-                    onClick={() => {
-                      api.post('/nfc/create-manual', { name: guestSearch.trim() || 'Neuer Gast' })
-                        .then((g) => { setGuest(g); setCart([]); setGuestSearch(''); setAllGuests(prev => [...prev, g]); })
-                        .catch((err) => addToast({ type: 'error', message: err.message || 'Gast konnte nicht angelegt werden' }));
-                    }}
-                    style={{ padding: '10px 14px', borderRadius: '8px', background: 'var(--pe-blue-mid)', color: 'var(--pe-text)', border: 'none', fontFamily: 'var(--pe-font-body)', fontWeight: 'bold', cursor: 'pointer', minHeight: '64px', whiteSpace: 'nowrap' }}
-                  >
-                    + Neu
-                  </button>
-                </div>
-                <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {allGuests
-                    .filter((g) => !guestSearch || g.name?.toLowerCase().includes(guestSearch.toLowerCase()))
-                    .map((g) => {
-                      const gBlocked = g.active === 0 || g.active === false;
-                      return (
-                        <button
-                          key={g.id}
-                          onClick={() => { setGuest(g); setCart([]); setOrderSuccess(false); }}
-                          style={{ padding: '12px 16px', borderRadius: '8px', background: 'var(--pe-bg-card)', border: `1px solid ${gBlocked ? 'var(--pe-danger)' : 'var(--pe-border)'}`, color: 'var(--pe-text)', textAlign: 'left', fontFamily: 'var(--pe-font-body)', cursor: 'pointer', minHeight: '64px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                        >
-                          <span style={{ fontWeight: 'bold' }}>{g.name || 'Gast'}</span>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            {gBlocked && (
-                              <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--pe-danger)', border: '1px solid var(--pe-danger)', borderRadius: '20px', padding: '2px 8px' }}>Gesperrt</span>
-                            )}
-                            <span style={{ color: 'var(--pe-text-muted)', fontSize: '12px' }}>#{g.id}</span>
-                          </div>
-                        </button>
-                      );
-                    })
-                  }
-                  {allGuests.length === 0 && (
-                    <p style={{ color: 'var(--pe-text-muted)', textAlign: 'center', padding: '16px', fontSize: '13px' }}>Noch keine Gäste. Mit "+ Neu" ersten Gast anlegen.</p>
-                  )}
-                </div>
-              </div>
-            </>
+            <GuestSelector
+              guests={allGuests}
+              onGuestSelect={(g) => { setGuest(g); setCart([]); setOrderSuccess(false); }}
+              onCreateGuest={(name) => api.post('/nfc/create-manual', { name })
+                .then((g) => { setGuest(g); setCart([]); setAllGuests((prev) => [...prev, g]); })
+                .catch((err) => addToast({ type: 'error', message: err.message }))}
+              nfcAvailable={'NDEFReader' in window}
+              onRequestNfcScan={handleNFCScan}
+              scanning={scanning}
+            />
           )}
 
           {guest && (
