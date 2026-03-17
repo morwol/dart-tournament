@@ -1,5 +1,5 @@
 // ProductGrid — category filter bar + responsive product button grid
-export default function ProductGrid({ products, onAddToCart, isBlocked, categoryFilter, onCategoryChange }) {
+export default function ProductGrid({ products, onTap, isBlocked, categoryFilter, onCategoryChange, sessionCounts = new Map() }) {
   const categories = [
     { id: 'all', label: 'Alle' },
     { id: 'drink', label: 'Getränke' },
@@ -15,7 +15,7 @@ export default function ProductGrid({ products, onAddToCart, isBlocked, category
       {filtered.map((product) => (
         <button
           key={product.id}
-          onClick={() => onAddToCart(product)}
+          onClick={() => onTap(product)}
           style={{
             minHeight: '96px',
             borderRadius: '12px',
@@ -37,6 +37,16 @@ export default function ProductGrid({ products, onAddToCart, isBlocked, category
           <span style={{ fontSize: '13px', color: 'var(--pe-cyan-bright)' }}>
             {parseFloat(product.price).toFixed(2)} €
           </span>
+          {sessionCounts.get(product.id) > 0 && (
+            <span style={{
+              fontSize: 11,
+              fontWeight: 'bold',
+              color: 'var(--pe-cyan-bright)',
+              fontFamily: 'Verdana, Geneva, sans-serif',
+            }}>
+              ×{sessionCounts.get(product.id)}
+            </span>
+          )}
         </button>
       ))}
     </div>
