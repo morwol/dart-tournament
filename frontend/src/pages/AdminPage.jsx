@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useStore } from '../store';
 import { api } from '../api/client';
 import { useToastStore } from '../store/toasts';
 import AdminLogin from '../components/admin/AdminLogin';
 import TournamentManager from '../components/admin/TournamentManager';
+import WalkonBadge from '../components/WalkonBadge';
 import {
   LayoutDashboard, Flag, Trophy, Users, Target,
   UserCog, UtensilsCrossed, Mail, Settings, ScrollText, HelpCircle,
+  Play, Square, Loader2,
 } from 'lucide-react';
 
 const ALL_TABS = [
@@ -361,6 +363,8 @@ function PlayersTab() {
   const [players, setPlayers] = useState([]);
   const [walkonStatuses, setWalkonStatuses] = useState({}); // { [playerId]: status string }
   const [walkonLoadingToasts, setWalkonLoadingToasts] = useState({}); // { [playerId]: toastId }
+  const [playingId, setPlayingId] = useState(null); // id of player whose walk-on is currently playing
+  const audioRef = useRef(null);
   const [addMode, setAddMode] = useState(null); // null | 'search' | 'new'
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -438,6 +442,33 @@ function PlayersTab() {
   }, [selectedTournament]);
 
   const isActive = tournamentStatus === 'active';
+
+  // Walk-On inline play/stop handler
+  const handleWalkonPlay = async (player) => {
+    // Stop current playback
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.onended = null;
+      audioRef.current = null;
+    }
+    // If same player — toggle off
+    if (playingId === player.id) {
+      setPlayingId(null);
+      return;
+    }
+    // Start new playback
+    const audio = new Audio(`/api/walkon/${player.id}/audio`);
+    audioRef.current = audio;
+    audio.onended = () => setPlayingId(null);
+    audio.onerror = () => setPlayingId(null);
+    try {
+      await audio.play();
+      setPlayingId(player.id);
+    } catch {
+      audioRef.current = null;
+      setPlayingId(null);
+    }
+  };
 
   const loadPlayers = async () => {
     const updated = await api.get(`/tournaments/${selectedTournament}/players`);
@@ -795,7 +826,7 @@ function PlayersTab() {
             const isExpanded = editingPlayer?.id === p.id;
             const effectiveWalkonStatus = walkonStatuses[p.id] ?? p.walkon_status ?? (p.has_walkon ? 'ready' : null);
             return (
-              <div key={p.id} style={{ background: 'var(--pe-bg-card)', border: `1px solid ${isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, borderRadius: '10px', padding: '12px' }}>
+              <div key={p.id} style={{ background: 'var(--pe-bg-card)', border: `1px solid ${isExpanded || playingId === p.id ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, borderRadius: '10px', padding: '12px', boxShadow: playingId === p.id ? '0 0 8px var(--pe-cyan-bright)' : 'none', transition: 'box-shadow 0.2s, border-color 0.2s' }}>
                 {/* Collapsed header — always visible */}
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   {/* Seed circle */}
@@ -813,6 +844,36 @@ function PlayersTab() {
                       />
                     )}
                   </div>
+                  {/* Walk-On Play/Stop button — only when ready */}
+                  {effectiveWalkonStatus === 'ready' && (
+                    <button
+                      onClick={() => handleWalkonPlay(p)}
+                      title={playingId === p.id ? 'Walk-On stoppen' : 'Walk-On abspielen'}
+                      style={{
+                        ...btnSmall,
+                        width: '36px',
+                        height: '36px',
+                        minHeight: '36px',
+                        padding: '0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        border: playingId === p.id ? '1px solid var(--pe-cyan-bright)' : '1px solid var(--pe-border)',
+                        background: playingId === p.id ? 'rgba(0,184,255,0.15)' : 'var(--pe-bg-elevated)',
+                        color: playingId === p.id ? 'var(--pe-cyan-bright)' : 'var(--pe-success)',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        boxShadow: playingId === p.id ? '0 0 8px var(--pe-cyan-bright)' : 'none',
+                        transition: 'box-shadow 0.2s, background 0.2s',
+                      }}
+                    >
+                      {playingId === p.id
+                        ? <Square size={14} strokeWidth={2.5} />
+                        : <Play size={14} strokeWidth={2.5} />
+                      }
+                    </button>
+                  )}
                   {/* Edit / Close button */}
                   <button
                     onClick={() => isExpanded
@@ -872,7 +933,7 @@ function PlayersTab() {
       ) : (
         <div className="space-y-2">
           {players.map((p) => (
-            <div key={p.id} className="p-3 rounded-lg flex justify-between items-center" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
+            <div key={p.id} className="p-3 rounded-lg flex justify-between items-center" style={{ background: 'var(--pe-bg-card)', border: `1px solid ${playingId === p.id ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, boxShadow: playingId === p.id ? '0 0 8px var(--pe-cyan-bright)' : 'none', transition: 'box-shadow 0.2s, border-color 0.2s' }}>
               <div>
                 <span className="font-bold" style={{ color: 'var(--pe-text)' }}>{p.name}</span>
                 {(p.has_walkon || p.walkon_youtube) && (
@@ -885,6 +946,36 @@ function PlayersTab() {
                 <span className="ml-3 text-xs" style={{ color: 'var(--pe-text-muted)' }}>Seed: {p.seed || '—'}</span>
               </div>
               <div className="flex gap-2">
+                {/* Walk-On Play/Stop button — only when ready */}
+                {(walkonStatuses[p.id] ?? p.walkon_status ?? (p.has_walkon ? 'ready' : null)) === 'ready' && (
+                  <button
+                    onClick={() => handleWalkonPlay(p)}
+                    title={playingId === p.id ? 'Walk-On stoppen' : 'Walk-On abspielen'}
+                    style={{
+                      ...btnSmall,
+                      width: '64px',
+                      height: '64px',
+                      minHeight: '64px',
+                      padding: '0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      border: playingId === p.id ? '1px solid var(--pe-cyan-bright)' : '1px solid var(--pe-border)',
+                      background: playingId === p.id ? 'rgba(0,184,255,0.15)' : 'var(--pe-bg-elevated)',
+                      color: playingId === p.id ? 'var(--pe-cyan-bright)' : 'var(--pe-success)',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      boxShadow: playingId === p.id ? '0 0 8px var(--pe-cyan-bright)' : 'none',
+                      transition: 'box-shadow 0.2s, background 0.2s',
+                    }}
+                  >
+                    {playingId === p.id
+                      ? <Square size={22} strokeWidth={2.5} />
+                      : <Play size={22} strokeWidth={2.5} />
+                    }
+                  </button>
+                )}
                 <button
                   onClick={() => setEditingPlayer({
                     id: p.id,
