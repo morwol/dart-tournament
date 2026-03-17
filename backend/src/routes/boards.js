@@ -4,14 +4,20 @@ const router = express.Router();
 const { db } = require('../db/db');
 const { requireAdmin, requireAdminOrDirector, requireAny } = require('../middleware/auth');
 
-// NEU: Alle Scheiben auflisten — optional gefiltert nach ?tournament_id=X
+// NEU: Alle Scheiben auflisten — gefiltert nach ?tournament_id=X oder aktives Turnier
 router.get('/', (req, res) => {
   const { tournament_id } = req.query;
   let boards;
   if (tournament_id !== undefined && tournament_id !== '') {
     boards = db.prepare('SELECT * FROM boards WHERE tournament_id = ? ORDER BY number').all(parseInt(tournament_id, 10));
   } else {
-    boards = db.prepare('SELECT * FROM boards ORDER BY number').all();
+    // Default: only boards of the currently active tournament
+    const active = db.prepare("SELECT id FROM tournaments WHERE status = 'active' ORDER BY id DESC LIMIT 1").get();
+    if (active) {
+      boards = db.prepare('SELECT * FROM boards WHERE tournament_id = ? ORDER BY number').all(active.id);
+    } else {
+      boards = [];
+    }
   }
   // Enrich with current active game
   const enriched = boards.map(b => {
