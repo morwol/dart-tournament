@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useStore } from '../store';
 import { api } from '../api/client';
 import { useToastStore } from '../store/toasts';
 import AdminLogin from '../components/admin/AdminLogin';
 import TournamentManager from '../components/admin/TournamentManager';
+import WalkonBadge from '../components/WalkonBadge';
 import {
   LayoutDashboard, Flag, Trophy, Users, Target,
   UserCog, UtensilsCrossed, Mail, Settings, ScrollText, HelpCircle,
+  Play, Square, Loader2,
 } from 'lucide-react';
 
 const ALL_TABS = [
@@ -309,58 +311,16 @@ function BoardsTab() {
 }
 
 // NEU: Tab "Spieler" — Anlegen, Walk-On Song, Statistiken
-// Walk-On Status Badge
-function WalkonBadge({ status, title, artist }) {
-  let bg, border, color, text;
-
-  if (status === 'ready') {
-    bg     = 'rgba(0,229,160,0.1)';
-    border = 'rgba(0,229,160,0.3)';
-    color  = 'var(--pe-success)';
-    const label = (artist && title) ? `${artist} — ${title}` : 'bereit';
-    text = `♪ ${label}`;
-  } else if (status === 'pending' || status === 'downloading') {
-    bg     = 'rgba(255,176,32,0.1)';
-    border = 'rgba(255,176,32,0.3)';
-    color  = 'var(--pe-warning)';
-    text   = '⏳ lädt…';
-  } else if (status === 'error') {
-    bg     = 'rgba(255,69,96,0.1)';
-    border = 'rgba(255,69,96,0.3)';
-    color  = 'var(--pe-danger)';
-    text   = '✗ Fehler';
-  } else {
-    // has_walkon but no known status yet — muted fallback
-    bg     = 'transparent';
-    border = 'transparent';
-    color  = 'var(--pe-text-muted)';
-    text   = '♪';
-  }
-
-  if (!text) return null;
-
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: '4px',
-      background: bg, border: `1px solid ${border}`,
-      borderRadius: '6px', padding: '2px 7px',
-      fontSize: '11px', color,
-      fontFamily: 'Verdana, Geneva, sans-serif',
-      maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-    }}>
-      {text}
-    </span>
-  );
-}
 
 function PlayersTab() {
-  const { addToast, removeToast } = useToastStore();
+  const { addToast } = useToastStore();
   const [tournaments, setTournaments] = useState([]);
   const [selectedTournament, setSelectedTournament] = useState('');
   const [tournamentStatus, setTournamentStatus] = useState('open');
   const [players, setPlayers] = useState([]);
   const [walkonStatuses, setWalkonStatuses] = useState({}); // { [playerId]: status string }
-  const [walkonLoadingToasts, setWalkonLoadingToasts] = useState({}); // { [playerId]: toastId }
+  const [playingId, setPlayingId] = useState(null); // id of player whose walk-on is currently playing
+  const audioRef = useRef(null);
   const [addMode, setAddMode] = useState(null); // null | 'search' | 'new'
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -394,23 +354,10 @@ function PlayersTab() {
           const status = s.job?.status;
           updates[id] = status;
           if (status === 'ready') {
-            // Remove persistent loading toast and show success
-            setWalkonLoadingToasts(prev => {
-              if (prev[id]) removeToast(prev[id]);
-              const next = { ...prev };
-              delete next[id];
-              return next;
-            });
-            addToast({ type: 'success', message: 'Walk-On bereit ✓' });
+            // Badge transitions to ready state automatically; close editing panel
             setEditingPlayer(prev => prev?.id === id ? null : prev);
           } else if (status === 'error') {
-            setWalkonLoadingToasts(prev => {
-              if (prev[id]) removeToast(prev[id]);
-              const next = { ...prev };
-              delete next[id];
-              return next;
-            });
-            addToast({ type: 'error', message: 'Walk-On Download fehlgeschlagen' });
+            // Badge transitions to error state automatically; close editing panel
             setEditingPlayer(prev => prev?.id === id ? null : prev);
           }
         } catch { updates[id] = null; }
@@ -438,6 +385,33 @@ function PlayersTab() {
   }, [selectedTournament]);
 
   const isActive = tournamentStatus === 'active';
+
+  // Walk-On inline play/stop handler
+  const handleWalkonPlay = async (player) => {
+    // Stop current playback
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.onended = null;
+      audioRef.current = null;
+    }
+    // If same player — toggle off
+    if (playingId === player.id) {
+      setPlayingId(null);
+      return;
+    }
+    // Start new playback
+    const audio = new Audio(`/api/walkon/${player.id}/audio`);
+    audioRef.current = audio;
+    audio.onended = () => setPlayingId(null);
+    audio.onerror = () => setPlayingId(null);
+    try {
+      await audio.play();
+      setPlayingId(player.id);
+    } catch {
+      audioRef.current = null;
+      setPlayingId(null);
+    }
+  };
 
   const loadPlayers = async () => {
     const updated = await api.get(`/tournaments/${selectedTournament}/players`);
@@ -534,12 +508,9 @@ function PlayersTab() {
             start: Number(editingPlayer.walkon_start) || 0,
             duration: Number(editingPlayer.walkon_duration) || 30,
           });
-          // Mark as pending immediately — polling effect takes over from here
+          // Mark as pending immediately — badge updates reactively, polling effect takes over
           setWalkonStatuses(prev => ({ ...prev, [editingPlayer.id]: 'pending' }));
-          // Show persistent loading toast — removed automatically when download completes
-          const loadingToastId = addToast({ type: 'loading', message: 'Walk-On wird heruntergeladen…' });
-          setWalkonLoadingToasts(prev => ({ ...prev, [editingPlayer.id]: loadingToastId }));
-          // Keep card open so user sees the download progress
+          // Keep card open so user sees the badge progress indicator
         } catch (err) {
           addToast({ type: 'error', message: 'Walk-On konnte nicht gestartet werden: ' + (err.message || '') });
           setEditingPlayer(null);
@@ -795,7 +766,7 @@ function PlayersTab() {
             const isExpanded = editingPlayer?.id === p.id;
             const effectiveWalkonStatus = walkonStatuses[p.id] ?? p.walkon_status ?? (p.has_walkon ? 'ready' : null);
             return (
-              <div key={p.id} style={{ background: 'var(--pe-bg-card)', border: `1px solid ${isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, borderRadius: '10px', padding: '12px' }}>
+              <div key={p.id} style={{ background: 'var(--pe-bg-card)', border: `1px solid ${isExpanded || playingId === p.id ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, borderRadius: '10px', padding: '12px', boxShadow: playingId === p.id ? '0 0 8px var(--pe-cyan-bright)' : 'none', transition: 'box-shadow 0.2s, border-color 0.2s' }}>
                 {/* Collapsed header — always visible */}
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   {/* Seed circle */}
@@ -813,6 +784,36 @@ function PlayersTab() {
                       />
                     )}
                   </div>
+                  {/* Walk-On Play/Stop button — only when ready */}
+                  {effectiveWalkonStatus === 'ready' && (
+                    <button
+                      onClick={() => handleWalkonPlay(p)}
+                      title={playingId === p.id ? 'Walk-On stoppen' : 'Walk-On abspielen'}
+                      style={{
+                        ...btnSmall,
+                        width: '36px',
+                        height: '36px',
+                        minHeight: '36px',
+                        padding: '0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        border: playingId === p.id ? '1px solid var(--pe-cyan-bright)' : '1px solid var(--pe-border)',
+                        background: playingId === p.id ? 'rgba(0,184,255,0.15)' : 'var(--pe-bg-elevated)',
+                        color: playingId === p.id ? 'var(--pe-cyan-bright)' : 'var(--pe-success)',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        boxShadow: playingId === p.id ? '0 0 8px var(--pe-cyan-bright)' : 'none',
+                        transition: 'box-shadow 0.2s, background 0.2s',
+                      }}
+                    >
+                      {playingId === p.id
+                        ? <Square size={14} strokeWidth={2.5} />
+                        : <Play size={14} strokeWidth={2.5} />
+                      }
+                    </button>
+                  )}
                   {/* Edit / Close button */}
                   <button
                     onClick={() => isExpanded
@@ -851,15 +852,9 @@ function PlayersTab() {
                     >
                       Löschen
                     </button>
-                    {walkonStatuses[p.id] === 'pending' || walkonStatuses[p.id] === 'downloading' ? (
-                      <div style={{ padding: '8px', textAlign: 'center', fontSize: '10px', color: 'var(--pe-warning)', background: 'rgba(255,176,32,0.08)', borderRadius: '6px', border: '1px solid rgba(255,176,32,0.2)' }}>
-                        ⏳ Walk-On wird heruntergeladen…
-                      </div>
-                    ) : (
                       <button type="submit" disabled={isSaving} style={{ ...btnSmall, background: 'var(--pe-gradient)', color: 'var(--pe-text)', borderRadius: '6px', padding: '8px', fontSize: '10px', opacity: isSaving ? 0.7 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>
                         {isSaving ? 'Speichert…' : 'Speichern'}
                       </button>
-                    )}
                   </form>
                 )}
               </div>
@@ -872,7 +867,7 @@ function PlayersTab() {
       ) : (
         <div className="space-y-2">
           {players.map((p) => (
-            <div key={p.id} className="p-3 rounded-lg flex justify-between items-center" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
+            <div key={p.id} className="p-3 rounded-lg flex justify-between items-center" style={{ background: 'var(--pe-bg-card)', border: `1px solid ${playingId === p.id ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, boxShadow: playingId === p.id ? '0 0 8px var(--pe-cyan-bright)' : 'none', transition: 'box-shadow 0.2s, border-color 0.2s' }}>
               <div>
                 <span className="font-bold" style={{ color: 'var(--pe-text)' }}>{p.name}</span>
                 {(p.has_walkon || p.walkon_youtube) && (
@@ -885,6 +880,36 @@ function PlayersTab() {
                 <span className="ml-3 text-xs" style={{ color: 'var(--pe-text-muted)' }}>Seed: {p.seed || '—'}</span>
               </div>
               <div className="flex gap-2">
+                {/* Walk-On Play/Stop button — only when ready */}
+                {(walkonStatuses[p.id] ?? p.walkon_status ?? (p.has_walkon ? 'ready' : null)) === 'ready' && (
+                  <button
+                    onClick={() => handleWalkonPlay(p)}
+                    title={playingId === p.id ? 'Walk-On stoppen' : 'Walk-On abspielen'}
+                    style={{
+                      ...btnSmall,
+                      width: '64px',
+                      height: '64px',
+                      minHeight: '64px',
+                      padding: '0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      border: playingId === p.id ? '1px solid var(--pe-cyan-bright)' : '1px solid var(--pe-border)',
+                      background: playingId === p.id ? 'rgba(0,184,255,0.15)' : 'var(--pe-bg-elevated)',
+                      color: playingId === p.id ? 'var(--pe-cyan-bright)' : 'var(--pe-success)',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      boxShadow: playingId === p.id ? '0 0 8px var(--pe-cyan-bright)' : 'none',
+                      transition: 'box-shadow 0.2s, background 0.2s',
+                    }}
+                  >
+                    {playingId === p.id
+                      ? <Square size={22} strokeWidth={2.5} />
+                      : <Play size={22} strokeWidth={2.5} />
+                    }
+                  </button>
+                )}
                 <button
                   onClick={() => setEditingPlayer({
                     id: p.id,
@@ -1030,25 +1055,25 @@ function UsersTab() {
             return (
               <div key={u.id} style={{ background: 'var(--pe-bg-card)', border: `1px solid ${isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, borderRadius: '10px', padding: '12px', opacity: u.active ? 1 : 0.5 }}>
                 {/* Card header row */}
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   {/* Avatar */}
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0, background: u.active ? 'var(--pe-gradient)' : 'var(--pe-bg-elevated)', border: u.active ? 'none' : '1px solid var(--pe-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px', color: u.active ? 'var(--pe-text)' : 'var(--pe-text-muted)' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0, background: u.active ? 'var(--pe-gradient)' : 'var(--pe-bg-elevated)', border: u.active ? 'none' : '1px solid var(--pe-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '13px', color: u.active ? 'var(--pe-text)' : 'var(--pe-text-muted)' }}>
                     {(u.vorname || u.username || '?')[0].toUpperCase()}
                   </div>
                   {/* Name + handle */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--pe-text)' }}>{u.display_name || u.username}</div>
+                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--pe-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.display_name || u.username}</div>
                     {u.display_name && <div style={{ fontSize: '10px', color: 'var(--pe-text-muted)' }}>@{u.username}</div>}
                   </div>
                   {/* Role badge */}
-                  <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '10px', flexShrink: 0, whiteSpace: 'nowrap', color: badge.color, background: badge.bg, border: `1px solid ${badge.border}` }}>
+                  <span style={{ fontSize: '11px', height: '28px', padding: '0 8px', borderRadius: '10px', flexShrink: 0, whiteSpace: 'nowrap', color: badge.color, background: badge.bg, border: `1px solid ${badge.border}`, display: 'inline-flex', alignItems: 'center' }}>
                     {ROLE_LABELS[u.role] || u.role}
                   </span>
                   {/* Edit / Close button — hidden for inactive users */}
                   {!!u.active && (
                     <button
                       onClick={() => isExpanded ? setEditId(null) : startEdit(u)}
-                      style={{ ...btnSmall, fontSize: '11px', padding: '3px 8px', minHeight: '28px', border: isExpanded ? `1px solid var(--pe-cyan-bright)` : '1px solid var(--pe-border)', background: isExpanded ? 'rgba(0,184,255,0.1)' : 'var(--pe-bg-elevated)', color: isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)', flexShrink: 0 }}
+                      style={{ ...btnSmall, fontSize: '11px', padding: '0 8px', height: '28px', minHeight: '28px', border: isExpanded ? `1px solid var(--pe-cyan-bright)` : '1px solid var(--pe-border)', background: isExpanded ? 'rgba(0,184,255,0.1)' : 'var(--pe-bg-elevated)', color: isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                     >
                       {isExpanded ? '✕' : '✏️'}
                     </button>
@@ -1057,14 +1082,14 @@ function UsersTab() {
                   {!isExpanded && (u.active ? (
                     <button
                       onClick={() => handleDelete(u.id)}
-                      style={{ ...btnSmall, fontSize: '11px', padding: '3px 8px', minHeight: '28px', color: 'var(--pe-danger)', flexShrink: 0 }}
+                      style={{ ...btnSmall, fontSize: '11px', padding: '0 8px', height: '28px', minHeight: '28px', color: 'var(--pe-danger)', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                     >
                       Deaktivieren
                     </button>
                   ) : (
                     <button
                       onClick={() => handleReactivate(u.id)}
-                      style={{ ...btnSmall, fontSize: '11px', padding: '3px 8px', minHeight: '28px', color: 'var(--pe-success)', border: '1px solid var(--pe-success)', flexShrink: 0 }}
+                      style={{ ...btnSmall, fontSize: '11px', padding: '0 8px', height: '28px', minHeight: '28px', color: 'var(--pe-success)', border: '1px solid var(--pe-success)', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                     >
                       Reaktivieren
                     </button>
@@ -1111,25 +1136,25 @@ function UsersTab() {
                     {u.display_name && <span className="ml-2 text-xs" style={{ color: 'var(--pe-text-muted)' }}>@{u.username}</span>}
                     {!u.active && <span className="ml-2 text-xs" style={{ color: 'var(--pe-danger)' }}>inaktiv</span>}
                   </div>
-                  <span className="text-xs px-2 py-1 rounded-full font-bold flex-shrink-0" style={{ color: ROLE_COLORS[u.role] || 'var(--pe-text-muted)', border: `1px solid ${ROLE_COLORS[u.role] || 'var(--pe-border)'}` }}>
+                  <span className="text-xs font-bold flex-shrink-0" style={{ height: '28px', padding: '0 8px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', color: ROLE_COLORS[u.role] || 'var(--pe-text-muted)', border: `1px solid ${ROLE_COLORS[u.role] || 'var(--pe-border)'}` }}>
                     {ROLE_LABELS[u.role] || u.role}
                   </span>
                 </div>
-                <div className="flex gap-2 flex-shrink-0">
+                <div style={{ display: 'flex', gap: '6px', flexShrink: 0, alignItems: 'center' }}>
                   {!!u.active && (
                     <button
                       onClick={() => editId === u.id ? setEditId(null) : startEdit(u)}
-                      style={{ ...btnSmall, background: editId === u.id ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: editId === u.id ? 'var(--pe-text)' : 'var(--pe-text-sub)', padding: '5px 12px' }}
+                      style={{ ...btnSmall, height: '32px', padding: '0 12px', background: editId === u.id ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: editId === u.id ? 'var(--pe-text)' : 'var(--pe-text-sub)', display: 'inline-flex', alignItems: 'center' }}
                     >
                       {editId === u.id ? 'Abbrechen' : 'Bearbeiten'}
                     </button>
                   )}
                   {u.active ? (
-                    <button onClick={() => handleDelete(u.id)} style={{ ...btnSmall, background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', padding: '5px 12px' }}>
+                    <button onClick={() => handleDelete(u.id)} style={{ ...btnSmall, height: '32px', padding: '0 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', display: 'inline-flex', alignItems: 'center' }}>
                       Deaktivieren
                     </button>
                   ) : (
-                    <button onClick={() => handleReactivate(u.id)} style={{ ...btnSmall, background: 'var(--pe-bg-elevated)', color: 'var(--pe-success)', border: '1px solid var(--pe-success)', padding: '5px 12px' }}>
+                    <button onClick={() => handleReactivate(u.id)} style={{ ...btnSmall, height: '32px', padding: '0 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-success)', border: '1px solid var(--pe-success)', display: 'inline-flex', alignItems: 'center' }}>
                       Reaktivieren
                     </button>
                   )}

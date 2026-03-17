@@ -165,3 +165,25 @@ CREATE TABLE IF NOT EXISTS settlements (
   settled_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   note TEXT
 );
+
+-- NEU: Leg-Tracking fuer Multi-Leg-Matches
+CREATE TABLE IF NOT EXISTS legs (
+  id INTEGER PRIMARY KEY,
+  game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  leg_number INTEGER NOT NULL,
+  winner_id INTEGER REFERENCES players(id),
+  finished_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- NEU: Persistente Turnierergebnisse (ueberleben WIPE)
+CREATE TABLE IF NOT EXISTS tournament_results (
+  id INTEGER PRIMARY KEY,
+  tournament_id INTEGER NOT NULL,
+  player_id INTEGER REFERENCES players(id),
+  rank INTEGER,
+  wins INTEGER DEFAULT 0,
+  losses INTEGER DEFAULT 0,
+  legs_won INTEGER DEFAULT 0,
+  legs_lost INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

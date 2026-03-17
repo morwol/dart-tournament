@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/client';
-import BackButton from '../components/BackButton';
 import Bracket from '../components/tournament/Bracket';
 
 export default function TournamentDetailPage() {
@@ -29,7 +28,6 @@ export default function TournamentDetailPage() {
   if (error || !data) {
     return (
       <div className="min-h-screen p-4">
-        <BackButton to="/history" label="History" />
         <p style={{ color: 'var(--pe-danger)', textAlign: 'center', marginTop: 24 }}>
           {error || 'Tournament not found.'}
         </p>
@@ -42,7 +40,6 @@ export default function TournamentDetailPage() {
   return (
     <div className="pe-page-enter" style={{ fontFamily: 'var(--pe-font-body)' }}>
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '16px 12px 100px' }}>
-        <BackButton to="/history" label="History" />
 
         <div style={{ marginTop: 12 }}>
           <h1

@@ -96,7 +96,13 @@ function initialize() {
     "ALTER TABLE players ADD COLUMN walkon_duration INTEGER DEFAULT 30",
     "ALTER TABLE guests ADD COLUMN active BOOLEAN DEFAULT 1",
     "ALTER TABLE tournaments ADD COLUMN use_seed BOOLEAN DEFAULT 0",
+    "ALTER TABLE tournaments ADD COLUMN legs_to_win INTEGER DEFAULT 1",
+    "ALTER TABLE games ADD COLUMN legs_won_p1 INTEGER DEFAULT 0",
+    "ALTER TABLE games ADD COLUMN legs_won_p2 INTEGER DEFAULT 0",
+    "ALTER TABLE games ADD COLUMN current_leg INTEGER DEFAULT 1",
+    "ALTER TABLE throws ADD COLUMN leg INTEGER DEFAULT 1",
   ];
+
 
   for (const stmt of alterStatements) {
     try {
@@ -139,6 +145,32 @@ function initialize() {
       error_msg TEXT,
       started_at DATETIME,
       finished_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Leg-Tracking fuer Multi-Leg-Matches
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS legs (
+      id INTEGER PRIMARY KEY,
+      game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+      leg_number INTEGER NOT NULL,
+      winner_id INTEGER REFERENCES players(id),
+      finished_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Persistente Turnierergebnisse (ueberleben WIPE)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tournament_results (
+      id INTEGER PRIMARY KEY,
+      tournament_id INTEGER NOT NULL,
+      player_id INTEGER REFERENCES players(id),
+      rank INTEGER,
+      wins INTEGER DEFAULT 0,
+      losses INTEGER DEFAULT 0,
+      legs_won INTEGER DEFAULT 0,
+      legs_lost INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);

@@ -220,27 +220,7 @@ function BoardPicker() {
           Keine Boards eingerichtet.
         </p>
       )}
-      {/* PWA escape hatch — no address bar in installed app */}
-      <div style={{ textAlign: 'center', marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--pe-border)' }}>
-        <Link
-          to="/"
-          style={{
-            color: 'var(--pe-text-muted)',
-            fontSize: '13px',
-            textDecoration: 'none',
-            fontFamily: 'var(--pe-font-body)',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: '64px',
-            padding: '12px 24px',
-          }}
-          onMouseEnter={e => e.currentTarget.style.color = 'var(--pe-text-sub)'}
-          onMouseLeave={e => e.currentTarget.style.color = 'var(--pe-text-muted)'}
-        >
-          ← Zur Startseite
-        </Link>
-      </div>
+
     </div>
   );
 }

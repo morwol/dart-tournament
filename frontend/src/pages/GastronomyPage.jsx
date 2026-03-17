@@ -3,7 +3,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import NFCScanner from '../components/nfc/NFCScanner';
-import BackButton from '../components/BackButton';
 import { useToastStore } from '../store/toasts';
 import { useStore } from '../store';
 

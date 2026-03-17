@@ -5,15 +5,18 @@ const router = express.Router();
 
 // ---------------------------------------------------------------------------
 // GET /api/history — List all finished tournaments
+// Also includes tournaments only in tournament_results (after WIPE)
 // ---------------------------------------------------------------------------
 router.get('/', (req, res) => {
   try {
-    const tournaments = db.prepare(`
+    // Live tournaments: still have their data in the DB
+    const liveTournaments = db.prepare(`
       SELECT
         t.id, t.name, t.date, t.format, t.checkout, t.status, t.created_at,
         COUNT(DISTINCT tr.player_id) AS player_count,
         COUNT(DISTINCT CASE WHEN g.status = 'finished' THEN g.id END) AS games_played,
-        w.name AS winner_name, w.id AS winner_id
+        w.name AS winner_name, w.id AS winner_id,
+        'live' AS data_source
       FROM tournaments t
       LEFT JOIN tournament_registrations tr ON tr.tournament_id = t.id
       LEFT JOIN games g ON g.tournament_id = t.id
@@ -32,7 +35,48 @@ router.get('/', (req, res) => {
       ORDER BY t.date DESC, t.created_at DESC
     `).all();
 
-    res.json(tournaments);
+    // Check for archived entries in tournament_results not in live list
+    let archived = [];
+    try {
+      const liveIds = liveTournaments.map(t => t.id);
+      const archivedRows = db.prepare(
+        'SELECT DISTINCT tournament_id FROM tournament_results'
+      ).all();
+
+      const archivedIds = archivedRows
+        .map(r => r.tournament_id)
+        .filter(id => !liveIds.includes(id));
+
+      archived = archivedIds.map(tid => {
+        const winner = db.prepare(`
+          SELECT p.id, p.name FROM tournament_results tr
+          JOIN players p ON p.id = tr.player_id
+          WHERE tr.tournament_id = ? AND tr.rank = 1
+          LIMIT 1
+        `).get(tid);
+        const playerCount = db.prepare(
+          'SELECT COUNT(*) as cnt FROM tournament_results WHERE tournament_id = ?'
+        ).get(tid).cnt;
+        return {
+          id: tid,
+          name: 'Tournament #' + tid,
+          date: null,
+          format: null,
+          checkout: null,
+          status: 'finished',
+          created_at: null,
+          player_count: playerCount,
+          games_played: null,
+          winner_name: winner ? winner.name : null,
+          winner_id: winner ? winner.id : null,
+          data_source: 'archived',
+        };
+      });
+    } catch (_) {
+      // tournament_results table may not exist yet on older DBs
+    }
+
+    res.json([...liveTournaments, ...archived]);
   } catch (err) {
     console.error('[history]', err);
     res.status(500).json({ error: 'Internal server error' });

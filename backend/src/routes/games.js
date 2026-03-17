@@ -28,17 +28,20 @@ function parseSegment(segment) {
   }
 }
 
-// Gibt alle aktiven Wuerfe fuer ein Spiel zurueck (ohne bulloff, ohne rueckgaengig gemachte)
-// Rueckgaengig gemachte: entweder geloescht (neue Methode) oder per undo_of markiert (alte Methode)
+// Returns active (non-bulloff, non-undo) throws for the current leg of a game.
+// Uses the `leg` column on throws to filter by game.current_leg.
 function activeThrowsQuery(gameId) {
+  const game = db.prepare('SELECT current_leg FROM games WHERE id = ?').get(gameId);
+  const currentLeg = game ? (game.current_leg || 1) : 1;
   return db.prepare(`
     SELECT * FROM throws
     WHERE game_id = ? AND is_bulloff = 0 AND undo_of IS NULL
+      AND COALESCE(leg, 1) = ?
     AND id NOT IN (
       SELECT COALESCE(undo_of, 0) FROM throws WHERE game_id = ? AND undo_of IS NOT NULL
     )
     ORDER BY id ASC
-  `).all(gameId, gameId);
+  `).all(gameId, currentLeg, gameId);
 }
 
 function getRemaining(gameId, playerId) {
@@ -93,6 +96,56 @@ function getCurrentRoundThrows(game) {
   return currentTurnThrows;
 }
 
+// Determines the legs_to_win for a game based on tournament config and round number.
+function getLegsToWin(tournamentId, round) {
+  const tournament = db.prepare(
+    'SELECT legs_to_win, prelim_legs, qf_legs, sf_legs, final_legs FROM tournaments WHERE id = ?'
+  ).get(tournamentId);
+  if (!tournament) return 1;
+
+  if (round === 0) return tournament.prelim_legs || 1;
+
+  const maxRound = db.prepare(
+    'SELECT MAX(round) as max FROM games WHERE tournament_id = ? AND round > 0'
+  ).get(tournamentId);
+  const max = maxRound ? maxRound.max : round;
+
+  if (round >= max) return tournament.final_legs || 5;
+  if (round === max - 1) return tournament.sf_legs || 3;
+  if (round === max - 2) return tournament.qf_legs || 3;
+  return tournament.prelim_legs || 1;
+}
+
+// Handles a leg win: updates leg counters, records the leg result, starts next leg or finishes game.
+// Returns { gameFinished, legs_won_p1, legs_won_p2 }
+function finishLeg(game, winnerId) {
+  const legsToWin = getLegsToWin(game.tournament_id, game.round);
+  const currentLeg = game.current_leg || 1;
+  const isP1 = winnerId === game.player1_id;
+  const newLegsWonP1 = (game.legs_won_p1 || 0) + (isP1 ? 1 : 0);
+  const newLegsWonP2 = (game.legs_won_p2 || 0) + (!isP1 ? 1 : 0);
+
+  // Record completed leg
+  db.prepare(
+    'INSERT INTO legs (game_id, leg_number, winner_id) VALUES (?, ?, ?)'
+  ).run(game.id, currentLeg, winnerId);
+
+  const gameFinished = newLegsWonP1 >= legsToWin || newLegsWonP2 >= legsToWin;
+
+  if (gameFinished) {
+    db.prepare(
+      'UPDATE games SET status = ?, winner_id = ?, legs_won_p1 = ?, legs_won_p2 = ? WHERE id = ?'
+    ).run('finished', winnerId, newLegsWonP1, newLegsWonP2, game.id);
+  } else {
+    // Start next leg: increment current_leg
+    db.prepare(
+      'UPDATE games SET current_leg = ?, legs_won_p1 = ?, legs_won_p2 = ? WHERE id = ?'
+    ).run(currentLeg + 1, newLegsWonP1, newLegsWonP2, game.id);
+  }
+
+  return { gameFinished, legs_won_p1: newLegsWonP1, legs_won_p2: newLegsWonP2 };
+}
+
 // GET /api/games — Liste aller Spiele (optional ?status=active&tournament_id=X)
 router.get('/', (req, res) => {
   try {
@@ -140,11 +193,10 @@ router.get('/:id', (req, res) => {
 
     const tournament = db.prepare('SELECT checkout FROM tournaments WHERE id = ?').get(game.tournament_id);
     const checkout = tournament ? tournament.checkout : 'single_out';
+    const legsToWin = getLegsToWin(game.tournament_id, game.round);
 
-    // Determine current turn
     const currentTurn = game.status === 'active' ? getCurrentTurn(game) : null;
 
-    // Checkout suggestions for the active player
     let checkoutSuggestions = [];
     if (game.status === 'active') {
       if (p1Remaining <= 170) {
@@ -168,6 +220,10 @@ router.get('/:id', (req, res) => {
         bull_winner_id: game.bull_winner_id,
         winner_id: game.winner_id,
         current_turn: currentTurn,
+        legs_to_win: legsToWin,
+        legs_won_p1: game.legs_won_p1 || 0,
+        legs_won_p2: game.legs_won_p2 || 0,
+        current_leg: game.current_leg || 1,
       },
       player1: {
         id: player1 ? player1.id : null,
@@ -279,7 +335,7 @@ router.post('/:id/throw', verifyToken, (req, res) => {
     // Check turn order
     const expectedTurn = getCurrentTurn(game);
     if (player_id !== expectedTurn) {
-      return res.status(400).json({ error: 'Not this player\'s turn' });
+      return res.status(400).json({ error: "Not this player's turn" });
     }
 
     const tournament = db.prepare('SELECT checkout FROM tournaments WHERE id = ?').get(game.tournament_id);
@@ -290,29 +346,44 @@ router.post('/:id/throw', verifyToken, (req, res) => {
 
     let actualScore = score;
     let actualRemaining = newRemaining;
-    let isBust = checkBust(currentRemaining, score, checkoutMode, is_double);
+    const isBust = checkBust(currentRemaining, score, checkoutMode, is_double);
 
     if (isBust) {
       actualScore = 0;
       actualRemaining = currentRemaining;
     }
 
-    // Save throw
+    const currentLeg = game.current_leg || 1;
+
+    // Save throw with leg number
     db.prepare(
-      'INSERT INTO throws (game_id, player_id, score, remaining, is_bulloff) VALUES (?, ?, ?, ?, 0)'
-    ).run(game.id, player_id, actualScore, actualRemaining);
+      'INSERT INTO throws (game_id, player_id, score, remaining, is_bulloff, leg) VALUES (?, ?, ?, ?, 0, ?)'
+    ).run(game.id, player_id, actualScore, actualRemaining, currentLeg);
 
-    // Check for game over (checkout)
+    // Check for leg win (checkout)
     if (!isBust && newRemaining === 0) {
-      db.prepare('UPDATE games SET status = ?, winner_id = ? WHERE id = ?').run('finished', player_id, game.id);
-      advanceBracket(db, game);
-
+      const legResult = finishLeg(game, player_id);
+      if (legResult.gameFinished) {
+        advanceBracket(db, game);
+        return res.json({
+          status: 'finished',
+          winner_id: player_id,
+          remaining: 0,
+          bust: false,
+          leg_won: true,
+          legs_won_p1: legResult.legs_won_p1,
+          legs_won_p2: legResult.legs_won_p2,
+          message: `Spieler ${player_id} hat ausgecheckt!`,
+        });
+      }
       return res.json({
-        status: 'finished',
-        winner_id: player_id,
+        status: 'active',
         remaining: 0,
         bust: false,
-        message: `Spieler ${player_id} hat ausgecheckt!`,
+        leg_won: true,
+        legs_won_p1: legResult.legs_won_p1,
+        legs_won_p2: legResult.legs_won_p2,
+        message: 'Leg gewonnen! Naechstes Leg beginnt.',
       });
     }
 
@@ -323,6 +394,7 @@ router.post('/:id/throw', verifyToken, (req, res) => {
       remaining: actualRemaining,
       bust: isBust,
       score: actualScore,
+      leg_won: false,
       checkout_suggestions: checkoutSuggestions,
       message: isBust ? 'Bust! Runde ungueltig.' : undefined,
     });
@@ -382,13 +454,12 @@ router.post('/:id/throw-segment', requireAuth, (req, res) => {
     // Check turn order
     const expectedTurn = getCurrentTurn(game);
     if (player_id !== expectedTurn) {
-      return res.status(400).json({ error: 'Not this player\'s turn' });
+      return res.status(400).json({ error: "Not this player's turn" });
     }
 
     const tournament = db.prepare('SELECT checkout FROM tournaments WHERE id = ?').get(game.tournament_id);
     const checkoutMode = tournament ? tournament.checkout : 'single_out';
 
-    // Zaehle Wuerfe in der aktuellen Runde (simuliert, korrekt auch bei Busts und Undos)
     const throwsInRound = getCurrentRoundThrows(game).length;
 
     const currentRemaining = getRemaining(game.id, player_id);
@@ -399,15 +470,32 @@ router.post('/:id/throw-segment', requireAuth, (req, res) => {
     const actualScore = isBust ? 0 : parsed.score;
     const actualRemaining = isBust ? currentRemaining : newRemaining;
 
-    // Wurf speichern
-    const result = db.prepare(
-      'INSERT INTO throws (game_id, player_id, score, remaining, is_bulloff, segment) VALUES (?, ?, ?, ?, 0, ?)'
-    ).run(game.id, player_id, actualScore, actualRemaining, isBust ? 'BUST' : segment.toUpperCase());
+    const currentLeg = game.current_leg || 1;
 
-    // Pruefen ob Spiel gewonnen
+    // Save throw with leg number
+    const result = db.prepare(
+      'INSERT INTO throws (game_id, player_id, score, remaining, is_bulloff, segment, leg) VALUES (?, ?, ?, ?, 0, ?, ?)'
+    ).run(game.id, player_id, actualScore, actualRemaining, isBust ? 'BUST' : segment.toUpperCase(), currentLeg);
+
+    // Check for leg win
     if (!isBust && newRemaining === 0) {
-      db.prepare('UPDATE games SET status = ?, winner_id = ? WHERE id = ?').run('finished', player_id, game.id);
-      advanceBracket(db, game);
+      const legResult = finishLeg(game, player_id);
+      if (legResult.gameFinished) {
+        advanceBracket(db, game);
+        return res.json({
+          throw_id: result.lastInsertRowid,
+          segment: segment.toUpperCase(),
+          score: actualScore,
+          remaining: 0,
+          bust: false,
+          round_complete: true,
+          game_finished: true,
+          leg_won: true,
+          legs_won_p1: legResult.legs_won_p1,
+          legs_won_p2: legResult.legs_won_p2,
+          winner_id: player_id,
+        });
+      }
       return res.json({
         throw_id: result.lastInsertRowid,
         segment: segment.toUpperCase(),
@@ -415,12 +503,14 @@ router.post('/:id/throw-segment', requireAuth, (req, res) => {
         remaining: 0,
         bust: false,
         round_complete: true,
-        game_finished: true,
-        winner_id: player_id,
+        game_finished: false,
+        leg_won: true,
+        legs_won_p1: legResult.legs_won_p1,
+        legs_won_p2: legResult.legs_won_p2,
+        message: 'Leg gewonnen! Naechstes Leg beginnt.',
       });
     }
 
-    // Nach 3 Wuerfen: Runde automatisch beenden (Wechsel zum anderen Spieler)
     const roundComplete = (throwsInRound + 1) >= 3 || isBust;
 
     const checkoutSuggestions = !isBust ? getCheckoutSuggestions(actualRemaining, checkoutMode) : [];
@@ -433,6 +523,7 @@ router.post('/:id/throw-segment', requireAuth, (req, res) => {
       bust: isBust,
       round_complete: roundComplete,
       game_finished: false,
+      leg_won: false,
       checkout_suggestions: checkoutSuggestions,
     });
   } catch (err) {
@@ -460,7 +551,7 @@ router.delete('/:id/throw/:throwId', requireAuth, (req, res) => {
     ).all(game.id);
     const recentIds = recentThrows.map(t => t.id);
     if (!recentIds.includes(throwId)) {
-      return res.status(400).json({ error: 'Nur die letzten 9 Würfe können rückgängig gemacht werden' });
+      return res.status(400).json({ error: 'Nur die letzten 9 Wuerfe koennen rueckgaengig gemacht werden' });
     }
 
     // Diesen und alle nachfolgenden Wuerfe loeschen
@@ -496,24 +587,9 @@ router.get('/:id/live', (req, res) => {
     ).get(game.tournament_id);
     const checkoutMode = tournament ? tournament.checkout : 'single_out';
 
-    // Anzahl Legs anhand der Runde ableiten
-    let legs = 1;
-    if (tournament) {
-      if (game.round === 0) {
-        legs = tournament.prelim_legs || 1;
-      } else {
-        const maxRound = db.prepare(
-          'SELECT MAX(round) as max FROM games WHERE tournament_id = ? AND round > 0'
-        ).get(game.tournament_id);
-        const max = maxRound ? maxRound.max : game.round;
-        if (game.round >= max) legs = tournament.final_legs || 5;
-        else if (game.round === max - 1) legs = tournament.sf_legs || 3;
-        else if (game.round === max - 2) legs = tournament.qf_legs || 3;
-        else legs = tournament.prelim_legs || 1;
-      }
-    }
+    const legsToWin = getLegsToWin(game.tournament_id, game.round);
 
-    // Aktive Wuerfe (ohne undo) pro Spieler
+    // Active throws for the current leg per player
     const allActiveThrows = activeThrowsQuery(game.id);
     const activeThrowsP1 = game.player1_id ? allActiveThrows.filter(t => t.player_id === game.player1_id) : [];
     const activeThrowsP2 = game.player2_id ? allActiveThrows.filter(t => t.player_id === game.player2_id) : [];
@@ -522,8 +598,6 @@ router.get('/:id/live', (req, res) => {
     const p2Remaining = game.player2_id ? getRemaining(game.id, game.player2_id) : game.start_score;
 
     const currentTurn = game.status === 'active' ? getCurrentTurn(game) : null;
-
-    // Würfe der aktuellen unvollständigen Runde des aktiven Spielers (korrekt via Simulation)
     const currentRoundThrows = game.status === 'active' ? getCurrentRoundThrows(game) : [];
 
     return res.json({
@@ -536,7 +610,11 @@ router.get('/:id/live', (req, res) => {
         start_score: game.start_score,
         format: tournament ? tournament.format : null,
         checkout: checkoutMode,
-        legs,
+        legs: legsToWin,
+        legs_to_win: legsToWin,
+        legs_won_p1: game.legs_won_p1 || 0,
+        legs_won_p2: game.legs_won_p2 || 0,
+        current_leg: game.current_leg || 1,
         bull_winner_id: game.bull_winner_id,
         winner_id: game.winner_id,
         current_turn: currentTurn,
@@ -573,9 +651,8 @@ router.put('/:id/assign-board', requireAuth, (req, res) => {
   if (board_id) {
     const board = db.prepare('SELECT * FROM boards WHERE id = ?').get(board_id);
     if (!board) return res.status(404).json({ error: 'Scheibe nicht gefunden' });
-    // Ensure board belongs to the same tournament as the game
     if (board.tournament_id !== null && game.tournament_id !== null && board.tournament_id !== game.tournament_id) {
-      return res.status(400).json({ error: 'Scheibe gehört nicht zum Turnier des Spiels' });
+      return res.status(400).json({ error: 'Scheibe gehoert nicht zum Turnier des Spiels' });
     }
   }
   db.prepare('UPDATE games SET board_id = ? WHERE id = ?').run(board_id || null, req.params.id);
@@ -594,7 +671,7 @@ router.post('/:id/skip', requireAuth, (req, res) => {
     const game = db.prepare('SELECT * FROM games WHERE id = ?').get(req.params.id);
     if (!game) return res.status(404).json({ error: 'Spiel nicht gefunden' });
     if (game.status !== 'pending') {
-      return res.status(400).json({ error: 'Nur ausstehende Spiele können übersprungen werden' });
+      return res.status(400).json({ error: 'Nur ausstehende Spiele koennen uebersprungen werden' });
     }
     db.prepare('UPDATE games SET board_id = NULL WHERE id = ?').run(req.params.id);
     const updated = db.prepare('SELECT * FROM games WHERE id = ?').get(req.params.id);
@@ -605,12 +682,12 @@ router.post('/:id/skip', requireAuth, (req, res) => {
   }
 });
 
-// POST /games/:id/reset — Bulloff zurücksetzen (Spiel auf pending, nur wenn bulloff oder pending)
+// POST /games/:id/reset — Bulloff zuruecksetzen (Spiel auf pending, nur wenn bulloff oder pending)
 router.post('/:id/reset', requireAuth, (req, res) => {
   const game = db.prepare('SELECT * FROM games WHERE id = ?').get(req.params.id);
   if (!game) return res.status(404).json({ error: 'Spiel nicht gefunden' });
   if (!['pending', 'bulloff'].includes(game.status)) {
-    return res.status(400).json({ error: 'Spiel kann nicht zurückgesetzt werden (bereits aktiv oder beendet)' });
+    return res.status(400).json({ error: 'Spiel kann nicht zurueckgesetzt werden (bereits aktiv oder beendet)' });
   }
   db.prepare("DELETE FROM throws WHERE game_id = ? AND is_bulloff = 1").run(game.id);
   db.prepare("UPDATE games SET status = 'pending', bull_winner_id = NULL WHERE id = ?").run(game.id);

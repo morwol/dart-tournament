@@ -1,6 +1,5 @@
 // frontend/src/components/TopBar.jsx
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store';
 
 const ROLE_PILL = {
@@ -10,16 +9,10 @@ const ROLE_PILL = {
   director:   { bg: 'rgba(0,184,255,0.15)',   color: 'var(--pe-cyan-bright)',  border: 'rgba(0,184,255,0.3)',   label: 'Director' },
 };
 
-export default function TopBar({ isSubPage = false, title = '', onBack }) {
-  const navigate = useNavigate();
+export default function TopBar() {
   const { role, logout } = useStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
-
-  const handleBack = () => {
-    if (onBack) onBack();
-    else navigate(-1);
-  };
 
   const handleLogout = () => {
     setMenuOpen(false);
@@ -61,54 +54,19 @@ export default function TopBar({ isSubPage = false, title = '', onBack }) {
       top: 0,
       zIndex: 100,
     }}>
-      {isSubPage ? (
-        /* Sub-page: ← back icon — 64×64px tap area */
-        <button
-          onClick={handleBack}
-          aria-label="Zurück"
-          style={{
-            padding: '12px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: 'var(--pe-text-sub)',
-            fontSize: '22px',
-            flexShrink: 0,
-            alignSelf: 'stretch',
-            width: '64px',
-            transition: 'color 150ms ease',
-            borderRadius: '8px',
-            margin: '0 0 0 -12px',
-          }}
-          onMouseEnter={e => e.currentTarget.style.color = 'var(--pe-cyan-bright)'}
-          onMouseLeave={e => e.currentTarget.style.color = 'var(--pe-text-sub)'}
-        >
-          ←
-        </button>
-      ) : (
-        /* Root: logo */
-        <img
-          src="/logo.jpeg"
-          alt="DartEvent"
-          style={{ height: '32px', flexShrink: 0, objectFit: 'contain' }}
-        />
-      )}
+      {/* Logo */}
+      <img
+        src="/logo.jpeg"
+        alt="DartEvent"
+        style={{ height: '32px', flexShrink: 0, objectFit: 'contain' }}
+      />
 
-      {/* Center: page title (sub-page) or spacer (root) */}
-      <div style={{ flex: 1, textAlign: isSubPage ? 'center' : 'left' }}>
-        {isSubPage && (
-          <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--pe-text)' }}>
-            {title}
-          </span>
-        )}
-      </div>
+      {/* Spacer */}
+      <div style={{ flex: 1 }} />
 
-      {/* Right: role pill (root only) + avatar with dropdown */}
+      {/* Right: role pill + avatar with dropdown */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-        {!isSubPage && pill && (
+        {pill && (
           <span style={{
             background: pill.bg,
             color: pill.color,

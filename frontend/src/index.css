@@ -27,10 +27,15 @@
   font-family: var(--pe-font-display);
 }
 
+/* Thin overlay scrollbar — no reserved gutter space */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(168,189,214,0.25); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(168,189,214,0.45); }
+
 html {
-  /* Always reserve scrollbar gutter — prevents horizontal layout shift
-     when content height changes between tabs */
-  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(168,189,214,0.25) transparent;
 }
 
 body {
@@ -132,6 +137,12 @@ body {
 }
 .pe-scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* ─── Shared Animations ─────────────────────────────────────── */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
 /* ─── Toast Notifications ───────────────────────────────────── */

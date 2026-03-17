@@ -9,12 +9,14 @@ const { auditLog } = require('../lib/auditLog');
 router.post('/wipe', requireAdmin, (req, res) => {
   const wipeTx = db.transaction(() => {
     db.prepare('DELETE FROM throws').run();
+    try { db.prepare('DELETE FROM legs').run(); } catch (_) {}
     db.prepare('DELETE FROM group_players').run();
     db.prepare('DELETE FROM games').run();
     db.prepare('DELETE FROM groups').run();
     db.prepare('DELETE FROM tournament_registrations').run();
     try { db.prepare('DELETE FROM schedule').run(); } catch (_) {}
     db.prepare('DELETE FROM tournaments').run();
+    // tournament_results intentionally NOT deleted — history survives WIPE
     // Spielerprofile bleiben erhalten (persistent über Turniere)
     // Boards zurücksetzen aber behalten
     try { db.prepare("UPDATE boards SET is_final = 0").run(); } catch (_) {}
@@ -25,8 +27,8 @@ router.post('/wipe', requireAdmin, (req, res) => {
   });
 
   wipeTx();
-  auditLog(req, 'system', 'WIPE', 'Alle Turnierdaten gelöscht (Spielerprofile, Boards, User, Produkte bleiben)');
-  res.json({ success: true, message: 'Alle Turnierdaten wurden gelöscht. Spielerprofile, Admins, User, Boards und Produkte bleiben erhalten.' });
+  auditLog(req, 'system', 'WIPE', 'Alle Turnierdaten geloescht (Spielerprofile, Boards, User, Produkte, Turnierergebnisse bleiben)');
+  res.json({ success: true, message: 'Alle Turnierdaten wurden geloescht. Spielerprofile, Admins, User, Boards, Produkte und Turnierergebnisse bleiben erhalten.' });
 });
 
 // GET /api/admin/logs — Audit-Log abrufen (Admin + Director)
