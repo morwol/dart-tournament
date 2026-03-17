@@ -3,7 +3,7 @@ import { useState } from 'react';
 import GuestSearchInput from './GuestSearchInput';
 import RegisterGuestCard from './RegisterGuestCard';
 
-export default function RegisterView({ guestOrders, settledIds, onSettle, loading }) {
+export default function RegisterView({ guestOrders, settledIds, onSettle, loading, submitting }) {
   const [search, setSearch] = useState('');
 
   const filtered = guestOrders.filter(
@@ -49,7 +49,7 @@ export default function RegisterView({ guestOrders, settledIds, onSettle, loadin
             guest={g}
             isSettled={settledIds.has(g.guest_id)}
             onSettle={() => onSettle(g)}
-            submitting={false}
+            submitting={submitting}
           />
         ))}
       </div>

@@ -87,14 +87,17 @@ export default function GastronomyPage() {
 
   // Cart helpers
   const addToCart = (product) => {
+    // Accept both full product objects (product.id) from ProductGrid
+    // and cart item objects (product.product_id) from OrderCartItem's + button
+    const pid = product.id ?? product.product_id;
     setCart((prev) => {
-      const existing = prev.find((item) => item.product_id === product.id);
+      const existing = prev.find((item) => item.product_id === pid);
       if (existing) {
         return prev.map((item) =>
-          item.product_id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          item.product_id === pid ? { ...item, quantity: item.quantity + 1 } : item
         );
       }
-      return [...prev, { product_id: product.id, name: product.name, price: product.price, quantity: 1 }];
+      return [...prev, { product_id: pid, name: product.name, price: product.price, quantity: 1 }];
     });
   };
 
@@ -276,9 +279,8 @@ export default function GastronomyPage() {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '8px 16px',
-          marginBottom: 4,
           maxWidth: 1200,
-          margin: '0 auto',
+          margin: '0 auto 4px',
         }}
       >
         {badge && (
@@ -395,6 +397,7 @@ export default function GastronomyPage() {
             settledIds={settledIds}
             onSettle={initSettle}
             loading={registerLoading}
+            submitting={submitting}
           />
         </div>
       )}

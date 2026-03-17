@@ -63,7 +63,7 @@ const OrderCartItem = ({ item, onAdd, onRemove }) => {
         </div>
 
         <button
-          onClick={() => onAdd(item.product_id)}
+          onClick={() => onAdd(item)}
           style={{
             width: 64,
             height: 64,

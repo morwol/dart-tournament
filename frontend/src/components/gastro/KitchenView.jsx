@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api } from '../../api/client.js';
 
 function timeAgo(isoString) {
@@ -13,7 +13,7 @@ export default function KitchenView() {
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(null);
 
-  async function fetchKitchenOrders() {
+  const fetchKitchenOrders = useCallback(async () => {
     try {
       const data = await api.get('/orders/by-guest');
       // Filter to guests that have at least one food item; also filter items to food only
@@ -30,13 +30,13 @@ export default function KitchenView() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     fetchKitchenOrders();
     const interval = setInterval(fetchKitchenOrders, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchKitchenOrders]);
 
   const refreshLabel = lastRefresh
     ? `Aktualisiert: ${lastRefresh.getHours().toString().padStart(2, '0')}:${lastRefresh.getMinutes().toString().padStart(2, '0')}`

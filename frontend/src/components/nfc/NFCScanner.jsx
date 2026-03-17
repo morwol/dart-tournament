@@ -1,14 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function NFCScanner({ onScan, scanning }) {
   const [nfcSupported, setNfcSupported] = useState(false);
   const [nfcStatus, setNfcStatus] = useState('idle'); // 'idle' | 'reading' | 'error'
   const [errorMessage, setErrorMessage] = useState('');
+  const ndefRef = useRef(null);
+  const abortRef = useRef(null);
 
   useEffect(() => {
     if ('NDEFReader' in window) {
       setNfcSupported(true);
     }
+    return () => { abortRef.current?.abort(); };
   }, []);
 
   const startNFC = async () => {
@@ -16,13 +19,17 @@ export default function NFCScanner({ onScan, scanning }) {
     try {
       setNfcStatus('reading');
       setErrorMessage('');
+      abortRef.current?.abort(); // clean up any previous scan session
+      abortRef.current = new AbortController();
       const ndef = new window.NDEFReader();
-      await ndef.scan();
+      ndefRef.current = ndef;
+      await ndef.scan({ signal: abortRef.current.signal });
       ndef.addEventListener('reading', ({ serialNumber }) => {
         onScan(serialNumber);
         setNfcStatus('idle');
-      });
+      }, { signal: abortRef.current.signal }); // listener is removed automatically when aborted
     } catch (err) {
+      if (err.name === 'AbortError') return; // ignore clean aborts
       setNfcStatus('error');
       setErrorMessage(err?.message || 'NFC konnte nicht gestartet werden.');
     }
