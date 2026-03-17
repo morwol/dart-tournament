@@ -309,58 +309,14 @@ function BoardsTab() {
 }
 
 // NEU: Tab "Spieler" — Anlegen, Walk-On Song, Statistiken
-// Walk-On Status Badge
-function WalkonBadge({ status, title, artist }) {
-  let bg, border, color, text;
-
-  if (status === 'ready') {
-    bg     = 'rgba(0,229,160,0.1)';
-    border = 'rgba(0,229,160,0.3)';
-    color  = 'var(--pe-success)';
-    const label = (artist && title) ? `${artist} — ${title}` : 'bereit';
-    text = `♪ ${label}`;
-  } else if (status === 'pending' || status === 'downloading') {
-    bg     = 'rgba(255,176,32,0.1)';
-    border = 'rgba(255,176,32,0.3)';
-    color  = 'var(--pe-warning)';
-    text   = '⏳ lädt…';
-  } else if (status === 'error') {
-    bg     = 'rgba(255,69,96,0.1)';
-    border = 'rgba(255,69,96,0.3)';
-    color  = 'var(--pe-danger)';
-    text   = '✗ Fehler';
-  } else {
-    // has_walkon but no known status yet — muted fallback
-    bg     = 'transparent';
-    border = 'transparent';
-    color  = 'var(--pe-text-muted)';
-    text   = '♪';
-  }
-
-  if (!text) return null;
-
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: '4px',
-      background: bg, border: `1px solid ${border}`,
-      borderRadius: '6px', padding: '2px 7px',
-      fontSize: '11px', color,
-      fontFamily: 'Verdana, Geneva, sans-serif',
-      maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-    }}>
-      {text}
-    </span>
-  );
-}
 
 function PlayersTab() {
-  const { addToast, removeToast } = useToastStore();
+  const { addToast } = useToastStore();
   const [tournaments, setTournaments] = useState([]);
   const [selectedTournament, setSelectedTournament] = useState('');
   const [tournamentStatus, setTournamentStatus] = useState('open');
   const [players, setPlayers] = useState([]);
   const [walkonStatuses, setWalkonStatuses] = useState({}); // { [playerId]: status string }
-  const [walkonLoadingToasts, setWalkonLoadingToasts] = useState({}); // { [playerId]: toastId }
   const [addMode, setAddMode] = useState(null); // null | 'search' | 'new'
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -394,23 +350,10 @@ function PlayersTab() {
           const status = s.job?.status;
           updates[id] = status;
           if (status === 'ready') {
-            // Remove persistent loading toast and show success
-            setWalkonLoadingToasts(prev => {
-              if (prev[id]) removeToast(prev[id]);
-              const next = { ...prev };
-              delete next[id];
-              return next;
-            });
-            addToast({ type: 'success', message: 'Walk-On bereit ✓' });
+            // Badge transitions to ready state automatically; close editing panel
             setEditingPlayer(prev => prev?.id === id ? null : prev);
           } else if (status === 'error') {
-            setWalkonLoadingToasts(prev => {
-              if (prev[id]) removeToast(prev[id]);
-              const next = { ...prev };
-              delete next[id];
-              return next;
-            });
-            addToast({ type: 'error', message: 'Walk-On Download fehlgeschlagen' });
+            // Badge transitions to error state automatically; close editing panel
             setEditingPlayer(prev => prev?.id === id ? null : prev);
           }
         } catch { updates[id] = null; }
@@ -534,12 +477,9 @@ function PlayersTab() {
             start: Number(editingPlayer.walkon_start) || 0,
             duration: Number(editingPlayer.walkon_duration) || 30,
           });
-          // Mark as pending immediately — polling effect takes over from here
+          // Mark as pending immediately — badge updates reactively, polling effect takes over
           setWalkonStatuses(prev => ({ ...prev, [editingPlayer.id]: 'pending' }));
-          // Show persistent loading toast — removed automatically when download completes
-          const loadingToastId = addToast({ type: 'loading', message: 'Walk-On wird heruntergeladen…' });
-          setWalkonLoadingToasts(prev => ({ ...prev, [editingPlayer.id]: loadingToastId }));
-          // Keep card open so user sees the download progress
+          // Keep card open so user sees the badge progress indicator
         } catch (err) {
           addToast({ type: 'error', message: 'Walk-On konnte nicht gestartet werden: ' + (err.message || '') });
           setEditingPlayer(null);
@@ -851,15 +791,9 @@ function PlayersTab() {
                     >
                       Löschen
                     </button>
-                    {walkonStatuses[p.id] === 'pending' || walkonStatuses[p.id] === 'downloading' ? (
-                      <div style={{ padding: '8px', textAlign: 'center', fontSize: '10px', color: 'var(--pe-warning)', background: 'rgba(255,176,32,0.08)', borderRadius: '6px', border: '1px solid rgba(255,176,32,0.2)' }}>
-                        ⏳ Walk-On wird heruntergeladen…
-                      </div>
-                    ) : (
                       <button type="submit" disabled={isSaving} style={{ ...btnSmall, background: 'var(--pe-gradient)', color: 'var(--pe-text)', borderRadius: '6px', padding: '8px', fontSize: '10px', opacity: isSaving ? 0.7 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>
                         {isSaving ? 'Speichert…' : 'Speichern'}
                       </button>
-                    )}
                   </form>
                 )}
               </div>
