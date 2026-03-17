@@ -1,6 +1,6 @@
 // CurrentGameView — Board-Ansicht für TV/Beamer und Mobile
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import BackButton from '../components/BackButton';
 
@@ -340,24 +340,7 @@ export default function CurrentGameView() {
 
       {/* Back navigation — PWA escape hatch */}
       <div style={{ padding: isMobile ? '8px 12px 0' : '12px 32px 0', textAlign: 'center' }}>
-        <Link
-          to="/"
-          style={{
-            color: 'var(--pe-text-muted)',
-            fontSize: '13px',
-            textDecoration: 'none',
-            fontFamily: 'var(--pe-font-body)',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: 64,
-            padding: '12px 24px',
-          }}
-          onMouseEnter={e => e.currentTarget.style.color = 'var(--pe-text-sub)'}
-          onMouseLeave={e => e.currentTarget.style.color = 'var(--pe-text-muted)'}
-        >
-          ← Zur Startseite
-        </Link>
+        <BackButton to="/" label="Zur Startseite" />
       </div>
 
       {/* Nächstes Spiel */}
