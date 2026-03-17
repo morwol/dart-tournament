@@ -16,7 +16,7 @@ export default function AdminReportsPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p style={{ color: 'var(--pe-text-sub)' }}>Loading reports...</p>
+        <p style={{ color: 'var(--pe-text-sub)' }}>Berichte werden geladen…</p>
       </div>
     );
   }
@@ -25,20 +25,19 @@ export default function AdminReportsPage() {
     return (
       <div className="min-h-screen p-4">
         <p style={{ color: 'var(--pe-danger)', textAlign: 'center', marginTop: 24 }}>
-          {error}
+          Fehler: {error}
         </p>
       </div>
     );
   }
 
-  const { revenue, top_products, orders_per_guest, by_category, settlements } = data || {};
+  const { revenue, top_products, orders_per_guest, by_category } = data || {};
 
   return (
     <div className="pe-page-enter" style={{ fontFamily: 'var(--pe-font-body)' }}>
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '16px 12px 100px' }}>
 
         <h1
-          className="pe-font-display"
           style={{
             fontSize: 22,
             fontWeight: 700,
@@ -48,10 +47,10 @@ export default function AdminReportsPage() {
             margin: '12px 0 20px',
           }}
         >
-          Gastro Reports
+          Gastro Auswertung
         </h1>
 
-        {/* Revenue overview */}
+        {/* Umsatz-Übersicht */}
         {revenue && (
           <div style={{
             display: 'grid',
@@ -59,16 +58,17 @@ export default function AdminReportsPage() {
             gap: 10,
             marginBottom: 24,
           }}>
-            <RevenueCard label="Total Revenue" value={formatCurrency(revenue.total)} color="var(--pe-success)" />
-            <RevenueCard label="Open Orders" value={formatCurrency(revenue.open)} color="var(--pe-warning)" />
-            <RevenueCard label="Settled" value={formatCurrency(revenue.settled)} />
-            <RevenueCard label="Total Orders" value={revenue.order_count ?? 0} />
+            <KennzahlKarte label="Gesamtumsatz" wert={formatWaehrung(revenue.total_revenue)} farbe="var(--pe-success)" />
+            <KennzahlKarte label="Offen" wert={formatWaehrung(revenue.open_revenue)} farbe="var(--pe-warning)" />
+            <KennzahlKarte label="Bezahlt" wert={formatWaehrung(revenue.paid_revenue)} />
+            <KennzahlKarte label="Bestellungen" wert={revenue.total_orders ?? 0} />
+            <KennzahlKarte label="Gäste" wert={revenue.total_guests ?? 0} />
           </div>
         )}
 
-        {/* Category breakdown */}
+        {/* Umsatz nach Kategorie */}
         {by_category && by_category.length > 0 && (
-          <Section title="Revenue by Category">
+          <Abschnitt titel="Nach Kategorie">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {by_category.map((cat) => (
                 <div
@@ -84,28 +84,33 @@ export default function AdminReportsPage() {
                   }}
                 >
                   <span style={{ fontSize: 14, fontWeight: 'bold', color: 'var(--pe-text)', textTransform: 'capitalize' }}>
-                    {cat.category}
+                    {cat.category === 'food' ? 'Speisen' : cat.category === 'drink' ? 'Getränke' : cat.category}
                   </span>
-                  <span className="pe-font-display" style={{ fontSize: 16, fontWeight: 700, color: 'var(--pe-cyan-bright)' }}>
-                    {formatCurrency(cat.total)}
-                  </span>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--pe-cyan-bright)', display: 'block' }}>
+                      {formatWaehrung(cat.total_revenue)}
+                    </span>
+                    <span style={{ fontSize: 12, color: 'var(--pe-text-muted)' }}>
+                      {cat.total_quantity} Stk.
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
-          </Section>
+          </Abschnitt>
         )}
 
-        {/* Top products */}
+        {/* Top-Produkte */}
         {top_products && top_products.length > 0 && (
-          <Section title="Top Products">
+          <Abschnitt titel="Top-Produkte">
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  {['Product', 'Sold', 'Revenue'].map((h) => (
+                  {[['Produkt', 'left'], ['Verkauft', 'right'], ['Umsatz', 'right']].map(([h, align]) => (
                     <th
                       key={h}
                       style={{
-                        textAlign: h === 'Product' ? 'left' : 'right',
+                        textAlign: align,
                         padding: '8px 10px',
                         fontSize: 11,
                         color: 'var(--pe-text-muted)',
@@ -120,35 +125,35 @@ export default function AdminReportsPage() {
                 </tr>
               </thead>
               <tbody>
-                {top_products.map((p, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid var(--pe-border)' }}>
+                {top_products.map((p) => (
+                  <tr key={p.id} style={{ borderBottom: '1px solid var(--pe-border)' }}>
                     <td style={{ padding: '10px', fontSize: 14, color: 'var(--pe-text)', fontWeight: 'bold' }}>
                       {p.name}
                     </td>
-                    <td className="pe-font-display" style={{ padding: '10px', fontSize: 14, fontWeight: 700, color: 'var(--pe-text)', textAlign: 'right' }}>
-                      {p.quantity_sold}
+                    <td style={{ padding: '10px', fontSize: 14, fontWeight: 700, color: 'var(--pe-text)', textAlign: 'right' }}>
+                      {p.total_quantity}
                     </td>
-                    <td className="pe-font-display" style={{ padding: '10px', fontSize: 14, fontWeight: 700, color: 'var(--pe-cyan-bright)', textAlign: 'right' }}>
-                      {formatCurrency(p.revenue)}
+                    <td style={{ padding: '10px', fontSize: 14, fontWeight: 700, color: 'var(--pe-cyan-bright)', textAlign: 'right' }}>
+                      {formatWaehrung(p.total_revenue)}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </Section>
+          </Abschnitt>
         )}
 
-        {/* Orders per guest */}
+        {/* Bestellungen pro Gast */}
         {orders_per_guest && orders_per_guest.length > 0 && (
-          <Section title="Orders per Guest">
+          <Abschnitt titel="Pro Gast">
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  {['Guest', 'Orders', 'Total'].map((h) => (
+                  {[['Gast', 'left'], ['Bestellungen', 'right'], ['Offen', 'right'], ['Bezahlt', 'right']].map(([h, align]) => (
                     <th
                       key={h}
                       style={{
-                        textAlign: h === 'Guest' ? 'left' : 'right',
+                        textAlign: align,
                         padding: '8px 10px',
                         fontSize: 11,
                         color: 'var(--pe-text-muted)',
@@ -163,74 +168,49 @@ export default function AdminReportsPage() {
                 </tr>
               </thead>
               <tbody>
-                {orders_per_guest.map((g, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid var(--pe-border)' }}>
+                {orders_per_guest.map((g) => (
+                  <tr key={g.guest_id} style={{ borderBottom: '1px solid var(--pe-border)' }}>
                     <td style={{ padding: '10px', fontSize: 14, color: 'var(--pe-text)', fontWeight: 'bold' }}>
-                      {g.guest_name || 'Guest'}
+                      {g.guest_name || 'Unbekannt'}
                     </td>
-                    <td className="pe-font-display" style={{ padding: '10px', fontSize: 14, fontWeight: 700, color: 'var(--pe-text)', textAlign: 'right' }}>
+                    <td style={{ padding: '10px', fontSize: 14, color: 'var(--pe-text)', textAlign: 'right' }}>
                       {g.order_count}
                     </td>
-                    <td className="pe-font-display" style={{ padding: '10px', fontSize: 14, fontWeight: 700, color: 'var(--pe-cyan-bright)', textAlign: 'right' }}>
-                      {formatCurrency(g.total)}
+                    <td style={{ padding: '10px', fontSize: 14, fontWeight: 700, color: 'var(--pe-warning)', textAlign: 'right' }}>
+                      {formatWaehrung(g.open_amount)}
+                    </td>
+                    <td style={{ padding: '10px', fontSize: 14, fontWeight: 700, color: 'var(--pe-success)', textAlign: 'right' }}>
+                      {formatWaehrung(g.paid_amount)}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </Section>
+          </Abschnitt>
         )}
 
-        {/* Settlements */}
-        {settlements && settlements.length > 0 && (
-          <Section title="Recent Settlements">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {settlements.map((s, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '10px 14px',
-                    borderRadius: 10,
-                    background: 'var(--pe-bg-card)',
-                    border: '1px solid var(--pe-border)',
-                  }}
-                >
-                  <div>
-                    <span style={{ fontSize: 14, fontWeight: 'bold', color: 'var(--pe-text)' }}>
-                      {s.guest_name || 'Guest'}
-                    </span>
-                    <span style={{ fontSize: 12, color: 'var(--pe-text-muted)', marginLeft: 8 }}>
-                      {s.settled_at}
-                    </span>
-                  </div>
-                  <span className="pe-font-display" style={{ fontSize: 15, fontWeight: 700, color: 'var(--pe-success)' }}>
-                    {formatCurrency(s.total)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Section>
+        {!revenue && !loading && (
+          <p style={{ color: 'var(--pe-text-muted)', textAlign: 'center', marginTop: 48 }}>
+            Noch keine Gastro-Daten vorhanden.
+          </p>
         )}
       </div>
     </div>
   );
 }
 
-function Section({ title, children }) {
+function Abschnitt({ titel, children }) {
   return (
     <div style={{ marginBottom: 24 }}>
-      <h2 style={{ fontSize: 14, fontWeight: 'bold', color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 10px' }}>
-        {title}
+      <h2 style={{ fontSize: 13, fontWeight: 'bold', color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 10px' }}>
+        {titel}
       </h2>
       {children}
     </div>
   );
 }
 
-function RevenueCard({ label, value, color }) {
+function KennzahlKarte({ label, wert, farbe }) {
   return (
     <div style={{
       background: 'var(--pe-bg-card)',
@@ -241,16 +221,8 @@ function RevenueCard({ label, value, color }) {
       flexDirection: 'column',
       gap: 4,
     }}>
-      <span
-        className="pe-font-display"
-        style={{
-          fontSize: 22,
-          fontWeight: 700,
-          color: color || 'var(--pe-text)',
-          letterSpacing: '0.01em',
-        }}
-      >
-        {value}
+      <span style={{ fontSize: 22, fontWeight: 700, color: farbe || 'var(--pe-text)' }}>
+        {wert}
       </span>
       <span style={{ fontSize: 11, color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>
         {label}
@@ -259,7 +231,7 @@ function RevenueCard({ label, value, color }) {
   );
 }
 
-function formatCurrency(val) {
+function formatWaehrung(val) {
   if (val == null) return '—';
-  return `${parseFloat(val).toFixed(2)} EUR`;
+  return `${parseFloat(val).toFixed(2)} €`;
 }
