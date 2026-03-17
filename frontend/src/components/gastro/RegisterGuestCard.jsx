@@ -37,7 +37,7 @@ export default function RegisterGuestCard({ guest, isSettled, onSettle, submitti
       {/* Item table */}
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
-          <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
+          <tr style={{ background: 'var(--pe-bg-elevated)' }}>
             <th
               style={{
                 textAlign: 'left',
