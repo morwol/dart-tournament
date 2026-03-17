@@ -185,7 +185,7 @@ Filtert Issues unter Confidence 80 heraus — nur echte, hochwahrscheinliche Pro
 
 ## Design — P Entertainment Corporate Design (PFLICHT)
 
-**Schrift:** Verdana, Geneva, sans-serif — keine andere
+**Schrift:** Space Grotesk (Body) + Rajdhani (Display) via Google Fonts — `--pe-font-body: 'Space Grotesk', system-ui, sans-serif` / `--pe-font-display: 'Rajdhani', system-ui, sans-serif`
 
 **CSS Tokens (immer verwenden):**
 ```css
@@ -412,7 +412,7 @@ GET    /api/orders/summary
 
 ## UI-Komponenten (Konventionen)
 
-- `BackButton` Komponente: `frontend/src/components/BackButton.jsx` — immer verwenden statt `←` Links
+- Navigation zurück: `usePageMeta({ parentLink: { href, label } })` aus `components/layout/AppLayout` — zeigt Link oben in TopBar. BackButton.jsx ist deprecated.
 - Admin-Header: Username klickbar → Dropdown mit Abmelden (User-Kontext-Popover)
 - Echtzeit-Updates: Polling alle 5 Sekunden
 
