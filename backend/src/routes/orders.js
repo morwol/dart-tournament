@@ -138,6 +138,19 @@ router.post('/settle/:guestId', requireAuth, (req, res) => {
   }
 });
 
+// DELETE /api/orders/:id (undo open order)
+router.delete('/:id', requireAuth, (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) return res.status(400).json({ error: 'Invalid order id' });
+  const result = db.prepare(
+    "DELETE FROM orders WHERE id = ? AND status = 'open'"
+  ).run(id);
+  if (result.changes === 0) {
+    return res.status(404).json({ error: 'Order not found or already paid' });
+  }
+  res.json({ message: 'Order deleted' });
+});
+
 // NEU: Admin-Dashboard (Gesamtumsatz, pro Artikel)
 router.get('/dashboard', requireAuth, (req, res) => {
   try {

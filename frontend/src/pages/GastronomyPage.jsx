@@ -1,6 +1,6 @@
 // GastronomyPage — station-split architecture
 // Stations: 'bar' (drinks + ordering), 'register' (settle)
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { api } from '../api/client';
 import GastronomyLogin from '../components/gastro/GastronomyLogin';
 import StationSelector from '../components/gastro/StationSelector';
@@ -9,7 +9,7 @@ import GuestSelector from '../components/gastro/GuestSelector';
 import GuestHeader from '../components/gastro/GuestHeader';
 import OpenOrdersPanel from '../components/gastro/OpenOrdersPanel';
 import ProductGrid from '../components/gastro/ProductGrid';
-import OrderCart from '../components/gastro/OrderCart';
+import SessionOrderList from '../components/gastro/SessionOrderList';
 import SettleDialog from '../components/gastro/SettleDialog';
 import { useToastStore } from '../store/toasts';
 import { useStore } from '../store';
@@ -36,14 +36,14 @@ export default function GastronomyPage() {
   // Bar / ordering state
   const [guest, setGuest] = useState(null);
   const [products, setProducts] = useState([]);
-  const [cart, setCart] = useState([]);
+  const [sessionOrders, setSessionOrders] = useState([]);
   const [productFilter, setProductFilter] = useState('all');
   const [scanning, setScanning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [guestOpenOrders, setGuestOpenOrders] = useState(null);
-  const [orderSuccess, setOrderSuccess] = useState(false);
   const [lockLoading, setLockLoading] = useState(false);
   const [allGuests, setAllGuests] = useState([]);
+  const timerRef = useRef(null);
 
   const isBlocked = guest != null && (guest.active === 0 || guest.active === false);
 
@@ -55,6 +55,32 @@ export default function GastronomyPage() {
   // Settle dialog
   const [settleTarget, setSettleTarget] = useState(null);
 
+  // Session management — 20s inactivity timer
+  const clearSession = useCallback(() => {
+    clearTimeout(timerRef.current);
+    setGuest(null);
+    setSessionOrders([]);
+    setGuestOpenOrders(null);
+    setProductFilter('all');
+  }, []);
+
+  const resetTimer = useCallback(() => {
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(clearSession, 20000);
+  }, [clearSession]);
+
+  const selectGuest = useCallback((g) => {
+    setGuest(g);
+    setSessionOrders([]);
+    setGuestOpenOrders(null);
+    resetTimer();
+  }, [resetTimer]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => clearTimeout(timerRef.current);
+  }, []);
+
   // Load products + all guests once token is available
   useEffect(() => {
     if (!token) return;
@@ -62,21 +88,29 @@ export default function GastronomyPage() {
     api.get('/nfc/guests').then(setAllGuests).catch(() => {});
   }, [token]);
 
+  // Fetch open orders for a guest
+  const fetchGuestOpenOrders = useCallback(async (guestId) => {
+    try {
+      const data = await api.get(`/orders/guest/${guestId}`);
+      setGuestOpenOrders(data);
+    } catch {
+      setGuestOpenOrders(null);
+    }
+  }, []);
+
   // Load open orders for the currently selected guest
   useEffect(() => {
     if (!token) return;
     if (!guest) { setGuestOpenOrders(null); return; }
-    api.get(`/orders/guest/${guest.id}`).then(setGuestOpenOrders).catch(() => setGuestOpenOrders(null));
-  }, [token, guest]);
+    fetchGuestOpenOrders(guest.id);
+  }, [token, guest, fetchGuestOpenOrders]);
 
   // NFC scan handler
   const handleNFCScan = async (uid) => {
     setScanning(true);
     try {
       const result = await api.post('/nfc/scan', { uid });
-      setGuest(result);
-      setCart([]);
-      setOrderSuccess(false);
+      selectGuest(result);
     } catch (err) {
       addToast({ type: 'error', message: err.message || 'Gast nicht gefunden' });
     } finally {
@@ -84,53 +118,42 @@ export default function GastronomyPage() {
     }
   };
 
-  // Cart helpers
-  const addToCart = (product) => {
-    // Accept both full product objects (product.id) from ProductGrid
-    // and cart item objects (product.product_id) from OrderCartItem's + button
-    const pid = product.id ?? product.product_id;
-    setCart((prev) => {
-      const existing = prev.find((item) => item.product_id === pid);
-      if (existing) {
-        return prev.map((item) =>
-          item.product_id === pid ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      return [...prev, { product_id: pid, name: product.name, price: product.price, quantity: 1 }];
-    });
-  };
-
-  const removeFromCart = (productId) => {
-    setCart((prev) =>
-      prev
-        .map((item) => item.product_id === productId ? { ...item, quantity: item.quantity - 1 } : item)
-        .filter((item) => item.quantity > 0)
-    );
-  };
-
-  // Submit order
-  const submitOrder = async () => {
-    if (!guest || cart.length === 0) return;
-    setSubmitting(true);
+  // Tap-to-order: immediately post order on product tap
+  const tapProduct = useCallback(async (product) => {
+    resetTimer();
     try {
-      for (const item of cart) {
-        await api.post('/orders', {
-          guest_uid: guest.nfc_uid,
-          product_id: item.product_id,
-          quantity: item.quantity,
-        });
-      }
-      setCart([]);
-      setOrderSuccess(true);
-      const updated = await api.get(`/orders/guest/${guest.id}`);
-      setGuestOpenOrders(updated);
-      setTimeout(() => setOrderSuccess(false), 2000);
+      const order = await api.post('/orders', {
+        guest_uid: guest.nfc_uid,
+        product_id: product.id,
+        quantity: 1,
+      });
+      setSessionOrders(prev => [...prev, order]);
     } catch (err) {
-      addToast({ type: 'error', message: err.message || 'Bestellung fehlgeschlagen – bitte erneut versuchen' });
-    } finally {
-      setSubmitting(false);
+      addToast({ type: 'error', message: 'Fehler beim Buchen' });
     }
-  };
+  }, [guest, resetTimer, addToast]);
+
+  // Undo last tap — delete order if still open
+  const tapUndo = useCallback(async (orderId) => {
+    resetTimer();
+    try {
+      await api.delete(`/orders/${orderId}`);
+      setSessionOrders(prev => prev.filter(o => o.id !== orderId));
+      if (guest) fetchGuestOpenOrders(guest.id);
+    } catch (err) {
+      if (err.status === 404) {
+        addToast({ type: 'error', message: 'Bereits abgerechnet — kann nicht entfernt werden' });
+      } else {
+        addToast({ type: 'error', message: 'Rückgängig nicht möglich' });
+      }
+    }
+  }, [guest, resetTimer, addToast, fetchGuestOpenOrders]);
+
+  // Category filter — also resets inactivity timer
+  const handleCategoryChange = useCallback((cat) => {
+    setProductFilter(cat);
+    resetTimer();
+  }, [resetTimer]);
 
   // Settle flow
   const initSettle = (target) => {
@@ -164,10 +187,10 @@ export default function GastronomyPage() {
         }, 2000);
         loadRegister();
       } else {
-        // Bar station: reset guest after settling
+        // Bar station: reset session after settling
         setGuest(null);
         setGuestOpenOrders(null);
-        setCart([]);
+        setSessionOrders([]);
       }
     } catch (err) {
       addToast({ type: 'error', message: err.message || 'Abrechnung fehlgeschlagen – bitte erneut versuchen' });
@@ -251,6 +274,12 @@ export default function GastronomyPage() {
     return true;
   });
 
+  // Derive session counts per product for tap feedback
+  const sessionCounts = sessionOrders.reduce((map, o) => {
+    map.set(o.product_id, (map.get(o.product_id) || 0) + 1);
+    return map;
+  }, new Map());
+
   // Station badge config
   const badgeConfig = {
     bar:      { label: 'Bar',   icon: '🍺', accent: 'var(--pe-cyan-bright)', accentBg: 'rgba(0,184,255,0.12)', accentBorder: 'rgba(0,184,255,0.35)' },
@@ -320,64 +349,48 @@ export default function GastronomyPage() {
 
       {/* ===== BAR STATION ===== */}
       {station === 'bar' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1200, margin: '0 auto', padding: 16 }} className="md:flex-row">
-          {/* Left column: guest selector or guest detail + products */}
-          <div className="flex-1 min-w-0">
-            {!guest && (
-              <GuestSelector
-                guests={allGuests}
-                onGuestSelect={(g) => { setGuest(g); setCart([]); setOrderSuccess(false); }}
-                onCreateGuest={(name) =>
-                  api.post('/nfc/create-manual', { name })
-                    .then((g) => { setGuest(g); setCart([]); setAllGuests((prev) => [...prev, g]); })
-                    .catch((err) => addToast({ type: 'error', message: err.message }))
-                }
-                nfcAvailable={'NDEFReader' in window}
-                onRequestNfcScan={handleNFCScan}
-                scanning={scanning}
-              />
-            )}
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: 16 }}>
+          {!guest && (
+            <GuestSelector
+              guests={allGuests}
+              onGuestSelect={selectGuest}
+              onCreateGuest={(name) =>
+                api.post('/nfc/create-manual', { name })
+                  .then((g) => { selectGuest(g); setAllGuests((prev) => [...prev, g]); })
+                  .catch((err) => addToast({ type: 'error', message: err.message }))
+              }
+              nfcAvailable={'NDEFReader' in window}
+              onRequestNfcScan={handleNFCScan}
+              scanning={scanning}
+            />
+          )}
 
-            {guest && (
-              <>
-                <GuestHeader
-                  guest={guest}
-                  isBlocked={isBlocked}
-                  onClose={() => { setGuest(null); setCart([]); }}
-                  onToggleLock={toggleGuestLock}
-                  lockLoading={lockLoading}
-                  onSettle={() => initSettle(guest)}
-                />
-
-                {guestOpenOrders?.items?.length > 0 && (
-                  <OpenOrdersPanel items={guestOpenOrders.items} total={guestOpenOrders.total} />
-                )}
-
-                <ProductGrid
-                  products={stationFilteredProducts}
-                  onAddToCart={addToCart}
-                  isBlocked={isBlocked}
-                  categoryFilter={productFilter}
-                  onCategoryChange={setProductFilter}
-                />
-              </>
-            )}
-          </div>
-
-          {/* Right column: cart (only when a guest is selected) */}
           {guest && (
-            <div className="md:w-80 md:flex-shrink-0">
-              <OrderCart
-                items={cart}
-                onAdd={addToCart}
-                onRemove={removeFromCart}
-                onSubmit={submitOrder}
-                submitting={submitting}
+            <>
+              <GuestHeader
+                guest={guest}
                 isBlocked={isBlocked}
-                guestName={guest?.name}
-                orderSuccess={orderSuccess}
+                onClose={clearSession}
+                onToggleLock={toggleGuestLock}
+                lockLoading={lockLoading}
+                onSettle={() => initSettle(guest)}
               />
-            </div>
+
+              {guestOpenOrders?.items?.length > 0 && (
+                <OpenOrdersPanel items={guestOpenOrders.items} total={guestOpenOrders.total} />
+              )}
+
+              <ProductGrid
+                products={stationFilteredProducts}
+                onTap={tapProduct}
+                sessionCounts={sessionCounts}
+                isBlocked={isBlocked}
+                categoryFilter={productFilter}
+                onCategoryChange={handleCategoryChange}
+              />
+
+              <SessionOrderList orders={sessionOrders} onUndo={tapUndo} />
+            </>
           )}
         </div>
       )}
