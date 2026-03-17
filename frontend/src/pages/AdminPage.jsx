@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useStore } from '../store';
+import { parseJwt, isTokenValid } from '../lib/parseJwt';
 import { api } from '../api/client';
 import { useToastStore } from '../store/toasts';
 import AdminLogin from '../components/admin/AdminLogin';
@@ -25,10 +26,6 @@ const ALL_TABS = [
   { id: 'log',         label: 'System-Log',    Icon: ScrollText,      color: 'var(--pe-text-muted)',  roles: ['admin', 'director'] },
   { id: 'help',        label: 'Hilfe',         Icon: HelpCircle,      color: 'var(--pe-text-sub)',    roles: ['admin', 'director'] },
 ];
-
-function parseJwt(token) {
-  try { return JSON.parse(atob(token.split('.')[1])); } catch { return null; }
-}
 
 // NEU: Rollen-Farben
 const ROLE_COLORS = {
@@ -2905,7 +2902,7 @@ function HelpTab() {
 export default function AdminPage() {
   const { token } = useStore();
 
-  if (!token) {
+  if (!token || !isTokenValid(token)) {
     // Overlay covers entire viewport including AppShell TopBar — no double header
     return (
       <div style={{
@@ -2926,8 +2923,8 @@ function AdminDashboard() {
   const token = useStore(s => s.token);
 
   const payload = parseJwt(token);
-  const userRole = payload?.role || 'admin';
-  const visibleTabs = ALL_TABS.filter(t => t.roles.includes(userRole));
+  const userRole = payload?.role ?? null;
+  const visibleTabs = ALL_TABS.filter(t => userRole && t.roles.includes(userRole));
 
   const [searchParams, setSearchParams] = useSearchParams();
   // Keep role-based guard: if URL names a tab not visible for this role, fall back to 'overview'
