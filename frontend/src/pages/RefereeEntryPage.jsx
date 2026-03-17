@@ -36,7 +36,7 @@ function RefereeLogin({ onLogin }) {
     color: 'var(--pe-text)',
     fontFamily: 'var(--pe-font-body)',
     minHeight: '64px',
-    borderRadius: '12px',
+    borderRadius: 'var(--pe-radius-md)',
     padding: '0 16px',
     width: '100%',
     outline: 'none',
@@ -91,7 +91,7 @@ function RefereeLogin({ onLogin }) {
               background: 'var(--pe-gradient)',
               color: 'var(--pe-text)',
               border: 'none',
-              borderRadius: '12px',
+              borderRadius: 'var(--pe-radius-md)',
               padding: '16px',
               fontFamily: 'var(--pe-font-body)',
               fontWeight: 'bold',
@@ -126,7 +126,7 @@ function BoardPicker() {
   const cardStyle = (occupied) => ({
     background: 'var(--pe-bg-card)',
     border: `1px solid ${occupied ? 'var(--pe-danger)' : 'var(--pe-border)'}`,
-    borderRadius: '12px',
+    borderRadius: 'var(--pe-radius-md)',
     padding: '14px 16px',
     marginBottom: '8px',
     display: 'flex',
@@ -141,7 +141,7 @@ function BoardPicker() {
   const badge = (text, color, bg, border) => (
     <span style={{
       padding: '3px 10px',
-      borderRadius: '20px',
+      borderRadius: 'var(--pe-radius-xl)',
       fontSize: '11px',
       fontWeight: 'bold',
       color,

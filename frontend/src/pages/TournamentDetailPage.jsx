@@ -72,7 +72,7 @@ export default function TournamentDetailPage() {
               onClick={() => setActiveTab(tab.id)}
               style={{
                 padding: '0 18px',
-                borderRadius: 10,
+                borderRadius: 'var(--pe-radius-md)',
                 border: '1px solid',
                 borderColor: activeTab === tab.id ? 'var(--pe-blue-deep)' : 'var(--pe-border)',
                 background: activeTab === tab.id ? 'var(--pe-blue-deep)' : 'var(--pe-bg-card)',

@@ -8,10 +8,10 @@ export default function SessionOrderList({ orders, onUndo }) {
     <div style={{
       background: 'var(--pe-bg-card)',
       border: '1px solid var(--pe-border)',
-      borderRadius: 12,
+      borderRadius: 'var(--pe-radius-md)',
       padding: 12,
       marginTop: 12,
-      fontFamily: 'Verdana, Geneva, sans-serif',
+      fontFamily: 'var(--pe-font-body)',
     }}>
       {/* Header */}
       <div style={{
@@ -19,7 +19,7 @@ export default function SessionOrderList({ orders, onUndo }) {
         color: 'var(--pe-text)',
         fontSize: 14,
         marginBottom: 8,
-        fontFamily: 'Verdana, Geneva, sans-serif',
+        fontFamily: 'var(--pe-font-body)',
       }}>
         Diese Bestellung ({orders.length} Artikel, {total.toFixed(2)} €)
       </div>
@@ -41,7 +41,7 @@ export default function SessionOrderList({ orders, onUndo }) {
             flex: 1,
             color: 'var(--pe-text)',
             fontSize: 14,
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
           }}>
             {order.product_name}
           </span>
@@ -50,7 +50,7 @@ export default function SessionOrderList({ orders, onUndo }) {
             fontSize: 13,
             minWidth: 56,
             textAlign: 'right',
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
           }}>
             {parseFloat(order.price).toFixed(2)} €
           </span>
@@ -62,11 +62,11 @@ export default function SessionOrderList({ orders, onUndo }) {
               color: 'var(--pe-danger)',
               background: 'var(--pe-bg-elevated)',
               border: 'none',
-              borderRadius: 12,
+              borderRadius: 'var(--pe-radius-md)',
               cursor: 'pointer',
               fontWeight: 'bold',
               fontSize: 18,
-              fontFamily: 'Verdana, Geneva, sans-serif',
+              fontFamily: 'var(--pe-font-body)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -85,7 +85,7 @@ export default function SessionOrderList({ orders, onUndo }) {
         color: 'var(--pe-cyan-bright)',
         fontWeight: 'bold',
         fontSize: 15,
-        fontFamily: 'Verdana, Geneva, sans-serif',
+        fontFamily: 'var(--pe-font-body)',
       }}>
         Gesamt: {total.toFixed(2)} €
       </div>

@@ -48,7 +48,7 @@ export default function KitchenView() {
         maxWidth: 1200,
         margin: '0 auto',
         padding: 16,
-        fontFamily: 'Verdana, Geneva, sans-serif',
+        fontFamily: 'var(--pe-font-body)',
       }}
     >
       {/* Header bar */}
@@ -67,7 +67,7 @@ export default function KitchenView() {
               fontWeight: 'bold',
               fontSize: 20,
               margin: 0,
-              fontFamily: 'Verdana, Geneva, sans-serif',
+              fontFamily: 'var(--pe-font-body)',
             }}
           >
             Offene Küchen-Bestellungen
@@ -76,11 +76,11 @@ export default function KitchenView() {
             style={{
               background: 'var(--pe-warning)',
               color: '#000',
-              borderRadius: 20,
+              borderRadius: 'var(--pe-radius-xl)',
               padding: '2px 10px',
               fontWeight: 'bold',
               marginLeft: 10,
-              fontFamily: 'Verdana, Geneva, sans-serif',
+              fontFamily: 'var(--pe-font-body)',
             }}
           >
             {orders.length}
@@ -90,7 +90,7 @@ export default function KitchenView() {
           style={{
             color: 'var(--pe-text-muted)',
             fontSize: 12,
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
           }}
         >
           {refreshLabel}
@@ -112,7 +112,7 @@ export default function KitchenView() {
             style={{
               color: 'var(--pe-text-sub)',
               fontSize: 16,
-              fontFamily: 'Verdana, Geneva, sans-serif',
+              fontFamily: 'var(--pe-font-body)',
             }}
           >
             Keine offenen Küchen-Bestellungen
@@ -135,7 +135,7 @@ export default function KitchenView() {
               style={{
                 background: 'var(--pe-bg-card)',
                 border: '1px solid var(--pe-border)',
-                borderRadius: 16,
+                borderRadius: 'var(--pe-radius-lg)',
                 overflow: 'hidden',
               }}
             >
@@ -153,7 +153,7 @@ export default function KitchenView() {
                   style={{
                     fontWeight: 'bold',
                     color: 'var(--pe-text)',
-                    fontFamily: 'Verdana, Geneva, sans-serif',
+                    fontFamily: 'var(--pe-font-body)',
                   }}
                 >
                   {guest.guest_name ?? guest.name ?? 'Gast'}
@@ -162,11 +162,11 @@ export default function KitchenView() {
                   style={{
                     background: 'rgba(255,176,32,0.15)',
                     color: 'var(--pe-warning)',
-                    borderRadius: 20,
+                    borderRadius: 'var(--pe-radius-xl)',
                     padding: '4px 10px',
                     fontSize: 12,
                     fontWeight: 'bold',
-                    fontFamily: 'Verdana, Geneva, sans-serif',
+                    fontFamily: 'var(--pe-font-body)',
                   }}
                 >
                   {timeAgo(guest.oldest_order_at ?? guest.items[0]?.ordered_at)}
@@ -192,7 +192,7 @@ export default function KitchenView() {
                       style={{
                         fontSize: 15,
                         color: 'var(--pe-text)',
-                        fontFamily: 'Verdana, Geneva, sans-serif',
+                        fontFamily: 'var(--pe-font-body)',
                       }}
                     >
                       {item.product_name}
@@ -202,7 +202,7 @@ export default function KitchenView() {
                         fontSize: 15,
                         color: 'var(--pe-text-muted)',
                         fontWeight: 'bold',
-                        fontFamily: 'Verdana, Geneva, sans-serif',
+                        fontFamily: 'var(--pe-font-body)',
                       }}
                     >
                       ×{item.quantity}

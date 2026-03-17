@@ -288,7 +288,7 @@ export default function GastronomyPage() {
   const badge = badgeConfig[station];
 
   return (
-    <div className="min-h-screen" style={{ fontFamily: 'Verdana, Geneva, sans-serif' }}>
+    <div className="min-h-screen" style={{ fontFamily: 'var(--pe-font-body)' }}>
       {/* Settle confirmation dialog — rendered at top level so it works from any station */}
       {settleTarget && (
         <SettleDialog
@@ -317,7 +317,7 @@ export default function GastronomyPage() {
               alignItems: 'center',
               gap: '8px',
               padding: '8px 14px',
-              borderRadius: '20px',
+              borderRadius: 'var(--pe-radius-xl)',
               background: badge.accentBg,
               border: `1px solid ${badge.accentBorder}`,
             }}
@@ -335,9 +335,9 @@ export default function GastronomyPage() {
             padding: '0 20px',
             background: 'var(--pe-bg-elevated)',
             border: '1px solid var(--pe-border)',
-            borderRadius: 12,
+            borderRadius: 'var(--pe-radius-md)',
             color: 'var(--pe-text-sub)',
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
             fontSize: 14,
             fontWeight: 'bold',
             cursor: 'pointer',

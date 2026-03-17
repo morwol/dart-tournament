@@ -1,7 +1,7 @@
 // GuestHeader — shows the current guest's info, status badge, close button, lock/unlock and optional settle button
 const btnStyle = {
-  fontFamily: 'Verdana, Geneva, sans-serif',
-  borderRadius: '12px',
+  fontFamily: 'var(--pe-font-body)',
+  borderRadius: 'var(--pe-radius-md)',
   fontWeight: 'bold',
   border: '1px solid var(--pe-border)',
   cursor: 'pointer',
@@ -38,7 +38,7 @@ export default function GuestHeader({ guest, isBlocked, onClose, onToggleLock, l
             style={{
               flexShrink: 0,
               padding: '4px 12px',
-              borderRadius: '20px',
+              borderRadius: 'var(--pe-radius-xl)',
               fontSize: '12px',
               fontWeight: 'bold',
               color: isBlocked ? 'var(--pe-danger)' : 'var(--pe-success)',
@@ -98,7 +98,7 @@ export default function GuestHeader({ guest, isBlocked, onClose, onToggleLock, l
             color: 'var(--pe-danger)',
             fontWeight: 'bold',
             textAlign: 'center',
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
           }}
         >
           Armband gesperrt — keine Bestellungen möglich
@@ -113,11 +113,11 @@ export default function GuestHeader({ guest, isBlocked, onClose, onToggleLock, l
             width: '100%',
             minHeight: '64px',
             marginTop: '10px',
-            borderRadius: '12px',
+            borderRadius: 'var(--pe-radius-md)',
             background: 'rgba(0,229,160,0.12)',
             color: 'var(--pe-success)',
             border: '1px solid var(--pe-success)',
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
             fontWeight: 'bold',
             fontSize: '14px',
             cursor: 'pointer',

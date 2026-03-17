@@ -18,11 +18,11 @@ export default function ProductGrid({ products, onTap, isBlocked, categoryFilter
           onClick={() => onTap(product)}
           style={{
             minHeight: '96px',
-            borderRadius: '12px',
+            borderRadius: 'var(--pe-radius-md)',
             border: '1px solid var(--pe-border)',
             background: 'var(--pe-bg-card)',
             color: 'var(--pe-text)',
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
@@ -42,7 +42,7 @@ export default function ProductGrid({ products, onTap, isBlocked, categoryFilter
               fontSize: 11,
               fontWeight: 'bold',
               color: 'var(--pe-cyan-bright)',
-              fontFamily: 'Verdana, Geneva, sans-serif',
+              fontFamily: 'var(--pe-font-body)',
             }}>
               ×{sessionCounts.get(product.id)}
             </span>
@@ -63,9 +63,9 @@ export default function ProductGrid({ products, onTap, isBlocked, categoryFilter
             style={{
               flex: 1,
               minHeight: '64px',
-              borderRadius: '12px',
+              borderRadius: 'var(--pe-radius-md)',
               border: '1px solid var(--pe-border)',
-              fontFamily: 'Verdana, Geneva, sans-serif',
+              fontFamily: 'var(--pe-font-body)',
               fontWeight: 'bold',
               fontSize: '15px',
               cursor: 'pointer',

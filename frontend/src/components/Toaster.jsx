@@ -87,7 +87,7 @@ function Toast({ toast, onDismiss }) {
         borderRight: `1px solid ${c.border}`,
         borderBottom: `1px solid ${c.border}`,
         borderLeft: `4px solid ${c.accent}`,
-        borderRadius: '10px',
+        borderRadius: 'var(--pe-radius-md)',
         fontFamily: 'var(--pe-font-body)',
         fontSize: '13px',
         color: 'var(--pe-text)',

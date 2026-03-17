@@ -7,7 +7,7 @@ export default function RegisterGuestCard({ guest, isSettled, onSettle, submitti
         background: isSettled ? 'rgba(0,229,160,0.08)' : 'var(--pe-bg-card)',
         border: isSettled ? '1px solid var(--pe-success)' : '1px solid var(--pe-border)',
         transition: 'all 0.3s',
-        fontFamily: 'Verdana, Geneva, sans-serif',
+        fontFamily: 'var(--pe-font-body)',
       }}
     >
       {/* Guest header */}
@@ -119,8 +119,8 @@ export default function RegisterGuestCard({ guest, isSettled, onSettle, submitti
             style={{
               width: '100%',
               minHeight: '64px',
-              borderRadius: '12px',
-              fontFamily: 'Verdana, Geneva, sans-serif',
+              borderRadius: 'var(--pe-radius-md)',
+              fontFamily: 'var(--pe-font-body)',
               fontWeight: 'bold',
               border: 'none',
               cursor: submitting ? 'not-allowed' : 'pointer',

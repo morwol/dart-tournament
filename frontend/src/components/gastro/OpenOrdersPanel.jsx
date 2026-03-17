@@ -8,7 +8,7 @@ export default function OpenOrdersPanel({ items, total }) {
   const [open, setOpen] = useState(items.length <= 3);
 
   return (
-    <div style={{ marginBottom: '16px', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+    <div style={{ marginBottom: '16px', fontFamily: 'var(--pe-font-body)' }}>
       {/* Header — always visible, clickable to toggle */}
       <div
         onClick={() => setOpen((o) => !o)}
@@ -23,7 +23,7 @@ export default function OpenOrdersPanel({ items, total }) {
           color: 'var(--pe-text-sub)',
           fontWeight: 'bold',
           fontSize: '13px',
-          fontFamily: 'Verdana, Geneva, sans-serif',
+          fontFamily: 'var(--pe-font-body)',
           minHeight: '48px',
           cursor: 'pointer',
           userSelect: 'none',
@@ -56,7 +56,7 @@ export default function OpenOrdersPanel({ items, total }) {
                     fontSize: '11px',
                     color: 'var(--pe-text-muted)',
                     textTransform: 'uppercase',
-                    fontFamily: 'Verdana, Geneva, sans-serif',
+                    fontFamily: 'var(--pe-font-body)',
                   }}
                 >
                   Artikel
@@ -69,7 +69,7 @@ export default function OpenOrdersPanel({ items, total }) {
                     color: 'var(--pe-text-muted)',
                     textTransform: 'uppercase',
                     width: '48px',
-                    fontFamily: 'Verdana, Geneva, sans-serif',
+                    fontFamily: 'var(--pe-font-body)',
                   }}
                 >
                   Menge
@@ -82,7 +82,7 @@ export default function OpenOrdersPanel({ items, total }) {
                     color: 'var(--pe-text-muted)',
                     textTransform: 'uppercase',
                     width: '80px',
-                    fontFamily: 'Verdana, Geneva, sans-serif',
+                    fontFamily: 'var(--pe-font-body)',
                   }}
                 >
                   Preis
@@ -97,7 +97,7 @@ export default function OpenOrdersPanel({ items, total }) {
                       padding: '7px 8px',
                       fontSize: '13px',
                       color: 'var(--pe-text)',
-                      fontFamily: 'Verdana, Geneva, sans-serif',
+                      fontFamily: 'var(--pe-font-body)',
                     }}
                   >
                     {item.product_name}
@@ -108,7 +108,7 @@ export default function OpenOrdersPanel({ items, total }) {
                       fontSize: '13px',
                       color: 'var(--pe-text)',
                       textAlign: 'center',
-                      fontFamily: 'Verdana, Geneva, sans-serif',
+                      fontFamily: 'var(--pe-font-body)',
                     }}
                   >
                     {item.quantity}
@@ -119,7 +119,7 @@ export default function OpenOrdersPanel({ items, total }) {
                       fontSize: '13px',
                       color: 'var(--pe-text-sub)',
                       textAlign: 'right',
-                      fontFamily: 'Verdana, Geneva, sans-serif',
+                      fontFamily: 'var(--pe-font-body)',
                     }}
                   >
                     {parseFloat(item.total).toFixed(2)} €
@@ -136,7 +136,7 @@ export default function OpenOrdersPanel({ items, total }) {
                     fontSize: '13px',
                     fontWeight: 'bold',
                     color: 'var(--pe-text-sub)',
-                    fontFamily: 'Verdana, Geneva, sans-serif',
+                    fontFamily: 'var(--pe-font-body)',
                   }}
                 >
                   Gesamt offen
@@ -148,7 +148,7 @@ export default function OpenOrdersPanel({ items, total }) {
                     fontWeight: 'bold',
                     color: 'var(--pe-cyan-bright)',
                     textAlign: 'right',
-                    fontFamily: 'Verdana, Geneva, sans-serif',
+                    fontFamily: 'var(--pe-font-body)',
                   }}
                 >
                   {parseFloat(total || 0).toFixed(2)} €

@@ -22,7 +22,7 @@ export default function Cart({ items, onRemove, onSubmit }) {
               <button
                 onClick={() => onRemove(item.product_id)}
                 className="rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ background: 'var(--pe-bg-card)', color: 'var(--pe-danger)', fontFamily: 'Verdana, Geneva, sans-serif', width: '64px', height: '64px', minWidth: '64px', borderRadius: '50%', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 'bold' }}
+                style={{ background: 'var(--pe-bg-card)', color: 'var(--pe-danger)', fontFamily: 'var(--pe-font-body)', width: '64px', height: '64px', minWidth: '64px', borderRadius: '50%', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 'bold' }}
               >
                 -
               </button>

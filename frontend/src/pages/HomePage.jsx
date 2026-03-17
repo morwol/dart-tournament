@@ -137,7 +137,7 @@ export default function HomePage() {
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       padding: '14px 16px',
-                      borderRadius: 12,
+                      borderRadius: 'var(--pe-radius-md)',
                       background: 'var(--pe-bg-card)',
                       border: '1px solid var(--pe-border)',
                       textDecoration: 'none',
@@ -235,7 +235,7 @@ export default function HomePage() {
                     placeholder="Spieler suchen..."
                     value={playerSearch}
                     onChange={e => setPlayerSearch(e.target.value)}
-                    style={{ width: '100%', boxSizing: 'border-box', marginBottom: 10, padding: '12px 14px', borderRadius: 10, border: '1px solid var(--pe-border)', background: 'var(--pe-bg-card)', color: 'var(--pe-text)', fontFamily: 'var(--pe-font-body)', fontSize: 14, outline: 'none', minHeight: '64px' }}
+                    style={{ width: '100%', boxSizing: 'border-box', marginBottom: 10, padding: '12px 14px', borderRadius: 'var(--pe-radius-md)', border: '1px solid var(--pe-border)', background: 'var(--pe-bg-card)', color: 'var(--pe-text)', fontFamily: 'var(--pe-font-body)', fontSize: 14, outline: 'none', minHeight: '64px' }}
                   />
                 )}
               <div style={styles.playerGrid}>
@@ -423,7 +423,7 @@ export default function HomePage() {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '16px 18px',
-                  borderRadius: 12,
+                  borderRadius: 'var(--pe-radius-md)',
                   background: 'var(--pe-bg-card)',
                   border: '1px solid var(--pe-border)',
                   textDecoration: 'none',
@@ -481,7 +481,7 @@ const styles = {
   },
   logo: {
     height: 56,
-    borderRadius: 8,
+    borderRadius: 'var(--pe-radius-sm)',
   },
   title: {
     fontSize: 20,
@@ -498,7 +498,7 @@ const styles = {
   },
   tournamentCard: {
     background: 'var(--pe-bg-card)',
-    borderRadius: 16,
+    borderRadius: 'var(--pe-radius-lg)',
     border: '1px solid var(--pe-border)',
     padding: 16,
     marginBottom: 16,
@@ -529,7 +529,7 @@ const styles = {
     fontSize: 11,
     fontWeight: 'bold',
     padding: '4px 10px',
-    borderRadius: 20,
+    borderRadius: 'var(--pe-radius-xl)',
     borderWidth: '1px',
     borderStyle: 'solid',
     whiteSpace: 'nowrap',
@@ -538,7 +538,7 @@ const styles = {
     fontSize: 10,
     fontWeight: 'bold',
     padding: '3px 8px',
-    borderRadius: 16,
+    borderRadius: 'var(--pe-radius-lg)',
     borderWidth: '1px',
     borderStyle: 'solid',
     whiteSpace: 'nowrap',
@@ -571,7 +571,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     padding: '12px 24px',
-    borderRadius: 12,
+    borderRadius: 'var(--pe-radius-md)',
     background: 'var(--pe-blue-deep)',
     color: 'var(--pe-text)',
     fontFamily: 'var(--pe-font-body)',
@@ -591,7 +591,7 @@ const styles = {
   },
   tabButton: {
     padding: '0 18px',
-    borderRadius: 10,
+    borderRadius: 'var(--pe-radius-md)',
     borderWidth: '1px',
     borderStyle: 'solid',
     borderColor: 'var(--pe-border)',
@@ -617,7 +617,7 @@ const styles = {
   },
   playerCard: {
     background: 'var(--pe-bg-card)',
-    borderRadius: 12,
+    borderRadius: 'var(--pe-radius-md)',
     border: '1px solid var(--pe-border)',
     padding: 14,
   },
@@ -656,7 +656,7 @@ const styles = {
   boardCard: {
     display: 'block',
     background: 'var(--pe-bg-card)',
-    borderRadius: 12,
+    borderRadius: 'var(--pe-radius-md)',
     border: '1px solid var(--pe-border)',
     padding: 14,
     textDecoration: 'none',
@@ -706,7 +706,7 @@ const styles = {
   },
   groupCard: {
     background: 'var(--pe-bg-card)',
-    borderRadius: 12,
+    borderRadius: 'var(--pe-radius-md)',
     border: '1px solid var(--pe-border)',
     padding: 14,
   },
@@ -754,7 +754,7 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '12px 14px',
-    borderRadius: 10,
+    borderRadius: 'var(--pe-radius-md)',
     background: 'var(--pe-bg-card)',
     border: '1px solid var(--pe-border)',
     textDecoration: 'none',

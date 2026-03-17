@@ -30,9 +30,9 @@ export default function GastronomyLogin({ onLogin }) {
     background: 'var(--pe-bg-card)',
     border: '1px solid var(--pe-border)',
     color: 'var(--pe-text)',
-    fontFamily: 'Verdana, Geneva, sans-serif',
+    fontFamily: 'var(--pe-font-body)',
     minHeight: '64px',
-    borderRadius: '12px',
+    borderRadius: 'var(--pe-radius-md)',
     padding: '0 16px',
     width: '100%',
     outline: 'none',
@@ -48,7 +48,7 @@ export default function GastronomyLogin({ onLogin }) {
         alignItems: 'center',
         justifyContent: 'center',
         padding: '16px',
-        fontFamily: 'Verdana, Geneva, sans-serif',
+        fontFamily: 'var(--pe-font-body)',
       }}
     >
       <div style={{ width: '100%', maxWidth: '380px' }}>
@@ -96,9 +96,9 @@ export default function GastronomyLogin({ onLogin }) {
               background: 'var(--pe-gradient)',
               color: 'var(--pe-text)',
               border: 'none',
-              borderRadius: '12px',
+              borderRadius: 'var(--pe-radius-md)',
               padding: '16px',
-              fontFamily: 'Verdana, Geneva, sans-serif',
+              fontFamily: 'var(--pe-font-body)',
               fontWeight: 'bold',
               fontSize: '16px',
               cursor: loading ? 'not-allowed' : 'pointer',

@@ -11,7 +11,7 @@ export default function RegisterView({ guestOrders, settledIds, onSettle, loadin
   );
 
   return (
-    <div style={{ fontFamily: 'Verdana, Geneva, sans-serif' }}>
+    <div style={{ fontFamily: 'var(--pe-font-body)' }}>
       {/* Search input */}
       <div style={{ marginBottom: '16px' }}>
         <GuestSearchInput

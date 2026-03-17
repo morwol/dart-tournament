@@ -93,7 +93,7 @@ export default function TournamentHistoryPage() {
                     fontSize: 11,
                     fontWeight: 'bold',
                     padding: '4px 10px',
-                    borderRadius: 20,
+                    borderRadius: 'var(--pe-radius-xl)',
                     border: '1px solid var(--pe-text-muted)',
                     color: 'var(--pe-text-muted)',
                     whiteSpace: 'nowrap',
