@@ -86,6 +86,138 @@ const btnStyle = {
   cursor: 'pointer',
 };
 
+// Station picker — shown when no station is selected yet
+function StationPicker({ onSelect }) {
+  const stations = [
+    {
+      id: 'bar',
+      label: 'Bar',
+      icon: '🍺',
+      description: 'Getränke',
+      accent: 'var(--pe-cyan-bright)',
+      accentBg: 'rgba(0,184,255,0.10)',
+      accentBorder: 'rgba(0,184,255,0.35)',
+    },
+    {
+      id: 'kueche',
+      label: 'Küche',
+      icon: '🍽️',
+      description: 'Speisen',
+      accent: 'var(--pe-warning)',
+      accentBg: 'rgba(255,176,32,0.10)',
+      accentBorder: 'rgba(255,176,32,0.35)',
+    },
+    {
+      id: 'kasse',
+      label: 'Kasse',
+      icon: '💳',
+      description: 'Alle Artikel',
+      accent: 'var(--pe-success)',
+      accentBg: 'rgba(0,229,160,0.10)',
+      accentBorder: 'rgba(0,229,160,0.35)',
+    },
+  ];
+
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px 16px',
+        background: 'var(--pe-bg)',
+        fontFamily: 'Verdana, Geneva, sans-serif',
+      }}
+    >
+      <div style={{ marginBottom: '8px', fontSize: '28px', textAlign: 'center' }}>📍</div>
+      <h1
+        style={{
+          color: 'var(--pe-text)',
+          fontWeight: 'bold',
+          fontSize: '22px',
+          margin: '0 0 6px',
+          textAlign: 'center',
+          fontFamily: 'Verdana, Geneva, sans-serif',
+        }}
+      >
+        Station wählen
+      </h1>
+      <p
+        style={{
+          color: 'var(--pe-text-sub)',
+          fontSize: '14px',
+          margin: '0 0 32px',
+          textAlign: 'center',
+          fontFamily: 'Verdana, Geneva, sans-serif',
+        }}
+      >
+        Wähle deine Station
+      </p>
+
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px',
+          width: '100%',
+          maxWidth: '420px',
+        }}
+      >
+        {stations.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => onSelect(s.id)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '20px',
+              minHeight: '130px',
+              padding: '20px 24px',
+              borderRadius: '16px',
+              background: s.accentBg,
+              border: `2px solid ${s.accentBorder}`,
+              cursor: 'pointer',
+              textAlign: 'left',
+              fontFamily: 'Verdana, Geneva, sans-serif',
+              transition: 'transform 0.1s, border-color 0.1s',
+            }}
+            onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
+            onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+            onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
+            onTouchEnd={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+          >
+            <span style={{ fontSize: '42px', lineHeight: 1, flexShrink: 0 }}>{s.icon}</span>
+            <div>
+              <div
+                style={{
+                  color: s.accent,
+                  fontWeight: 'bold',
+                  fontSize: '22px',
+                  marginBottom: '4px',
+                  fontFamily: 'Verdana, Geneva, sans-serif',
+                }}
+              >
+                {s.label}
+              </div>
+              <div
+                style={{
+                  color: 'var(--pe-text-sub)',
+                  fontSize: '13px',
+                  fontFamily: 'Verdana, Geneva, sans-serif',
+                }}
+              >
+                {s.description}
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function GastronomyPage() {
   const { addToast } = useToastStore();
   const { token, setToken: storeSetToken } = useStore();
@@ -95,6 +227,21 @@ export default function GastronomyPage() {
   const [view, setView] = useState(
     tabParam === 'kasse' ? 'register' : tabParam === 'products' ? 'products' : 'order'
   );
+
+  // Station state — persisted in sessionStorage
+  const [station, setStation] = useState(() => {
+    try { return sessionStorage.getItem('gastro_station') || null; } catch { return null; }
+  });
+
+  const selectStation = (s) => {
+    setStation(s);
+    try { sessionStorage.setItem('gastro_station', s); } catch { /* ignore */ }
+  };
+
+  const clearStation = () => {
+    setStation(null);
+    try { sessionStorage.removeItem('gastro_station'); } catch { /* ignore */ }
+  };
 
   // Keep view in sync when user navigates between tabs (URL changes without unmount)
   useEffect(() => {
@@ -293,13 +440,41 @@ export default function GastronomyPage() {
     </div>
   );
 
+  // Show station picker if no station selected yet
+  if (station === null) return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 400,
+      background: 'var(--pe-bg)',
+      overflow: 'auto',
+    }}>
+      <StationPicker onSelect={selectStation} />
+    </div>
+  );
+
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const filteredProducts = productFilter === 'all'
-    ? products.filter((p) => p.available)
-    : products.filter((p) => p.available && p.category === productFilter);
+
+  // Station-based category restriction: bar=drink, kueche=food, kasse=all
+  const stationCategory = station === 'bar' ? 'drink' : station === 'kueche' ? 'food' : null;
+
+  const filteredProducts = products.filter((p) => {
+    if (!p.available) return false;
+    // Apply station restriction first
+    if (stationCategory && p.category !== stationCategory) return false;
+    // Then apply manual tab filter (but only if it makes sense given the station)
+    if (productFilter !== 'all' && p.category !== productFilter) return false;
+    return true;
+  });
+
+  // Station badge config
+  const stationBadgeConfig = {
+    bar:    { label: 'Bar',   icon: '🍺', accent: 'var(--pe-cyan-bright)', accentBg: 'rgba(0,184,255,0.12)', accentBorder: 'rgba(0,184,255,0.35)' },
+    kueche: { label: 'Küche', icon: '🍽️', accent: 'var(--pe-warning)',    accentBg: 'rgba(255,176,32,0.12)', accentBorder: 'rgba(255,176,32,0.35)' },
+    kasse:  { label: 'Kasse', icon: '💳', accent: 'var(--pe-success)',    accentBg: 'rgba(0,229,160,0.12)', accentBorder: 'rgba(0,229,160,0.35)' },
+  };
+  const currentBadge = stationBadgeConfig[station];
 
   return (
-    <div className="min-h-screen p-4" style={{ fontFamily: 'var(--pe-font-body)' }}>
+    <div className="min-h-screen p-4" style={{ fontFamily: 'Verdana, Geneva, sans-serif' }}>
       {/* Bestätigungs-Dialog */}
       {settleTarget && (
         <SettleConfirmDialog
@@ -308,6 +483,45 @@ export default function GastronomyPage() {
           onConfirm={confirmSettle}
           onCancel={() => setSettleTarget(null)}
         />
+      )}
+
+      {/* Station badge */}
+      {currentBadge && (
+        <div className="max-w-5xl mx-auto mb-4" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 14px',
+              borderRadius: '20px',
+              background: currentBadge.accentBg,
+              border: `1px solid ${currentBadge.accentBorder}`,
+              fontFamily: 'Verdana, Geneva, sans-serif',
+            }}
+          >
+            <span style={{ fontSize: '16px' }}>{currentBadge.icon}</span>
+            <span style={{ color: currentBadge.accent, fontWeight: 'bold', fontSize: '14px' }}>
+              {currentBadge.label}
+            </span>
+          </div>
+          <button
+            onClick={clearStation}
+            style={{
+              padding: '8px 14px',
+              borderRadius: '20px',
+              border: '1px solid var(--pe-border)',
+              background: 'var(--pe-bg-elevated)',
+              color: 'var(--pe-text-sub)',
+              fontFamily: 'Verdana, Geneva, sans-serif',
+              fontSize: '12px',
+              cursor: 'pointer',
+              minHeight: '44px',
+            }}
+          >
+            Station wechseln
+          </button>
+        </div>
       )}
 
       {/* NEU: View-Toggle — Bestellung | Kasse */}
