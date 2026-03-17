@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client';
-import BackButton from '../components/BackButton';
 
 export default function TournamentHistoryPage() {
   const [tournaments, setTournaments] = useState([]);
@@ -34,8 +33,6 @@ export default function TournamentHistoryPage() {
   return (
     <div className="pe-page-enter" style={{ fontFamily: 'var(--pe-font-body)' }}>
       <div style={{ maxWidth: 700, margin: '0 auto', padding: '16px 12px 100px' }}>
-        <BackButton to="/" label="Home" />
-
         <h1
           className="pe-font-display"
           style={{

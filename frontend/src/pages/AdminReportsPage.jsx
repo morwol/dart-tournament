@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
-import BackButton from '../components/BackButton';
 
 export default function AdminReportsPage() {
   const [data, setData] = useState(null);
@@ -25,7 +24,6 @@ export default function AdminReportsPage() {
   if (error) {
     return (
       <div className="min-h-screen p-4">
-        <BackButton to="/admin" label="Admin" />
         <p style={{ color: 'var(--pe-danger)', textAlign: 'center', marginTop: 24 }}>
           {error}
         </p>
@@ -38,7 +36,6 @@ export default function AdminReportsPage() {
   return (
     <div className="pe-page-enter" style={{ fontFamily: 'var(--pe-font-body)' }}>
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '16px 12px 100px' }}>
-        <BackButton to="/admin" label="Admin" />
 
         <h1
           className="pe-font-display"

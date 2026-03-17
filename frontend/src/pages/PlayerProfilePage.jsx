@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/client';
-import BackButton from '../components/BackButton';
 
 export default function PlayerProfilePage() {
   const { id } = useParams();
@@ -27,7 +26,6 @@ export default function PlayerProfilePage() {
   if (error || !data) {
     return (
       <div className="min-h-screen p-4">
-        <BackButton to="/" label="Back" />
         <p style={{ color: 'var(--pe-danger)', textAlign: 'center', marginTop: 24 }}>
           {error || 'Player not found.'}
         </p>
@@ -40,7 +38,6 @@ export default function PlayerProfilePage() {
   return (
     <div className="pe-page-enter" style={{ fontFamily: 'var(--pe-font-body)' }}>
       <div style={{ maxWidth: 700, margin: '0 auto', padding: '16px 12px 100px' }}>
-        <BackButton to="/history" label="History" />
 
         {/* Player header */}
         <div style={{ marginTop: 12, marginBottom: 20 }}>

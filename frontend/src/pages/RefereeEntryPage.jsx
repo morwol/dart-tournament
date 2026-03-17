@@ -5,7 +5,6 @@ import { useStore } from '../store';
 import { api } from '../api/client';
 import TopBar from '../components/TopBar';
 import { useToastStore } from '../store/toasts';
-import BackButton from '../components/BackButton';
 
 // ── Login form ──────────────────────────────────────────────────────────────
 function RefereeLogin({ onLogin }) {
@@ -221,10 +220,7 @@ function BoardPicker() {
           Keine Boards eingerichtet.
         </p>
       )}
-      {/* PWA escape hatch — no address bar in installed app */}
-      <div style={{ textAlign: 'center', marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--pe-border)' }}>
-        <BackButton to="/" label="Zur Startseite" />
-      </div>
+
     </div>
   );
 }
