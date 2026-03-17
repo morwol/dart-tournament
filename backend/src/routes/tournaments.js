@@ -207,6 +207,7 @@ router.delete('/:id', requireAdmin, (req, res) => {
     for (const game of games) {
       db.prepare('DELETE FROM schedule WHERE game_id = ?').run(game.id);
       db.prepare('DELETE FROM throws WHERE game_id = ?').run(game.id);
+      try { db.prepare('DELETE FROM legs WHERE game_id = ?').run(game.id); } catch (_) {}
     }
     db.prepare('DELETE FROM games WHERE tournament_id = ?').run(req.params.id);
     const groups = db.prepare('SELECT id FROM groups WHERE tournament_id = ?').all(req.params.id);
@@ -622,6 +623,88 @@ router.put('/:id/lock', requireAdminOrDirector, (req, res) => {
   }
 });
 
+// PUT /api/tournaments/:id/finish — Manually finish a tournament
+// Returns HTTP 409 if open games exist (unless ?force=true cancels them)
+// Persists final standings into tournament_results for history after WIPE
+router.put('/:id/finish', requireAdminOrDirector, (req, res) => {
+  try {
+    const tournamentId = parseInt(req.params.id, 10);
+    const tournament = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(tournamentId);
+    if (!tournament) return res.status(404).json({ error: 'Tournament not found' });
+
+    if (tournament.status === 'finished') {
+      return res.status(400).json({ error: 'Tournament is already finished' });
+    }
+
+    const openGames = db.prepare(`
+      SELECT id, round, player1_id, player2_id, status FROM games
+      WHERE tournament_id = ? AND status IN ('pending', 'bulloff', 'active')
+    `).all(tournamentId);
+
+    const force = req.query.force === 'true';
+
+    if (openGames.length > 0 && !force) {
+      return res.status(409).json({
+        error: 'Cannot finish tournament: open games exist',
+        open_games: openGames,
+        hint: 'Use ?force=true to cancel open games and finish the tournament anyway',
+      });
+    }
+
+    const finishTx = db.transaction(() => {
+      if (openGames.length > 0 && force) {
+        db.prepare(`
+          UPDATE games SET status = 'cancelled'
+          WHERE tournament_id = ? AND status IN ('pending', 'bulloff', 'active')
+        `).run(tournamentId);
+      }
+
+      db.prepare("UPDATE tournaments SET status = 'finished', locked = 1 WHERE id = ?").run(tournamentId);
+
+      // Persist final standings into tournament_results (survives WIPE)
+      db.prepare('DELETE FROM tournament_results WHERE tournament_id = ?').run(tournamentId);
+
+      const players = db.prepare(`
+        SELECT DISTINCT p.id FROM players p
+        JOIN tournament_registrations tr ON tr.player_id = p.id
+        WHERE tr.tournament_id = ?
+      `).all(tournamentId);
+
+      const stmtWins = db.prepare(`
+        SELECT COUNT(*) as cnt FROM games
+        WHERE tournament_id = ? AND status = 'finished' AND winner_id = ?
+      `);
+      const stmtLosses = db.prepare(`
+        SELECT COUNT(*) as cnt FROM games
+        WHERE tournament_id = ? AND status = 'finished'
+          AND (player1_id = ? OR player2_id = ?) AND winner_id != ?
+      `);
+
+      const playerStats = players.map(p => {
+        const wins = stmtWins.get(tournamentId, p.id).cnt;
+        const losses = stmtLosses.get(tournamentId, p.id, p.id, p.id).cnt;
+        return { player_id: p.id, wins, losses };
+      }).sort((a, b) => b.wins - a.wins || a.losses - b.losses);
+
+      const insertResult = db.prepare(
+        'INSERT INTO tournament_results (tournament_id, player_id, rank, wins, losses) VALUES (?, ?, ?, ?, ?)'
+      );
+      playerStats.forEach((p, index) => {
+        insertResult.run(tournamentId, p.player_id, index + 1, p.wins, p.losses);
+      });
+    });
+
+    finishTx();
+
+    const updated = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(tournamentId);
+    auditLog(req, 'tournament', 'FINISH', `Tournament "${tournament.name}" manually finished${force ? ' (force)' : ''}`, tournamentId);
+    return res.json(updated);
+  } catch (err) {
+    console.error('[tournaments]', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // POST /api/tournaments/:id/reset — Turnier auf open zurücksetzen (Gruppen + Spiele löschen)
 router.post('/:id/reset', requireAdmin, (req, res) => {
   try {
@@ -630,7 +713,10 @@ router.post('/:id/reset', requireAdmin, (req, res) => {
 
     const resetTx = db.transaction(() => {
       const games = db.prepare('SELECT id FROM games WHERE tournament_id = ?').all(req.params.id);
-      for (const g of games) db.prepare('DELETE FROM throws WHERE game_id = ?').run(g.id);
+      for (const g of games) {
+        db.prepare('DELETE FROM throws WHERE game_id = ?').run(g.id);
+        try { db.prepare('DELETE FROM legs WHERE game_id = ?').run(g.id); } catch (_) {}
+      }
       db.prepare('DELETE FROM games WHERE tournament_id = ?').run(req.params.id);
       const groups = db.prepare('SELECT id FROM groups WHERE tournament_id = ?').all(req.params.id);
       for (const g of groups) db.prepare('DELETE FROM group_players WHERE group_id = ?').run(g.id);
