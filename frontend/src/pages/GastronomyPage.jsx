@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import NFCScanner from '../components/nfc/NFCScanner';
 import GuestHeader from '../components/gastro/GuestHeader';
+import OpenOrdersPanel from '../components/gastro/OpenOrdersPanel';
 import { useToastStore } from '../store/toasts';
 import { useStore } from '../store';
 
@@ -630,34 +631,8 @@ export default function GastronomyPage() {
                 />
 
                 {/* Bereits offene Bestellungen dieses Gastes */}
-                {guestOpenOrders && guestOpenOrders.items?.length > 0 && (
-                  <div className="mb-4 p-3 rounded-xl" style={{ background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)' }}>
-                    <p className="text-xs font-bold mb-2" style={{ color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>Offene Bestellungen</p>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                      <thead>
-                        <tr>
-                          <th style={{ textAlign: 'left', padding: '4px 8px', fontSize: '11px', color: 'var(--pe-text-muted)', textTransform: 'uppercase' }}>Artikel</th>
-                          <th style={{ textAlign: 'center', padding: '4px 8px', fontSize: '11px', color: 'var(--pe-text-muted)', textTransform: 'uppercase', width: '48px' }}>Menge</th>
-                          <th style={{ textAlign: 'right', padding: '4px 8px', fontSize: '11px', color: 'var(--pe-text-muted)', textTransform: 'uppercase', width: '80px' }}>Preis</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {guestOpenOrders.items.map((item, i) => (
-                          <tr key={i} style={{ borderTop: '1px solid var(--pe-border)' }}>
-                            <td style={{ padding: '7px 8px', fontSize: '13px', color: 'var(--pe-text)' }}>{item.product_name}</td>
-                            <td style={{ padding: '7px 8px', fontSize: '13px', color: 'var(--pe-text)', textAlign: 'center' }}>{item.quantity}</td>
-                            <td style={{ padding: '7px 8px', fontSize: '13px', color: 'var(--pe-text-sub)', textAlign: 'right' }}>{parseFloat(item.total).toFixed(2)} €</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr style={{ borderTop: '2px solid var(--pe-border)' }}>
-                          <td colSpan="2" style={{ padding: '7px 8px', fontSize: '13px', fontWeight: 'bold', color: 'var(--pe-text-sub)' }}>Gesamt offen</td>
-                          <td style={{ padding: '7px 8px', fontSize: '14px', fontWeight: 'bold', color: 'var(--pe-cyan-bright)', textAlign: 'right' }}>{parseFloat(guestOpenOrders.total || 0).toFixed(2)} €</td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
+                {guestOpenOrders?.items?.length > 0 && (
+                  <OpenOrdersPanel items={guestOpenOrders.items} total={guestOpenOrders.total} />
                 )}
 
                 {/* Kategorien-Tabs */}
