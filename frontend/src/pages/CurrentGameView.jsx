@@ -15,7 +15,7 @@ function YouTubeModal({ url, onClose }) {
       <div style={{ width: '80vw', maxWidth: 900, aspectRatio: '16/9' }} onClick={e => e.stopPropagation()}>
         <iframe
           src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
-          style={{ width: '100%', height: '100%', border: 'none', borderRadius: 12 }}
+          style={{ width: '100%', height: '100%', border: 'none', borderRadius: 'var(--pe-radius-md)' }}
           allow="autoplay; encrypted-media"
           allowFullScreen
           title="Walk-On Song"
@@ -113,7 +113,7 @@ export default function CurrentGameView() {
   if (boardNotFound) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--pe-bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--pe-font-body)', gap: 16, padding: 24 }}>
-        <img src="/logo.jpeg" alt="DartEvent" style={{ height: 56, borderRadius: 8, marginBottom: 8 }} />
+        <img src="/logo.jpeg" alt="DartEvent" style={{ height: 56, borderRadius: 'var(--pe-radius-sm)', marginBottom: 8 }} />
         <p style={{ color: 'var(--pe-danger)', fontWeight: 'bold', fontSize: 16 }}>Board {boardNumber} nicht gefunden</p>
         <p style={{ color: 'var(--pe-text-muted)', fontSize: 13, textAlign: 'center' }}>Dieses Board existiert nicht oder gehört nicht zum aktiven Turnier.</p>
       </div>
@@ -138,7 +138,7 @@ export default function CurrentGameView() {
 
       {/* Header */}
       <div style={{ background: 'var(--pe-gradient)', padding: hPad, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <img src="/logo.jpeg" alt="DartEvent" style={{ height: isMobile ? 32 : 48, borderRadius: 8, flexShrink: 0 }} />
+        <img src="/logo.jpeg" alt="DartEvent" style={{ height: isMobile ? 32 : 48, borderRadius: 'var(--pe-radius-sm)', flexShrink: 0 }} />
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
           <span style={{ fontSize: isMobile ? 18 : isTablet ? 22 : 28, fontFamily: 'var(--pe-font-display)', fontWeight: 700, color: 'var(--pe-text)', textShadow: '0 2px 8px rgba(0,0,0,0.3)', letterSpacing: '0.02em' }}>
             Board {boardNumber}
@@ -195,7 +195,7 @@ export default function CurrentGameView() {
                     <div style={{ fontSize: 13, color: 'var(--pe-text-sub)' }}>Avg: {calcAverage(gameData.player1?.throws)}</div>
                     {playerStats.p1?.fav_single && <span style={{ fontSize: 11, color: 'var(--pe-text-muted)' }}>♦ {playerStats.p1.fav_single} ({playerStats.p1.fav_single_count}x)</span>}
                     {isQuarterOrLater(gameData.game?.round) && currentGame?.player1_walkon && (
-                      <button style={{ marginTop: 4, padding: '10px 16px', borderRadius: 8, border: '1px solid var(--pe-cyan-bright)', background: 'transparent', color: 'var(--pe-cyan-bright)', fontFamily: 'var(--pe-font-body)', fontSize: 11, fontWeight: 'bold', cursor: 'pointer', alignSelf: 'flex-start', minHeight: 64 }} onClick={() => setYoutubeUrl(currentGame.player1_walkon)}>Walk-On</button>
+                      <button style={{ marginTop: 4, padding: '10px 16px', borderRadius: 'var(--pe-radius-sm)', border: '1px solid var(--pe-cyan-bright)', background: 'transparent', color: 'var(--pe-cyan-bright)', fontFamily: 'var(--pe-font-body)', fontSize: 11, fontWeight: 'bold', cursor: 'pointer', alignSelf: 'flex-start', minHeight: 64 }} onClick={() => setYoutubeUrl(currentGame.player1_walkon)}>Walk-On</button>
                     )}
                   </div>
                   <div style={{ fontSize: 64, fontFamily: 'var(--pe-font-display)', fontWeight: 800, letterSpacing: '-0.01em', background: 'var(--pe-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1, flexShrink: 0 }}>
@@ -219,7 +219,7 @@ export default function CurrentGameView() {
                     </div>
                   )}
                   {isQuarterOrLater(gameData.game?.round) && currentGame?.player1_walkon && (
-                    <button style={{ marginTop: 4, padding: '10px 20px', borderRadius: 8, border: '1px solid var(--pe-cyan-bright)', background: 'transparent', color: 'var(--pe-cyan-bright)', fontFamily: 'var(--pe-font-body)', fontSize: 13, fontWeight: 'bold', cursor: 'pointer', minHeight: 64 }} onClick={() => setYoutubeUrl(currentGame.player1_walkon)}>Walk-On</button>
+                    <button style={{ marginTop: 4, padding: '10px 20px', borderRadius: 'var(--pe-radius-sm)', border: '1px solid var(--pe-cyan-bright)', background: 'transparent', color: 'var(--pe-cyan-bright)', fontFamily: 'var(--pe-font-body)', fontSize: 13, fontWeight: 'bold', cursor: 'pointer', minHeight: 64 }} onClick={() => setYoutubeUrl(currentGame.player1_walkon)}>Walk-On</button>
                   )}
                 </>
               )}
@@ -230,7 +230,7 @@ export default function CurrentGameView() {
               <div style={{ background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', borderTop: 'none', borderBottom: 'none', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
                 <div style={{ height: 1, flex: 1, background: 'var(--pe-border)' }} />
                 <span style={{ fontSize: 13, fontWeight: 'bold', color: 'var(--pe-text-muted)' }}>vs</span>
-                <div style={{ fontSize: 11, fontWeight: 'bold', color: 'var(--pe-success)', border: '1px solid var(--pe-success)', borderRadius: 20, padding: '3px 12px', textTransform: 'uppercase', letterSpacing: 1 }}>
+                <div style={{ fontSize: 11, fontWeight: 'bold', color: 'var(--pe-success)', border: '1px solid var(--pe-success)', borderRadius: 'var(--pe-radius-xl)', padding: '3px 12px', textTransform: 'uppercase', letterSpacing: 1 }}>
                   {gameData.game?.status === 'bulloff' ? 'Ausbullen' : gameData.game?.status === 'active' ? 'Live' : gameData.game?.status === 'finished' ? 'Beendet' : '—'}
                 </div>
                 <div style={{ height: 1, flex: 1, background: 'var(--pe-border)' }} />
@@ -238,7 +238,7 @@ export default function CurrentGameView() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, minWidth: 80 }}>
                 <span style={{ fontSize: Math.round(24 * px), fontWeight: 'bold', color: 'var(--pe-text-muted)' }}>vs</span>
-                <div style={{ fontSize: 12, fontWeight: 'bold', color: 'var(--pe-success)', border: '1px solid var(--pe-success)', borderRadius: 20, padding: '4px 12px', textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center' }}>
+                <div style={{ fontSize: 12, fontWeight: 'bold', color: 'var(--pe-success)', border: '1px solid var(--pe-success)', borderRadius: 'var(--pe-radius-xl)', padding: '4px 12px', textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center' }}>
                   {gameData.game?.status === 'bulloff' ? 'Ausbullen' : gameData.game?.status === 'active' ? 'Live' : gameData.game?.status === 'finished' ? 'Beendet' : '—'}
                 </div>
               </div>
@@ -259,7 +259,7 @@ export default function CurrentGameView() {
                     <div style={{ fontSize: 13, color: 'var(--pe-text-sub)' }}>Avg: {calcAverage(gameData.player2?.throws)}</div>
                     {playerStats.p2?.fav_single && <span style={{ fontSize: 11, color: 'var(--pe-text-muted)' }}>{playerStats.p2.fav_single} ({playerStats.p2.fav_single_count}x) ♦</span>}
                     {isQuarterOrLater(gameData.game?.round) && currentGame?.player2_walkon && (
-                      <button style={{ marginTop: 4, padding: '10px 16px', borderRadius: 8, border: '1px solid var(--pe-cyan-bright)', background: 'transparent', color: 'var(--pe-cyan-bright)', fontFamily: 'var(--pe-font-body)', fontSize: 11, fontWeight: 'bold', cursor: 'pointer', alignSelf: 'flex-end', minHeight: 64 }} onClick={() => setYoutubeUrl(currentGame.player2_walkon)}>Walk-On</button>
+                      <button style={{ marginTop: 4, padding: '10px 16px', borderRadius: 'var(--pe-radius-sm)', border: '1px solid var(--pe-cyan-bright)', background: 'transparent', color: 'var(--pe-cyan-bright)', fontFamily: 'var(--pe-font-body)', fontSize: 11, fontWeight: 'bold', cursor: 'pointer', alignSelf: 'flex-end', minHeight: 64 }} onClick={() => setYoutubeUrl(currentGame.player2_walkon)}>Walk-On</button>
                     )}
                   </div>
                 </>
@@ -280,7 +280,7 @@ export default function CurrentGameView() {
                     </div>
                   )}
                   {isQuarterOrLater(gameData.game?.round) && currentGame?.player2_walkon && (
-                    <button style={{ marginTop: 4, padding: '10px 20px', borderRadius: 8, border: '1px solid var(--pe-cyan-bright)', background: 'transparent', color: 'var(--pe-cyan-bright)', fontFamily: 'var(--pe-font-body)', fontSize: 13, fontWeight: 'bold', cursor: 'pointer', minHeight: 64 }} onClick={() => setYoutubeUrl(currentGame.player2_walkon)}>Walk-On</button>
+                    <button style={{ marginTop: 4, padding: '10px 20px', borderRadius: 'var(--pe-radius-sm)', border: '1px solid var(--pe-cyan-bright)', background: 'transparent', color: 'var(--pe-cyan-bright)', fontFamily: 'var(--pe-font-body)', fontSize: 13, fontWeight: 'bold', cursor: 'pointer', minHeight: 64 }} onClick={() => setYoutubeUrl(currentGame.player2_walkon)}>Walk-On</button>
                   )}
                 </>
               )}
@@ -290,7 +290,7 @@ export default function CurrentGameView() {
           })()}
 
           {/* Aktuelle Würfe */}
-          <div style={{ margin: secMar, background: 'var(--pe-bg-elevated)', borderRadius: 12, border: '1px solid var(--pe-border)', padding: isMobile ? '10px 12px' : '16px 24px' }}>
+          <div style={{ margin: secMar, background: 'var(--pe-bg-elevated)', borderRadius: 'var(--pe-radius-md)', border: '1px solid var(--pe-border)', padding: isMobile ? '10px 12px' : '16px 24px' }}>
             <div style={{ fontSize: isMobile ? 10 : 13, color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: isMobile ? 4 : 8, textAlign: 'center' }}>Aktuelle Würfe</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 16 }}>
               <div style={{ flex: 1, textAlign: 'center', fontSize: isMobile ? 13 : 20, fontWeight: 'bold', color: 'var(--pe-text)' }}>
@@ -325,7 +325,7 @@ export default function CurrentGameView() {
 
           {/* Gewinner */}
           {gameData.game?.status === 'finished' && gameData.game?.winner_id && (
-            <div style={{ margin: secMar, padding: isMobile ? '12px 16px' : '16px 24px', borderRadius: 12, background: 'rgba(0,229,160,0.15)', border: '1px solid var(--pe-success)', color: 'var(--pe-success)', fontSize: isMobile ? 20 : 28, fontWeight: 'bold', textAlign: 'center' }}>
+            <div style={{ margin: secMar, padding: isMobile ? '12px 16px' : '16px 24px', borderRadius: 'var(--pe-radius-md)', background: 'rgba(0,229,160,0.15)', border: '1px solid var(--pe-success)', color: 'var(--pe-success)', fontSize: isMobile ? 20 : 28, fontWeight: 'bold', textAlign: 'center' }}>
               Gewinner: {gameData.game.winner_id === gameData.player1?.id ? gameData.player1?.name : gameData.player2?.name}
             </div>
           )}
@@ -339,7 +339,7 @@ export default function CurrentGameView() {
 
       {/* Nächstes Spiel */}
       {nextGame && (
-        <div style={{ margin: isMobile ? '8px 12px 16px' : '16px 32px 24px', padding: isMobile ? '10px 14px' : '14px 24px', borderRadius: 12, background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? 6 : 12, flexWrap: 'wrap' }}>
+        <div style={{ margin: isMobile ? '8px 12px 16px' : '16px 32px 24px', padding: isMobile ? '10px 14px' : '14px 24px', borderRadius: 'var(--pe-radius-md)', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? 6 : 12, flexWrap: 'wrap' }}>
           <span style={{ fontSize: isMobile ? 11 : 14, color: 'var(--pe-text-muted)', fontWeight: 'bold' }}>Nächstes Spiel:</span>
           <span style={{ fontSize: isMobile ? 14 : 18, color: 'var(--pe-text)', fontWeight: 'bold', textAlign: 'center' }}>
             {nextGame.player1_name || 'TBD'} vs. {nextGame.player2_name || 'TBD'}

@@ -101,7 +101,7 @@ export default function PlayerProfilePage() {
                   alignItems: 'center',
                   padding: '12px 14px',
                   minHeight: 64,
-                  borderRadius: 12,
+                  borderRadius: 'var(--pe-radius-md)',
                   background: 'var(--pe-bg-card)',
                   border: '1px solid var(--pe-border)',
                   textDecoration: 'none',
@@ -126,7 +126,7 @@ export default function PlayerProfilePage() {
                       fontSize: 11,
                       fontWeight: 'bold',
                       padding: '3px 8px',
-                      borderRadius: 16,
+                      borderRadius: 'var(--pe-radius-lg)',
                       border: '1px solid var(--pe-success)',
                       color: 'var(--pe-success)',
                     }}>
@@ -147,7 +147,7 @@ function StatCard({ label, value, color }) {
   return (
     <div style={{
       background: 'var(--pe-bg-card)',
-      borderRadius: 12,
+      borderRadius: 'var(--pe-radius-md)',
       border: '1px solid var(--pe-border)',
       padding: 14,
       display: 'flex',

@@ -80,7 +80,7 @@ function EmergencyLogout() {
           position: 'absolute', top: 'calc(100% + 8px)', right: 0,
           background: 'var(--pe-bg-elevated)',
           border: '1px solid var(--pe-border)',
-          borderRadius: '12px',
+          borderRadius: 'var(--pe-radius-md)',
           padding: '8px',
           minWidth: '140px',
           boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
@@ -93,7 +93,7 @@ function EmergencyLogout() {
               padding: '10px 12px',
               background: 'none',
               border: '1px solid var(--pe-border)',
-              borderRadius: '8px',
+              borderRadius: 'var(--pe-radius-sm)',
               color: 'var(--pe-danger)',
               cursor: 'pointer',
               fontSize: '13px', fontWeight: 'bold',
@@ -114,7 +114,7 @@ function EmergencyLogout() {
 // ── Shared styles ──────────────────────────────────────────────────────────
 const btn = (extra = {}) => ({
   fontFamily: 'var(--pe-font-body)',
-  borderRadius: '10px',
+  borderRadius: 'var(--pe-radius-md)',
   fontWeight: 'bold',
   cursor: 'pointer',
   border: '1px solid var(--pe-border)',
@@ -162,7 +162,7 @@ function BulloffPanel({ gameId, player1, player2, onDone, isTablet }) {
       </div>
 
       {tieMsg && (
-        <div style={{ background: 'rgba(255,176,32,0.15)', border: '1px solid var(--pe-warning)', borderRadius: '10px', padding: '10px', textAlign: 'center', color: 'var(--pe-warning)', fontWeight: 'bold', fontSize: '14px' }}>
+        <div style={{ background: 'rgba(255,176,32,0.15)', border: '1px solid var(--pe-warning)', borderRadius: 'var(--pe-radius-md)', padding: '10px', textAlign: 'center', color: 'var(--pe-warning)', fontWeight: 'bold', fontSize: '14px' }}>
           {tieMsg}
         </div>
       )}
@@ -185,7 +185,7 @@ function BulloffPanel({ gameId, player1, player2, onDone, isTablet }) {
       </div>
 
       {bothMiss && (
-        <div style={{ background: 'rgba(255,176,32,0.1)', border: '1px solid var(--pe-warning)', borderRadius: '10px', padding: '12px' }}>
+        <div style={{ background: 'rgba(255,176,32,0.1)', border: '1px solid var(--pe-warning)', borderRadius: 'var(--pe-radius-md)', padding: '12px' }}>
           <p style={{ color: 'var(--pe-warning)', fontSize: '13px', fontWeight: 'bold', textAlign: 'center', margin: '0 0 10px' }}>Beide MISS — wer war näher am Bull?</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             {[player1, player2].map(p => (
@@ -260,7 +260,7 @@ function RoundThrows({ throws, prevThrow, onUndo, disabled, isTablet }) {
   const displayThrows = showPrev ? [] : throws;
   const total = displayThrows.reduce((s, t) => s + segmentScore(t.segment), 0);
   return (
-    <div style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', borderRadius: '12px', padding: isTablet ? '14px' : '10px' }}>
+    <div style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', borderRadius: 'var(--pe-radius-md)', padding: isTablet ? '14px' : '10px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
         <span style={{ color: 'var(--pe-text-muted)', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
           {showPrev ? 'Letzter Wurf (vorige Runde)' : 'Aktuelle Runde'}
@@ -270,7 +270,7 @@ function RoundThrows({ throws, prevThrow, onUndo, disabled, isTablet }) {
 
       {showPrev ? (
         // Show only the last throw from the previous round with a prominent undo button
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--pe-bg-elevated)', borderRadius: '8px', padding: '10px 12px', border: '1px solid var(--pe-warning)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--pe-bg-elevated)', borderRadius: 'var(--pe-radius-sm)', padding: '10px 12px', border: '1px solid var(--pe-warning)' }}>
           <div style={{ flex: 1 }}>
             <span style={{ fontWeight: 'bold', color: prevThrow.segment === 'BUST' ? 'var(--pe-danger)' : 'var(--pe-text)', fontSize: '16px' }}>{prevThrow.segment}</span>
             <span style={{ fontSize: '12px', color: 'var(--pe-text-muted)', marginLeft: '8px' }}>{segmentScore(prevThrow.segment)} Pkt</span>
@@ -285,7 +285,7 @@ function RoundThrows({ throws, prevThrow, onUndo, disabled, isTablet }) {
           {[0, 1, 2].map(i => {
             const t = displayThrows[i];
             return (
-              <div key={i} style={{ flex: 1, background: 'var(--pe-bg-elevated)', borderRadius: '8px', padding: '8px', minHeight: '52px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', border: `1px solid ${t ? 'var(--pe-blue-mid)' : 'var(--pe-border)'}` }}>
+              <div key={i} style={{ flex: 1, background: 'var(--pe-bg-elevated)', borderRadius: 'var(--pe-radius-sm)', padding: '8px', minHeight: '52px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', border: `1px solid ${t ? 'var(--pe-blue-mid)' : 'var(--pe-border)'}` }}>
                 <span style={{ fontSize: '10px', color: 'var(--pe-text-muted)', textTransform: 'uppercase' }}>Wurf {i + 1}</span>
                 {t ? (
                   <>
@@ -388,7 +388,7 @@ function WalkonPlayButton({ playerId }) {
         fontFamily: 'var(--pe-font-body)',
         fontSize: '11px',
         fontWeight: 'bold',
-        borderRadius: '8px',
+        borderRadius: 'var(--pe-radius-sm)',
         cursor: 'pointer',
         border: `1px solid ${playing ? 'var(--pe-warning)' : 'var(--pe-success)'}`,
         background: playing ? 'rgba(255,176,32,0.15)' : 'rgba(0,229,160,0.12)',
@@ -478,7 +478,7 @@ function GameQueue({ boardId, currentGameId, canSwitch, onSelect, onSkip, isTabl
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {games.map((g, idx) => (
-            <div key={g.id} style={{ background: 'var(--pe-bg-elevated)', borderRadius: '8px', padding: '8px 10px', border: '1px solid var(--pe-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+            <div key={g.id} style={{ background: 'var(--pe-bg-elevated)', borderRadius: 'var(--pe-radius-sm)', padding: '8px 10px', border: '1px solid var(--pe-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ fontSize: '10px', color: 'var(--pe-text-muted)', display: 'block' }}>#{idx + 1}</span>
                 <span style={{ fontSize: '12px', color: 'var(--pe-text)', fontWeight: 'bold', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.player1_name}</span>
@@ -534,7 +534,7 @@ function NextGamePreview({ boardId, currentGameId, isTablet }) {
     <div style={{
       background: 'var(--pe-bg-card)',
       border: '1px solid var(--pe-border)',
-      borderRadius: '12px',
+      borderRadius: 'var(--pe-radius-md)',
       padding: isTablet ? '14px' : '12px',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
@@ -542,7 +542,7 @@ function NextGamePreview({ boardId, currentGameId, isTablet }) {
           Nächstes Spiel
         </span>
       </div>
-      <div style={{ background: 'var(--pe-bg-elevated)', borderRadius: '8px', padding: '10px 12px', border: '1px solid var(--pe-border)' }}>
+      <div style={{ background: 'var(--pe-bg-elevated)', borderRadius: 'var(--pe-radius-sm)', padding: '10px 12px', border: '1px solid var(--pe-border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
           <span style={{ fontSize: isTablet ? '15px' : '14px', fontWeight: 'bold', color: 'var(--pe-text)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {nextGame.player1_name || 'TBD'}
@@ -567,7 +567,7 @@ function GameInfoBar({ game, isTablet }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
       {tiles.map(({ label, value, color }) => (
-        <div key={label} style={{ textAlign: 'center', padding: isTablet ? '8px 4px' : '6px 4px', borderRadius: '8px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)' }}>
+        <div key={label} style={{ textAlign: 'center', padding: isTablet ? '8px 4px' : '6px 4px', borderRadius: 'var(--pe-radius-sm)', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)' }}>
           <span style={{ fontSize: '10px', color: 'var(--pe-text-muted)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</span>
           <span style={{ fontSize: isTablet ? '14px' : '13px', fontWeight: 'bold', color }}>{value}</span>
         </div>
@@ -649,7 +649,7 @@ function TabletLayout({ boardId, boardNumber, selectedGameId, setSelectedGameId,
               )}
 
               {game.status === 'finished' && (
-                <div style={{ textAlign: 'center', padding: '20px', borderRadius: '12px', border: '2px solid var(--pe-success)', background: 'rgba(0,229,160,0.08)' }}>
+                <div style={{ textAlign: 'center', padding: '20px', borderRadius: 'var(--pe-radius-md)', border: '2px solid var(--pe-success)', background: 'rgba(0,229,160,0.08)' }}>
                   <p style={{ color: 'var(--pe-success)', fontWeight: 'bold', fontSize: '18px', margin: '0 0 4px' }}>Spiel beendet!</p>
                   <p style={{ color: 'var(--pe-text)', fontSize: '15px', margin: 0 }}>
                     Gewinner: {(game.winner_id === player1?.id ? player1 : player2)?.name || '—'}
@@ -722,7 +722,7 @@ function TabletLayout({ boardId, boardNumber, selectedGameId, setSelectedGameId,
         {game?.status === 'active' && player1 && player2 && (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {/* Active player banner */}
-            <div style={{ background: 'rgba(26,79,214,0.25)', border: '1px solid var(--pe-blue-mid)', borderRadius: '10px', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ background: 'rgba(26,79,214,0.25)', border: '1px solid var(--pe-blue-mid)', borderRadius: 'var(--pe-radius-md)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{ fontSize: '20px' }}>▶</span>
               <span style={{ fontWeight: 'bold', fontSize: '18px', color: 'var(--pe-text)' }}>
                 {(currentThrowerId === player1.id ? player1 : player2)?.name}
@@ -814,7 +814,7 @@ function PhoneLayout({ boardId, boardNumber, selectedGameId, setSelectedGameId, 
       {/* Finished */}
       {game?.status === 'finished' && (
         <div>
-          <div style={{ textAlign: 'center', padding: '32px', borderRadius: '16px', background: 'var(--pe-bg-card)', border: '2px solid var(--pe-success)', marginBottom: '12px' }}>
+          <div style={{ textAlign: 'center', padding: '32px', borderRadius: 'var(--pe-radius-lg)', background: 'var(--pe-bg-card)', border: '2px solid var(--pe-success)', marginBottom: '12px' }}>
             <p style={{ color: 'var(--pe-success)', fontWeight: 'bold', fontSize: '20px', marginBottom: '8px' }}>Spiel beendet!</p>
             <p style={{ color: 'var(--pe-text)', fontSize: '16px' }}>
               Gewinner: {(game.winner_id === player1?.id ? player1 : player2)?.name || '—'}
@@ -854,7 +854,7 @@ function PhoneLayout({ boardId, boardNumber, selectedGameId, setSelectedGameId, 
             flexShrink: 0,
             background: 'var(--pe-bg-elevated)',
             border: '1px solid var(--pe-border)',
-            borderRadius: '10px',
+            borderRadius: 'var(--pe-radius-md)',
             padding: '0 12px',
             marginBottom: '10px',
             fontFamily: 'var(--pe-font-body)',
@@ -1006,7 +1006,7 @@ export default function RefereePage() {
                 Kein aktives Turnier mit Board {boardNumber} gefunden.<br />Bitte den Turnierleiter kontaktieren.
               </div>
               <button onClick={() => { setBoardNotFound(false); api.get(`/boards/by-number/${boardNumber}`).then(b => setResolvedBoardId(b.id)).catch(() => setBoardNotFound(true)); }}
-                style={{ background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '8px', padding: '10px 20px', cursor: 'pointer', fontSize: '13px', fontFamily: 'var(--pe-font-body)', fontWeight: 'bold' }}>
+                style={{ background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: 'var(--pe-radius-sm)', padding: '10px 20px', cursor: 'pointer', fontSize: '13px', fontFamily: 'var(--pe-font-body)', fontWeight: 'bold' }}>
                 ↻ Erneut versuchen
               </button>
             </div>

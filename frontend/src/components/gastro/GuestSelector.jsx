@@ -30,7 +30,7 @@ export default function GuestSelector({
   );
 
   return (
-    <div style={{ fontFamily: 'Verdana, Geneva, sans-serif' }}>
+    <div style={{ fontFamily: 'var(--pe-font-body)' }}>
       {/* NFC section — only when NFC is available */}
       {nfcAvailable && (
         <NFCScanner onScan={onRequestNfcScan} scanning={scanning} />
@@ -45,13 +45,13 @@ export default function GuestSelector({
             minHeight: '48px',
             background: 'var(--pe-bg-elevated)',
             border: '1px solid var(--pe-border)',
-            borderRadius: '12px',
+            borderRadius: 'var(--pe-radius-md)',
             color: 'var(--pe-text-sub)',
             fontWeight: 'bold',
             fontSize: '13px',
             cursor: 'pointer',
             width: '100%',
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
             marginTop: '12px',
           }}
         >
@@ -73,7 +73,7 @@ export default function GuestSelector({
                 color: 'var(--pe-warning)',
                 fontSize: 12,
                 margin: '4px 0 0',
-                fontFamily: 'Verdana, Geneva, sans-serif',
+                fontFamily: 'var(--pe-font-body)',
               }}
             >
               Bitte Namen eingeben
@@ -102,12 +102,12 @@ export default function GuestSelector({
                     width: '100%',
                     background: 'var(--pe-bg-card)',
                     border: `1px solid ${gBlocked ? 'var(--pe-danger)' : 'var(--pe-border)'}`,
-                    borderRadius: '12px',
+                    borderRadius: 'var(--pe-radius-md)',
                     padding: '0 16px',
                     textAlign: 'left',
                     cursor: 'pointer',
                     color: 'var(--pe-text)',
-                    fontFamily: 'Verdana, Geneva, sans-serif',
+                    fontFamily: 'var(--pe-font-body)',
                     fontSize: '15px',
                     fontWeight: 'bold',
                     display: 'flex',
@@ -124,7 +124,7 @@ export default function GuestSelector({
                           fontWeight: 'bold',
                           color: 'var(--pe-danger)',
                           border: '1px solid var(--pe-danger)',
-                          borderRadius: '20px',
+                          borderRadius: 'var(--pe-radius-xl)',
                           padding: '2px 8px',
                         }}
                       >

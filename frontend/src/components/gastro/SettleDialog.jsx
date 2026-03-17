@@ -21,10 +21,10 @@ export default function SettleDialog({ guest, total, onConfirm, onCancel }) {
         style={{
           background: 'var(--pe-bg-card)',
           border: '1px solid var(--pe-border)',
-          borderRadius: '16px',
+          borderRadius: 'var(--pe-radius-lg)',
           padding: '24px',
           width: 'min(480px, 90vw)',
-          fontFamily: 'Verdana, Geneva, sans-serif',
+          fontFamily: 'var(--pe-font-body)',
         }}
       >
         <h3 style={{ color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '18px', margin: '0 0 8px' }}>
@@ -55,11 +55,11 @@ export default function SettleDialog({ guest, total, onConfirm, onCancel }) {
             style={{
               flex: 1,
               minHeight: '64px',
-              borderRadius: '12px',
+              borderRadius: 'var(--pe-radius-md)',
               border: '1px solid var(--pe-border)',
               background: 'var(--pe-bg-elevated)',
               color: 'var(--pe-text)',
-              fontFamily: 'Verdana, Geneva, sans-serif',
+              fontFamily: 'var(--pe-font-body)',
               fontWeight: 'bold',
               fontSize: '15px',
               cursor: 'pointer',
@@ -72,11 +72,11 @@ export default function SettleDialog({ guest, total, onConfirm, onCancel }) {
             style={{
               flex: 1,
               minHeight: '64px',
-              borderRadius: '12px',
+              borderRadius: 'var(--pe-radius-md)',
               border: 'none',
               background: 'var(--pe-success)',
               color: '#000',
-              fontFamily: 'Verdana, Geneva, sans-serif',
+              fontFamily: 'var(--pe-font-body)',
               fontWeight: 'bold',
               fontSize: '15px',
               cursor: 'pointer',

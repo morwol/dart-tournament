@@ -78,7 +78,7 @@ export default function AdminReportsPage() {
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     padding: '12px 14px',
-                    borderRadius: 10,
+                    borderRadius: 'var(--pe-radius-md)',
                     background: 'var(--pe-bg-card)',
                     border: '1px solid var(--pe-border)',
                   }}
@@ -214,7 +214,7 @@ function KennzahlKarte({ label, wert, farbe }) {
   return (
     <div style={{
       background: 'var(--pe-bg-card)',
-      borderRadius: 12,
+      borderRadius: 'var(--pe-radius-md)',
       border: '1px solid var(--pe-border)',
       padding: 14,
       display: 'flex',

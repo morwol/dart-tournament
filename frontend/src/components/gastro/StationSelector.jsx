@@ -30,7 +30,7 @@ export default function StationSelector({ onSelect }) {
         justifyContent: 'center',
         padding: 24,
         background: 'var(--pe-bg)',
-        fontFamily: 'Verdana, Geneva, sans-serif',
+        fontFamily: 'var(--pe-font-body)',
       }}
     >
       {/* Header */}
@@ -84,11 +84,11 @@ export default function StationSelector({ onSelect }) {
               onMouseLeave={() => setHovered(null)}
               style={{
                 minHeight: 140,
-                borderRadius: 16,
+                borderRadius: 'var(--pe-radius-lg)',
                 border: `1px solid ${isHovered ? station.accent : 'var(--pe-border)'}`,
                 background: isHovered ? 'var(--pe-bg-elevated)' : 'var(--pe-bg-card)',
                 color: 'var(--pe-text)',
-                fontFamily: 'Verdana, Geneva, sans-serif',
+                fontFamily: 'var(--pe-font-body)',
                 cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column',

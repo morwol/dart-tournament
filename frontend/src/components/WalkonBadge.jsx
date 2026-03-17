@@ -26,7 +26,7 @@ export default function WalkonBadge({ status, artist, title, error }) {
           padding: '2px 7px',
           fontSize: '11px',
           color: 'var(--pe-warning)',
-          fontFamily: 'Verdana, Geneva, sans-serif',
+          fontFamily: 'var(--pe-font-body)',
           maxWidth: '100%',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
@@ -58,7 +58,7 @@ export default function WalkonBadge({ status, artist, title, error }) {
           padding: '2px 7px',
           fontSize: '11px',
           color: 'var(--pe-danger)',
-          fontFamily: 'Verdana, Geneva, sans-serif',
+          fontFamily: 'var(--pe-font-body)',
           maxWidth: '100%',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
@@ -85,7 +85,7 @@ export default function WalkonBadge({ status, artist, title, error }) {
           padding: '2px 7px',
           fontSize: '11px',
           color: 'var(--pe-success)',
-          fontFamily: 'Verdana, Geneva, sans-serif',
+          fontFamily: 'var(--pe-font-body)',
           maxWidth: '100%',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
@@ -111,7 +111,7 @@ export default function WalkonBadge({ status, artist, title, error }) {
         padding: '2px 7px',
         fontSize: '11px',
         color: 'var(--pe-text-muted)',
-        fontFamily: 'Verdana, Geneva, sans-serif',
+        fontFamily: 'var(--pe-font-body)',
       }}
     >
       <Music size={11} style={{ flexShrink: 0 }} />

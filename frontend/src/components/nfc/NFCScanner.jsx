@@ -77,10 +77,10 @@ export default function NFCScanner({ onScan, scanning }) {
                 animation: nfcStatus === 'reading' ? 'pulse 2s infinite' : 'none',
               }}
             >
-              <span className="text-4xl" style={{ color: circleColor(), fontFamily: 'Verdana, Geneva, sans-serif' }}>NFC</span>
+              <span className="text-4xl" style={{ color: circleColor(), fontFamily: 'var(--pe-font-body)' }}>NFC</span>
             </div>
           </button>
-          <p style={{ color: nfcStatus === 'error' ? 'var(--pe-danger)' : 'var(--pe-text-sub)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+          <p style={{ color: nfcStatus === 'error' ? 'var(--pe-danger)' : 'var(--pe-text-sub)', fontFamily: 'var(--pe-font-body)' }}>
             {statusText()}
           </p>
           {nfcStatus === 'error' && (
@@ -93,9 +93,9 @@ export default function NFCScanner({ onScan, scanning }) {
                 color: 'var(--pe-cyan-bright)',
                 background: 'var(--pe-bg-elevated)',
                 border: '1px solid var(--pe-cyan-bright)',
-                borderRadius: '12px',
+                borderRadius: 'var(--pe-radius-md)',
                 cursor: 'pointer',
-                fontFamily: 'Verdana, Geneva, sans-serif',
+                fontFamily: 'var(--pe-font-body)',
                 fontWeight: 'bold',
                 fontSize: '0.875rem',
               }}
@@ -117,12 +117,12 @@ export default function NFCScanner({ onScan, scanning }) {
               border: '2px solid var(--pe-text-muted)',
             }}
           >
-            <span className="text-4xl" style={{ color: 'var(--pe-text-muted)', fontFamily: 'Verdana, Geneva, sans-serif' }}>QR</span>
+            <span className="text-4xl" style={{ color: 'var(--pe-text-muted)', fontFamily: 'var(--pe-font-body)' }}>QR</span>
           </div>
-          <p className="mb-4" style={{ color: 'var(--pe-text-sub)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+          <p className="mb-4" style={{ color: 'var(--pe-text-sub)', fontFamily: 'var(--pe-font-body)' }}>
             NFC nicht verfuegbar. Nutze einen QR-Code mit UID-Parameter.
           </p>
-          <p className="text-sm" style={{ color: 'var(--pe-text-muted)', fontFamily: 'Verdana, Geneva, sans-serif' }}>
+          <p className="text-sm" style={{ color: 'var(--pe-text-muted)', fontFamily: 'var(--pe-font-body)' }}>
             URL-Format: /nfc?uid=DEIN_CODE
           </p>
         </div>

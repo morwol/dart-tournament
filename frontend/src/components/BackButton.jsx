@@ -9,7 +9,7 @@ export default function BackButton({ to = '/', label = 'Zurück' }) {
         alignItems: 'center',
         gap: '6px',
         padding: '8px 14px',
-        borderRadius: '10px',
+        borderRadius: 'var(--pe-radius-md)',
         background: 'var(--pe-bg-elevated)',
         border: '1px solid var(--pe-border)',
         color: 'var(--pe-text-sub)',
