@@ -1,9 +1,13 @@
 import { create } from 'zustand';
-import { parseJwt } from '../lib/parseJwt';
+import { parseJwt, isTokenValid } from '../lib/parseJwt';
+
+const storedToken = localStorage.getItem('token');
+const validToken = isTokenValid(storedToken) ? storedToken : null;
+if (!validToken && storedToken) localStorage.removeItem('token');
 
 export const useStore = create((set) => ({
-  token: localStorage.getItem('token'),
-  role:  parseJwt(localStorage.getItem('token'))?.role ?? null,
+  token: validToken,
+  role:  parseJwt(validToken)?.role ?? null,
   admin: null,
 
   setToken: (token) => {

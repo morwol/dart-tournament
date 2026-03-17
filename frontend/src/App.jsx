@@ -10,7 +10,7 @@ import LoginSelectionPage from './pages/LoginSelectionPage';
 // NEU: Board-Ansicht importieren
 import CurrentGameView from './pages/CurrentGameView';
 import AppShell from './components/AppShell';
-import { parseJwt } from './lib/parseJwt';
+import { parseJwt, isTokenValid } from './lib/parseJwt';
 import Toaster from './components/Toaster';
 
 // NEU: Lazy imports für Seiten die von frontend-referee-admin erstellt werden
@@ -23,10 +23,10 @@ const TournamentDetailPage = lazy(() => import('./pages/TournamentDetailPage'));
 const PlayerProfilePage = lazy(() => import('./pages/PlayerProfilePage'));
 const AdminReportsPage = lazy(() => import('./pages/AdminReportsPage'));
 
-// NEU: Protected Route mit Rollenprüfung
+// Protected Route mit Rollenprüfung und Expiry-Check
 function ProtectedRoute({ element, roles }) {
   const token = localStorage.getItem('token');
-  if (!token) return <Navigate to="/" replace />;
+  if (!isTokenValid(token)) return <Navigate to="/" replace />;
   const payload = parseJwt(token);
   if (!payload || (roles && !roles.includes(payload.role))) return <Navigate to="/" replace />;
   return element;
