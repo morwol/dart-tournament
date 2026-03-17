@@ -218,7 +218,8 @@ router.get('/by-guest', requireAuth, (req, res) => {
         g.id as guest_id,
         g.name as guest_name,
         COUNT(o.id) as open_orders,
-        COALESCE(SUM(o.quantity * p.price), 0) as total
+        COALESCE(SUM(o.quantity * p.price), 0) as total,
+        MIN(o.ordered_at) as oldest_order_at
       FROM guests g
       JOIN orders o ON o.guest_id = g.id AND o.status = 'open'
       JOIN products p ON o.product_id = p.id
