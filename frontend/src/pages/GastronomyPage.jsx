@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import NFCScanner from '../components/nfc/NFCScanner';
+import GuestHeader from '../components/gastro/GuestHeader';
 import { useToastStore } from '../store/toasts';
 import { useStore } from '../store';
 
@@ -619,64 +620,14 @@ export default function GastronomyPage() {
               {/* NEU: Linke Seite — Gast-Info + offene Bestellungen + Produkte */}
               <div className="flex-1">
                 {/* Gast-Header */}
-                {/* Gast-Header */}
-                <div className="mb-4 p-3 rounded-xl" style={{ background: 'var(--pe-bg-card)', border: `1px solid ${isBlocked ? 'var(--pe-danger)' : 'var(--pe-border)'}` }}>
-                      {/* Zeile 1: Name + Badge + Schließen */}
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '10px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
-                          <div>
-                            <p style={{ fontWeight: 'bold', color: 'var(--pe-text)', margin: 0, fontSize: '15px' }}>{guest.name || 'Gast'}</p>
-                            <p style={{ fontSize: '11px', color: 'var(--pe-text-muted)', margin: '2px 0 0' }}>#{guest.id}</p>
-                          </div>
-                          {/* Status-Badge */}
-                          <span
-                            style={{
-                              flexShrink: 0,
-                              padding: '4px 12px',
-                              borderRadius: '20px',
-                              fontSize: '12px',
-                              fontWeight: 'bold',
-                              color: isBlocked ? 'var(--pe-danger)' : 'var(--pe-success)',
-                              border: `1px solid ${isBlocked ? 'var(--pe-danger)' : 'var(--pe-success)'}`,
-                              background: isBlocked ? 'rgba(255,69,96,0.12)' : 'rgba(0,229,160,0.10)',
-                            }}
-                          >
-                            {isBlocked ? 'Gesperrt' : 'Aktiv'}
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => { setGuest(null); setCart([]); setGuestOpenOrders(null); }}
-                          style={{ ...btnStyle, minHeight: '64px', padding: '0 16px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-text-sub)', border: '1px solid var(--pe-border)', flexShrink: 0 }}
-                        >
-                          ✕ Schließen
-                        </button>
-                      </div>
-                      {/* Zeile 2: Sperren/Entsperren */}
-                      <button
-                        onClick={toggleGuestLock}
-                        disabled={lockLoading}
-                        style={{
-                          ...btnStyle,
-                          width: '100%',
-                          minHeight: '64px',
-                          background: isBlocked ? 'rgba(0,229,160,0.12)' : 'rgba(255,69,96,0.12)',
-                          color: isBlocked ? 'var(--pe-success)' : 'var(--pe-danger)',
-                          border: `1px solid ${isBlocked ? 'var(--pe-success)' : 'var(--pe-danger)'}`,
-                          fontSize: '13px',
-                          opacity: lockLoading ? 0.6 : 1,
-                        }}
-                      >
-                        {lockLoading
-                          ? (isBlocked ? 'Wird entsperrt...' : 'Wird gesperrt...')
-                          : (isBlocked ? 'Armband entsperren' : 'Armband sperren')}
-                      </button>
-                      {/* Hinweis wenn gesperrt */}
-                      {isBlocked && (
-                        <p style={{ margin: '8px 0 0', fontSize: '13px', color: 'var(--pe-danger)', fontWeight: 'bold', textAlign: 'center' }}>
-                          Armband gesperrt — keine Bestellungen möglich
-                        </p>
-                      )}
-                </div>
+                <GuestHeader
+                  guest={guest}
+                  isBlocked={isBlocked}
+                  onClose={() => { setGuest(null); setCart([]); }}
+                  onToggleLock={toggleGuestLock}
+                  lockLoading={lockLoading}
+                  onSettle={() => initSettle(guest)}
+                />
 
                 {/* Bereits offene Bestellungen dieses Gastes */}
                 {guestOpenOrders && guestOpenOrders.items?.length > 0 && (
