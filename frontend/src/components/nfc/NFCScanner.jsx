@@ -47,7 +47,7 @@ export default function NFCScanner({ onScan, scanning }) {
         <div>
           <button
             onClick={startNFC}
-            disabled={nfcStatus === 'reading' || scanning}
+            disabled={nfcStatus === 'reading' || nfcStatus === 'error' || scanning}
             style={{
               background: 'none',
               border: 'none',
@@ -120,8 +120,9 @@ export default function NFCScanner({ onScan, scanning }) {
 
       <style>{`
         @keyframes pulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(0, 184, 255, 0.4); }
-          50% { box-shadow: 0 0 0 20px rgba(0, 184, 255, 0); }
+          0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--pe-cyan-bright) 40%, transparent); }
+          70% { box-shadow: 0 0 0 20px transparent; }
+          100% { box-shadow: 0 0 0 0 transparent; }
         }
       `}</style>
     </div>
