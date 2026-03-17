@@ -1055,25 +1055,25 @@ function UsersTab() {
             return (
               <div key={u.id} style={{ background: 'var(--pe-bg-card)', border: `1px solid ${isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, borderRadius: '10px', padding: '12px', opacity: u.active ? 1 : 0.5 }}>
                 {/* Card header row */}
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   {/* Avatar */}
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0, background: u.active ? 'var(--pe-gradient)' : 'var(--pe-bg-elevated)', border: u.active ? 'none' : '1px solid var(--pe-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px', color: u.active ? 'var(--pe-text)' : 'var(--pe-text-muted)' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0, background: u.active ? 'var(--pe-gradient)' : 'var(--pe-bg-elevated)', border: u.active ? 'none' : '1px solid var(--pe-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '13px', color: u.active ? 'var(--pe-text)' : 'var(--pe-text-muted)' }}>
                     {(u.vorname || u.username || '?')[0].toUpperCase()}
                   </div>
                   {/* Name + handle */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--pe-text)' }}>{u.display_name || u.username}</div>
+                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--pe-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.display_name || u.username}</div>
                     {u.display_name && <div style={{ fontSize: '10px', color: 'var(--pe-text-muted)' }}>@{u.username}</div>}
                   </div>
                   {/* Role badge */}
-                  <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '10px', flexShrink: 0, whiteSpace: 'nowrap', color: badge.color, background: badge.bg, border: `1px solid ${badge.border}` }}>
+                  <span style={{ fontSize: '11px', height: '28px', padding: '0 8px', borderRadius: '10px', flexShrink: 0, whiteSpace: 'nowrap', color: badge.color, background: badge.bg, border: `1px solid ${badge.border}`, display: 'inline-flex', alignItems: 'center' }}>
                     {ROLE_LABELS[u.role] || u.role}
                   </span>
                   {/* Edit / Close button — hidden for inactive users */}
                   {!!u.active && (
                     <button
                       onClick={() => isExpanded ? setEditId(null) : startEdit(u)}
-                      style={{ ...btnSmall, fontSize: '11px', padding: '3px 8px', minHeight: '28px', border: isExpanded ? `1px solid var(--pe-cyan-bright)` : '1px solid var(--pe-border)', background: isExpanded ? 'rgba(0,184,255,0.1)' : 'var(--pe-bg-elevated)', color: isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)', flexShrink: 0 }}
+                      style={{ ...btnSmall, fontSize: '11px', padding: '0 8px', height: '28px', minHeight: '28px', border: isExpanded ? `1px solid var(--pe-cyan-bright)` : '1px solid var(--pe-border)', background: isExpanded ? 'rgba(0,184,255,0.1)' : 'var(--pe-bg-elevated)', color: isExpanded ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                     >
                       {isExpanded ? '✕' : '✏️'}
                     </button>
@@ -1082,14 +1082,14 @@ function UsersTab() {
                   {!isExpanded && (u.active ? (
                     <button
                       onClick={() => handleDelete(u.id)}
-                      style={{ ...btnSmall, fontSize: '11px', padding: '3px 8px', minHeight: '28px', color: 'var(--pe-danger)', flexShrink: 0 }}
+                      style={{ ...btnSmall, fontSize: '11px', padding: '0 8px', height: '28px', minHeight: '28px', color: 'var(--pe-danger)', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                     >
                       Deaktivieren
                     </button>
                   ) : (
                     <button
                       onClick={() => handleReactivate(u.id)}
-                      style={{ ...btnSmall, fontSize: '11px', padding: '3px 8px', minHeight: '28px', color: 'var(--pe-success)', border: '1px solid var(--pe-success)', flexShrink: 0 }}
+                      style={{ ...btnSmall, fontSize: '11px', padding: '0 8px', height: '28px', minHeight: '28px', color: 'var(--pe-success)', border: '1px solid var(--pe-success)', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                     >
                       Reaktivieren
                     </button>
@@ -1136,25 +1136,25 @@ function UsersTab() {
                     {u.display_name && <span className="ml-2 text-xs" style={{ color: 'var(--pe-text-muted)' }}>@{u.username}</span>}
                     {!u.active && <span className="ml-2 text-xs" style={{ color: 'var(--pe-danger)' }}>inaktiv</span>}
                   </div>
-                  <span className="text-xs px-2 py-1 rounded-full font-bold flex-shrink-0" style={{ color: ROLE_COLORS[u.role] || 'var(--pe-text-muted)', border: `1px solid ${ROLE_COLORS[u.role] || 'var(--pe-border)'}` }}>
+                  <span className="text-xs font-bold flex-shrink-0" style={{ height: '28px', padding: '0 8px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', color: ROLE_COLORS[u.role] || 'var(--pe-text-muted)', border: `1px solid ${ROLE_COLORS[u.role] || 'var(--pe-border)'}` }}>
                     {ROLE_LABELS[u.role] || u.role}
                   </span>
                 </div>
-                <div className="flex gap-2 flex-shrink-0">
+                <div style={{ display: 'flex', gap: '6px', flexShrink: 0, alignItems: 'center' }}>
                   {!!u.active && (
                     <button
                       onClick={() => editId === u.id ? setEditId(null) : startEdit(u)}
-                      style={{ ...btnSmall, background: editId === u.id ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: editId === u.id ? 'var(--pe-text)' : 'var(--pe-text-sub)', padding: '5px 12px' }}
+                      style={{ ...btnSmall, height: '32px', padding: '0 12px', background: editId === u.id ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: editId === u.id ? 'var(--pe-text)' : 'var(--pe-text-sub)', display: 'inline-flex', alignItems: 'center' }}
                     >
                       {editId === u.id ? 'Abbrechen' : 'Bearbeiten'}
                     </button>
                   )}
                   {u.active ? (
-                    <button onClick={() => handleDelete(u.id)} style={{ ...btnSmall, background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', padding: '5px 12px' }}>
+                    <button onClick={() => handleDelete(u.id)} style={{ ...btnSmall, height: '32px', padding: '0 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', display: 'inline-flex', alignItems: 'center' }}>
                       Deaktivieren
                     </button>
                   ) : (
-                    <button onClick={() => handleReactivate(u.id)} style={{ ...btnSmall, background: 'var(--pe-bg-elevated)', color: 'var(--pe-success)', border: '1px solid var(--pe-success)', padding: '5px 12px' }}>
+                    <button onClick={() => handleReactivate(u.id)} style={{ ...btnSmall, height: '32px', padding: '0 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-success)', border: '1px solid var(--pe-success)', display: 'inline-flex', alignItems: 'center' }}>
                       Reaktivieren
                     </button>
                   )}
