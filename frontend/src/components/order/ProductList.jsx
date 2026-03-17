@@ -1,3 +1,4 @@
+// TODO: superseded by gastro/ProductGrid.jsx — remove after audit
 import { useState } from 'react';
 
 const categories = [
