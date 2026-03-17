@@ -516,7 +516,7 @@ export default function GastronomyPage() {
               fontFamily: 'Verdana, Geneva, sans-serif',
               fontSize: '12px',
               cursor: 'pointer',
-              minHeight: '44px',
+              minHeight: '64px',
             }}
           >
             Station wechseln
