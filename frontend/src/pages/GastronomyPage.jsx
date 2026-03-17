@@ -5,6 +5,7 @@ import { api } from '../api/client';
 import NFCScanner from '../components/nfc/NFCScanner';
 import GuestHeader from '../components/gastro/GuestHeader';
 import OpenOrdersPanel from '../components/gastro/OpenOrdersPanel';
+import RegisterView from '../components/gastro/RegisterView';
 import { useToastStore } from '../store/toasts';
 import { useStore } from '../store';
 
@@ -731,72 +732,12 @@ export default function GastronomyPage() {
       {/* ===== KASSEN-ANSICHT (Kassier) ===== */}
       {view === 'register' && (
         <div className="max-w-5xl mx-auto">
-          {registerLoading && guestOrders.length === 0 && (
-            <p className="text-center" style={{ color: 'var(--pe-text-sub)' }}>Lade Bestellungen...</p>
-          )}
-
-          {/* Liste aller Gäste mit offenen Bestellungen */}
-          <div className="space-y-3">
-            {guestOrders.map((g) => {
-              const isJustSettled = settledIds.has(g.guest_id);
-              return (
-                <div
-                  key={g.guest_id}
-                  className="rounded-xl overflow-hidden"
-                  style={{
-                    background: isJustSettled ? 'rgba(0,229,160,0.08)' : 'var(--pe-bg-card)',
-                    border: isJustSettled ? '1px solid var(--pe-success)' : '1px solid var(--pe-border)',
-                    transition: 'all 0.3s',
-                  }}
-                >
-                  {/* Gast-Header */}
-                  <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--pe-border)' }}>
-                    <span style={{ fontWeight: 'bold', fontSize: '16px', color: 'var(--pe-text)' }}>{g.guest_name || 'Gast'}</span>
-                    <span style={{ fontWeight: 'bold', fontSize: '20px', color: isJustSettled ? 'var(--pe-success)' : 'var(--pe-cyan-bright)' }}>
-                      {isJustSettled ? '✓ Abgerechnet' : `${parseFloat(g.total || 0).toFixed(2)} €`}
-                    </span>
-                  </div>
-
-                  {/* Artikel-Tabelle */}
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
-                        <th style={{ textAlign: 'left', padding: '8px 16px', fontSize: '11px', color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Artikel</th>
-                        <th style={{ textAlign: 'center', padding: '8px 16px', fontSize: '11px', color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', width: '64px' }}>Menge</th>
-                        <th style={{ textAlign: 'right', padding: '8px 16px', fontSize: '11px', color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', width: '96px' }}>Preis</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(g.items || []).map((item, i) => (
-                        <tr key={i} style={{ borderTop: '1px solid var(--pe-border)' }}>
-                          <td style={{ padding: '10px 16px', fontSize: '14px', color: 'var(--pe-text)' }}>{item.product_name}</td>
-                          <td style={{ padding: '10px 16px', fontSize: '14px', color: 'var(--pe-text)', textAlign: 'center' }}>{item.quantity}</td>
-                          <td style={{ padding: '10px 16px', fontSize: '14px', color: 'var(--pe-text-sub)', textAlign: 'right', whiteSpace: 'nowrap' }}>{parseFloat(item.total).toFixed(2)} €</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  {/* Jetzt-abrechnen Button */}
-                  {!isJustSettled && (
-                    <div style={{ padding: '12px 16px' }}>
-                      <button
-                        onClick={() => initSettle(g)}
-                        disabled={submitting}
-                        style={{ ...btnStyle, width: '100%', minHeight: '64px', background: 'var(--pe-success)', color: '#000', border: 'none', fontSize: '15px' }}
-                      >
-                        Jetzt abrechnen
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {!registerLoading && guestOrders.length === 0 && (
-              <p className="text-center py-8" style={{ color: 'var(--pe-text-muted)' }}>Keine offenen Bestellungen</p>
-            )}
-          </div>
+          <RegisterView
+            guestOrders={guestOrders}
+            settledIds={settledIds}
+            onSettle={initSettle}
+            loading={registerLoading}
+          />
         </div>
       )}
     </div>
