@@ -1,10 +1,9 @@
 // GastronomyPage — station-split architecture
-// Stations: 'bar' (drinks + ordering), 'kitchen' (food tickets), 'register' (settle)
+// Stations: 'bar' (drinks + ordering), 'register' (settle)
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '../api/client';
 import GastronomyLogin from '../components/gastro/GastronomyLogin';
 import StationSelector from '../components/gastro/StationSelector';
-import KitchenView from '../components/gastro/KitchenView';
 import RegisterView from '../components/gastro/RegisterView';
 import GuestSelector from '../components/gastro/GuestSelector';
 import GuestHeader from '../components/gastro/GuestHeader';
@@ -244,7 +243,7 @@ export default function GastronomyPage() {
   }
 
   // Station-level product filtering
-  // 'bar' shows drinks only, 'kitchen' and 'register' show all available
+  // 'bar' shows drinks only, 'register' shows all available
   const stationCategory = station === 'bar' ? 'drink' : null;
   const stationFilteredProducts = products.filter((p) => {
     if (!p.available) return false;
@@ -255,7 +254,6 @@ export default function GastronomyPage() {
   // Station badge config
   const badgeConfig = {
     bar:      { label: 'Bar',   icon: '🍺', accent: 'var(--pe-cyan-bright)', accentBg: 'rgba(0,184,255,0.12)', accentBorder: 'rgba(0,184,255,0.35)' },
-    kitchen:  { label: 'Küche', icon: '🍳', accent: 'var(--pe-warning)',     accentBg: 'rgba(255,176,32,0.12)',  accentBorder: 'rgba(255,176,32,0.35)' },
     register: { label: 'Kasse', icon: '💳', accent: 'var(--pe-success)',     accentBg: 'rgba(0,229,160,0.12)',  accentBorder: 'rgba(0,229,160,0.35)' },
   };
   const badge = badgeConfig[station];
@@ -322,7 +320,7 @@ export default function GastronomyPage() {
 
       {/* ===== BAR STATION ===== */}
       {station === 'bar' && (
-        <div className="flex flex-col md:flex-row gap-4 max-w-5xl mx-auto p-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1200, margin: '0 auto', padding: 16 }} className="md:flex-row">
           {/* Left column: guest selector or guest detail + products */}
           <div className="flex-1 min-w-0">
             {!guest && (
@@ -384,14 +382,9 @@ export default function GastronomyPage() {
         </div>
       )}
 
-      {/* ===== KITCHEN STATION ===== */}
-      {station === 'kitchen' && (
-        <KitchenView />
-      )}
-
       {/* ===== REGISTER (KASSE) STATION ===== */}
       {station === 'register' && (
-        <div className="max-w-5xl mx-auto p-4">
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: 16 }}>
           <RegisterView
             guestOrders={guestOrders}
             settledIds={settledIds}

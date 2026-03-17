@@ -23,6 +23,7 @@ export default function GuestSelector({
 }) {
   const [manualOpen, setManualOpen] = useState(!nfcAvailable);
   const [search, setSearch] = useState('');
+  const [searchTouched, setSearchTouched] = useState(false);
 
   const filteredGuests = guests.filter(
     (g) => !search || g.name?.toLowerCase().includes(search.toLowerCase())
@@ -63,9 +64,21 @@ export default function GuestSelector({
         <div style={{ marginTop: '8px' }}>
           <GuestSearchInput
             value={search}
-            onChange={setSearch}
-            onCreateNew={() => onCreateGuest(search.trim() || 'Neuer Gast')}
+            onChange={(val) => { setSearch(val); setSearchTouched(true); }}
+            onCreateNew={search.trim() ? () => onCreateGuest(search.trim()) : undefined}
           />
+          {searchTouched && !search.trim() && (
+            <p
+              style={{
+                color: 'var(--pe-warning)',
+                fontSize: 12,
+                margin: '4px 0 0',
+                fontFamily: 'Verdana, Geneva, sans-serif',
+              }}
+            >
+              Bitte Namen eingeben
+            </p>
+          )}
 
           <div
             style={{
