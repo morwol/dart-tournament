@@ -160,6 +160,16 @@ body {
   to   { opacity: 0; }
 }
 
+@keyframes pe-slide-down {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes walkon-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(var(--walkon-shift, 0px)); }
+}
+
 /* ─── Responsive nav wrappers ─── */
 /* Desktop TopNav: shown only on ≥768px */
 .pe-topnav-wrap { display: none; }
