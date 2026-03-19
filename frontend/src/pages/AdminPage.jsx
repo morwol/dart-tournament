@@ -561,10 +561,14 @@ function PlayersTab() {
                   {/* Name + badges */}
                   <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
                     <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--pe-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: p.active_tournament_name || p.has_walkon || p.walkon_youtube ? '3px' : 0 }}>
-                      {p.active_tournament_name && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '3px' }}>
+                      {p.active_tournament_name ? (
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: 'rgba(26,79,214,0.15)', border: '1px solid rgba(26,79,214,0.4)', borderRadius: '6px', padding: '1px 6px', fontSize: '10px', color: 'var(--pe-cyan-light)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
                           🏆 {p.active_tournament_name}
+                        </span>
+                      ) : (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: 'transparent', border: '1px solid var(--pe-border)', borderRadius: '6px', padding: '1px 6px', fontSize: '10px', color: 'var(--pe-text-muted)' }}>
+                          kein Turnier
                         </span>
                       )}
                       {(p.has_walkon || p.walkon_youtube) && (
@@ -619,7 +623,7 @@ function PlayersTab() {
                 </div>
                 {/* Expanded accordion form */}
                 {isExpanded && (
-                  <form onSubmit={handleEdit} style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <form onSubmit={handleEdit} style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '5px', animation: 'pe-slide-down 0.18s ease' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
                       <input type="text" value={editingPlayer.vorname} onChange={e => setEditingPlayer({ ...editingPlayer, vorname: e.target.value })} placeholder="Vorname *" required style={{ ...inputStyle, padding: '6px 8px' }} />
                       <input type="text" value={editingPlayer.nachname} onChange={e => setEditingPlayer({ ...editingPlayer, nachname: e.target.value })} placeholder="Nachname *" required style={{ ...inputStyle, padding: '6px 8px' }} />
@@ -663,10 +667,14 @@ function PlayersTab() {
             <div key={p.id} className="p-3 rounded-lg flex justify-between items-center" style={{ background: 'var(--pe-bg-card)', border: `1px solid ${playingId === p.id ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, boxShadow: playingId === p.id ? '0 0 8px var(--pe-cyan-bright)' : 'none', transition: 'box-shadow 0.2s, border-color 0.2s' }}>
               <div style={{ minWidth: 0, overflow: 'hidden', flex: 1 }}>
                 <span className="font-bold" style={{ color: 'var(--pe-text)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: p.active_tournament_name || p.has_walkon || p.walkon_youtube ? '3px' : 0 }}>
-                  {p.active_tournament_name && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '3px' }}>
+                  {p.active_tournament_name ? (
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: 'rgba(26,79,214,0.15)', border: '1px solid rgba(26,79,214,0.4)', borderRadius: '6px', padding: '1px 6px', fontSize: '10px', color: 'var(--pe-cyan-light)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
                       🏆 {p.active_tournament_name}
+                    </span>
+                  ) : (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: 'transparent', border: '1px solid var(--pe-border)', borderRadius: '6px', padding: '1px 6px', fontSize: '10px', color: 'var(--pe-text-muted)' }}>
+                      kein Turnier
                     </span>
                   )}
                   {(p.has_walkon || p.walkon_youtube) && (
