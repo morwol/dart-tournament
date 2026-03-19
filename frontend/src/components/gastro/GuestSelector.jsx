@@ -65,18 +65,25 @@ export default function GuestSelector({
           <GuestSearchInput
             value={search}
             onChange={(val) => { setSearch(val); setSearchTouched(true); }}
-            onCreateNew={search.trim() ? () => onCreateGuest(search.trim()) : undefined}
+            onCreateNew={() => {
+              if (!search.trim()) {
+                setSearchTouched(true);
+                return;
+              }
+              onCreateGuest(search.trim());
+            }}
+            createDisabled={!search.trim()}
           />
           {searchTouched && !search.trim() && (
             <p
               style={{
-                color: 'var(--pe-warning)',
+                color: 'var(--pe-danger)',
                 fontSize: 12,
                 margin: '4px 0 0',
                 fontFamily: 'var(--pe-font-body)',
               }}
             >
-              Bitte Namen eingeben
+              Bitte Namen eingeben, um einen neuen Gast anzulegen
             </p>
           )}
 

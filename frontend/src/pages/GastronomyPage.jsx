@@ -306,8 +306,7 @@ export default function GastronomyPage() {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '8px 16px',
-          maxWidth: 1200,
-          margin: '0 auto 4px',
+          margin: '0 0 4px',
         }}
       >
         {badge && (
@@ -349,7 +348,7 @@ export default function GastronomyPage() {
 
       {/* ===== BAR STATION ===== */}
       {station === 'bar' && (
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: 16 }}>
+        <div style={{ width: '100%', padding: 16 }}>
           {!guest && (
             <GuestSelector
               guests={allGuests}
@@ -397,7 +396,7 @@ export default function GastronomyPage() {
 
       {/* ===== REGISTER (KASSE) STATION ===== */}
       {station === 'register' && (
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: 16 }}>
+        <div style={{ width: '100%', padding: 16 }}>
           <RegisterView
             guestOrders={guestOrders}
             settledIds={settledIds}
