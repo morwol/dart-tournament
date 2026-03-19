@@ -30,6 +30,9 @@ const historyRoutes = require('./routes/history');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust nginx reverse proxy (required for express-rate-limit + X-Forwarded-For)
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(helmet());
 const corsOptions = {
