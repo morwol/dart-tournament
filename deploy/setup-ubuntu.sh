@@ -79,6 +79,9 @@ fi
 # JWT Secret (auto-generate)
 JWT_SECRET=$(openssl rand -hex 48)
 
+# Webhook Secret (auto-generate, only used on dev branch)
+WEBHOOK_SECRET=$(openssl rand -hex 32)
+
 # Summary
 APP_DIR="/var/www/dartsturnier"
 SERVICE_NAME="dartevent"
@@ -169,6 +172,8 @@ JWT_SECRET=$JWT_SECRET
 DB_PATH=./data/dartevent.db
 ADMIN_USERNAME=$ADMIN_USER
 ADMIN_PASSWORD=$ADMIN_PASS
+WEBHOOK_SECRET=$WEBHOOK_SECRET
+WEBHOOK_PORT=9001
 EOF
   chmod 600 "$ENV_FILE"
   chown "$SERVICE_NAME":"$SERVICE_NAME" "$ENV_FILE"
@@ -226,6 +231,17 @@ server {
             add_header Cache-Control "public, immutable";
         }
     }
+$([ "$BRANCH" = "dev" ] && cat <<'WEBHOOK_BLOCK'
+    location /webhook {
+        proxy_pass http://127.0.0.1:9001/webhook;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+WEBHOOK_BLOCK
+)
 }
 EOF
 
@@ -277,6 +293,15 @@ systemctl daemon-reload
 systemctl enable --now dartevent
 sleep 2
 
+# ── Webhook service (dev branch only) ───────────────────────
+
+if [ "$BRANCH" = "dev" ]; then
+  cp "$APP_DIR/deploy/dartevent-webhook.service" /etc/systemd/system/
+  systemctl daemon-reload
+  systemctl enable --now dartevent-webhook
+  echo -e "${GREEN}    ✓ Webhook service installed and running${NC}"
+fi
+
 # ── Final status ────────────────────────────────────────────
 
 echo ""
@@ -297,5 +322,14 @@ echo -e "  Update: ${CYAN}sudo bash $APP_DIR/deploy/update-dev.sh${NC}   (dev)"
 echo -e "         ${CYAN}sudo bash $APP_DIR/deploy/update.sh${NC}        (prod)"
 echo ""
 echo -e "  Logs:   ${CYAN}journalctl -u dartevent -f${NC}"
+if [ "$BRANCH" = "dev" ]; then
+  echo ""
+  echo -e "  ${BOLD}${YELLOW}GitHub Webhook (auto-deploy):${NC}"
+  echo -e "  Payload URL:  ${CYAN}https://$DOMAIN/webhook${NC}"
+  echo -e "  Secret:       ${CYAN}$WEBHOOK_SECRET${NC}"
+  echo -e "  Content type: application/json"
+  echo -e "  Event:        Just the push event"
+  echo -e "  ${BOLD}→ GitHub → Repo → Settings → Webhooks → Add webhook${NC}"
+fi
 echo -e "${CYAN}══════════════════════════════════════════════${NC}"
 echo ""
