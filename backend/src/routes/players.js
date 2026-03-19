@@ -197,6 +197,40 @@ router.post('/', requireAdminOrDirector, requireFields(['vorname', 'nickname', '
   return res.status(201).json(player);
 });
 
+// PUT /api/players/:id — Spielerprofil bearbeiten (ohne Turnierbezug)
+router.put('/:id', requireAdminOrDirector, (req, res) => {
+  const playerId = parseInt(req.params.id, 10);
+  if (!playerId || playerId <= 0) return res.status(400).json({ error: 'Ungültige Spieler-ID' });
+
+  const player = db.prepare('SELECT * FROM players WHERE id = ?').get(playerId);
+  if (!player) return res.status(404).json({ error: 'Spieler nicht gefunden' });
+
+  const vorname = (req.body.vorname ?? player.vorname ?? '').trim();
+  const nickname = (req.body.nickname ?? player.nickname ?? '').trim();
+  const nachname = (req.body.nachname ?? player.nachname ?? '').trim();
+
+  if (!vorname || !nickname || !nachname) {
+    return res.status(400).json({ error: 'Vorname, Nickname und Nachname sind Pflichtfelder' });
+  }
+
+  // Check nickname uniqueness (excluding self)
+  const conflict = db.prepare(
+    'SELECT id FROM players WHERE LOWER(TRIM(nickname)) = LOWER(?) AND id != ?'
+  ).get(nickname, playerId);
+  if (conflict) {
+    return res.status(409).json({ error: `Der Nickname "${nickname}" ist bereits vergeben.` });
+  }
+
+  const displayName = `${vorname} "${nickname}" ${nachname}`;
+  db.prepare(
+    'UPDATE players SET name = ?, vorname = ?, nickname = ?, nachname = ?, walkon_youtube = ? WHERE id = ?'
+  ).run(displayName, vorname, nickname, nachname, req.body.walkon_youtube ?? player.walkon_youtube, playerId);
+
+  const updated = db.prepare('SELECT * FROM players WHERE id = ?').get(playerId);
+  auditLog(req, 'player', 'UPDATE', `Spielerprofil "${displayName}" bearbeitet`, playerId);
+  return res.json(updated);
+});
+
 // GET /api/players — Alle Spielerprofile mit Gesamt-Stats
 router.get('/', (req, res) => {
   const players = db.prepare(`
