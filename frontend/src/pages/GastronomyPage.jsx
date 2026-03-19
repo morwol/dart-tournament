@@ -105,6 +105,7 @@ export default function GastronomyPage() {
   const [orderSuccess, setOrderSuccess] = useState(false);
 
   const [allGuests, setAllGuests] = useState([]);
+  const [activeTournamentId, setActiveTournamentId] = useState(null);
 
   // NEU: Kassen-Ansicht State
   const [guestOrders, setGuestOrders] = useState([]);
@@ -116,10 +117,13 @@ export default function GastronomyPage() {
 
   if (!token) return <GastronomyLogin onLogin={setToken} />;
 
-  // NEU: Produkte + Gäste laden
+  // NEU: Produkte + Gäste + aktives Turnier laden
   useEffect(() => {
     api.get('/products').then(setProducts).catch(() => {});
     api.get('/nfc/guests').then(setAllGuests).catch(() => {});
+    api.get('/tournaments/active').then((t) => {
+      if (t && t.id) setActiveTournamentId(t.id);
+    }).catch(() => {});
   }, []);
 
   // NEU: Offene Bestellungen des ausgewählten Gastes laden
@@ -327,7 +331,9 @@ export default function GastronomyPage() {
                   />
                   <button
                     onClick={() => {
-                      api.post('/nfc/create-manual', { name: guestSearch.trim() || 'Neuer Gast' })
+                      const payload = { name: guestSearch.trim() || 'Neuer Gast' };
+                      if (activeTournamentId) payload.tournament_id = activeTournamentId;
+                      api.post('/nfc/create-manual', payload)
                         .then((g) => { setGuest(g); setCart([]); setGuestSearch(''); setAllGuests(prev => [...prev, g]); })
                         .catch((err) => alert(err.message || 'Gast konnte nicht angelegt werden'));
                     }}
