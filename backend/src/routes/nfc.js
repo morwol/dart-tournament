@@ -29,6 +29,12 @@ router.post('/scan', requireFields(['uid']), (req, res) => {
 // POST /api/nfc/create (Admin)
 router.post('/create', verifyToken, requireFields(['uid', 'name']), (req, res) => {
   const { uid, name, tournament_id } = req.body;
+
+  const parsedTournamentId = tournament_id !== undefined && tournament_id !== null ? parseInt(tournament_id, 10) : null;
+  if (parsedTournamentId !== null && (isNaN(parsedTournamentId) || parsedTournamentId <= 0)) {
+    return res.status(400).json({ error: 'tournament_id muss eine positive ganze Zahl sein' });
+  }
+
   const hashedUid = hashUid(uid);
 
   const existing = db.prepare('SELECT * FROM guests WHERE nfc_uid = ?').get(hashedUid);
@@ -38,7 +44,7 @@ router.post('/create', verifyToken, requireFields(['uid', 'name']), (req, res) =
 
   const result = db.prepare(
     'INSERT INTO guests (nfc_uid, name, tournament_id) VALUES (?, ?, ?)'
-  ).run(hashedUid, name, tournament_id || null);
+  ).run(hashedUid, name, parsedTournamentId);
 
   const guest = db.prepare('SELECT * FROM guests WHERE id = ?').get(result.lastInsertRowid);
   res.status(201).json(guest);
@@ -53,9 +59,15 @@ router.get('/guests', requireAny(['admin', 'gastronomy']), (req, res) => {
 // POST /api/nfc/create-manual — Gast ohne NFC-Hardware anlegen (Gastronomy + Admin)
 router.post('/create-manual', requireAny(['admin', 'gastronomy']), requireFields(['name']), (req, res) => {
   const { name, tournament_id } = req.body;
+
+  const parsedTournamentId = tournament_id !== undefined && tournament_id !== null ? parseInt(tournament_id, 10) : null;
+  if (parsedTournamentId !== null && (isNaN(parsedTournamentId) || parsedTournamentId <= 0)) {
+    return res.status(400).json({ error: 'tournament_id muss eine positive ganze Zahl sein' });
+  }
+
   const rawUid = 'MANUAL-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7).toUpperCase();
   const hashedManualUid = hashUid(rawUid);
-  const result = db.prepare('INSERT INTO guests (nfc_uid, name, tournament_id) VALUES (?, ?, ?)').run(hashedManualUid, name, tournament_id || null);
+  const result = db.prepare('INSERT INTO guests (nfc_uid, name, tournament_id) VALUES (?, ?, ?)').run(hashedManualUid, name, parsedTournamentId);
   const guest = db.prepare('SELECT * FROM guests WHERE id = ?').get(result.lastInsertRowid);
   res.status(201).json(guest);
 });
