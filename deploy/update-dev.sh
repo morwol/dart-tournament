@@ -25,7 +25,7 @@ echo ""
 # --- 1. Pull latest dev branch ---
 echo -e "${GREEN}>>> git pull (dev)...${NC}"
 cd "$APP_DIR"
-git fetch origin
+git fetch origin || (sleep 10 && git fetch origin) || (sleep 30 && git fetch origin)
 git checkout dev
 git pull origin dev
 
