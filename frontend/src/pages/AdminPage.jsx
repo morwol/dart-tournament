@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useStore } from '../store';
 import { parseJwt, isTokenValid } from '../lib/parseJwt';
@@ -311,19 +311,11 @@ function BoardsTab() {
 
 function PlayersTab() {
   const { addToast } = useToastStore();
-  const [tournaments, setTournaments] = useState([]);
-  const [selectedTournament, setSelectedTournament] = useState('');
-  const [tournamentStatus, setTournamentStatus] = useState('open');
   const [players, setPlayers] = useState([]);
   const [walkonStatuses, setWalkonStatuses] = useState({}); // { [playerId]: status string }
   const [playingId, setPlayingId] = useState(null); // id of player whose walk-on is currently playing
   const audioRef = useRef(null);
-  const [addMode, setAddMode] = useState(null); // null | 'search' | 'new'
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [confirmPlayer, setConfirmPlayer] = useState(null); // player object to confirm
-  const [confirmSeed, setConfirmSeed] = useState('');
+  const [addMode, setAddMode] = useState(null); // null | 'new'
 
   const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 768px)').matches);
   useEffect(() => {
@@ -364,25 +356,6 @@ function PlayersTab() {
     return () => clearInterval(interval);
   }, [walkonStatuses]);
 
-  useEffect(() => {
-    api.get('/tournaments').then((t) => {
-      setTournaments(t);
-      if (t.length > 0) {
-        setSelectedTournament(t[0].id);
-        setTournamentStatus(t[0].status);
-      }
-    }).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (!selectedTournament) return;
-    api.get(`/tournaments/${selectedTournament}/players`).then(setPlayers).catch(() => {});
-    const t = tournaments.find(t => String(t.id) === String(selectedTournament));
-    if (t) setTournamentStatus(t.status);
-  }, [selectedTournament]);
-
-  const isActive = tournamentStatus === 'active';
-
   // Walk-On inline play/stop handler
   const handleWalkonPlay = async (player) => {
     // Stop current playback
@@ -410,67 +383,22 @@ function PlayersTab() {
     }
   };
 
-  const loadPlayers = async () => {
-    const updated = await api.get(`/tournaments/${selectedTournament}/players`);
-    setPlayers(updated);
-    // Use server-side walkon_status instead of per-player API calls
-    const statuses = {};
-    for (const p of updated) {
-      if (p.has_walkon || p.walkon_youtube) {
-        statuses[p.id] = p.walkon_status || null;
-      }
-    }
-    setWalkonStatuses(statuses);
-  };
-
-  useEffect(() => {
-    if (!searchQuery || searchQuery.trim().length < 2) {
-      setSearchResults([]);
-      setConfirmPlayer(null);
-      return;
-    }
-    const timer = setTimeout(async () => {
-      setSearchLoading(true);
-      try {
-        const results = await api.get(
-          `/players/search?q=${encodeURIComponent(searchQuery.trim())}&tournament_id=${selectedTournament}`
-        );
-        setSearchResults(results);
-      } catch {
-        setSearchResults([]);
-      } finally {
-        setSearchLoading(false);
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery, selectedTournament]);
-
-  const handleRegisterExisting = async () => {
-    if (!confirmPlayer || !selectedTournament) return;
+  const loadPlayers = useCallback(async () => {
     try {
-      await api.post(`/tournaments/${selectedTournament}/players`, {
-        player_id: confirmPlayer.id,
-        seed: confirmSeed ? parseInt(confirmSeed, 10) : undefined,
-      });
-      setAddMode(null);
-      setSearchQuery('');
-      setSearchResults([]);
-      setConfirmPlayer(null);
-      setConfirmSeed('');
-      await loadPlayers();
-      addToast({ type: 'success', message: `${confirmPlayer.name} angemeldet` });
-    } catch (err) {
-      addToast({ type: 'error', message: err.message || 'Anmeldung fehlgeschlagen' });
-    }
-  };
+      const data = await api.get('/players');
+      setPlayers(data);
+      const statuses = {};
+      data.forEach(p => { if (p.walkon_status) statuses[p.id] = p.walkon_status; });
+      setWalkonStatuses(statuses);
+    } catch { /* ignore */ }
+  }, []);
+  useEffect(() => { loadPlayers(); }, [loadPlayers]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!form.vorname.trim() || !form.nickname.trim() || !form.nachname.trim()) return;
     try {
-      const res = selectedTournament
-        ? await api.post(`/tournaments/${selectedTournament}/players`, form)
-        : await api.post('/players', form);
+      const res = await api.post('/players', form);
       const newPlayerId = res.id || res.player_id || res.player?.id;
       if (form.walk_on_song && newPlayerId) {
         try {
@@ -485,9 +413,6 @@ function PlayersTab() {
       }
       setForm({ vorname: '', nickname: '', nachname: '', walk_on_song: '', walkon_start: 0, walkon_duration: 30 });
       setAddMode(null);
-      setSearchQuery('');
-      setSearchResults([]);
-      setConfirmPlayer(null);
       await loadPlayers();
     } catch (err) {
       addToast({ type: 'error', message: err.message || 'Spieler konnte nicht angelegt werden' });
@@ -499,7 +424,7 @@ function PlayersTab() {
     if (!editingPlayer) return;
     setIsSaving(true);
     try {
-      await api.put(`/tournaments/${selectedTournament}/players/${editingPlayer.id}`, editingPlayer);
+      await api.put(`/players/${editingPlayer.id}`, editingPlayer);
       if (editingPlayer.walk_on_song) {
         try {
           await api.post(`/walkon/${editingPlayer.id}`, {
@@ -533,190 +458,51 @@ function PlayersTab() {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px' }}>
         <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Spieler</h2>
-        {!isActive && (
-          <button
-            onClick={() => { setAddMode(addMode ? null : 'search'); setSearchQuery(''); setSearchResults([]); setConfirmPlayer(null); }}
-            className="px-4 py-2 rounded-lg text-sm font-bold"
-            style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'var(--pe-font-body)' }}
-          >
-            {addMode ? 'Abbrechen' : '+ Spieler'}
-          </button>
-        )}
+        <button
+          onClick={() => { setAddMode(addMode ? null : 'new'); }}
+          className="px-4 py-2 rounded-lg text-sm font-bold"
+          style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'var(--pe-font-body)' }}
+        >
+          {addMode ? 'Abbrechen' : '+ Spieler'}
+        </button>
       </div>
 
-      <select value={selectedTournament} onChange={(e) => setSelectedTournament(e.target.value)} className="w-full p-3 rounded-lg outline-none mb-4" style={selectStyle}>
-        {tournaments.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.status})</option>)}
-      </select>
-
-      {isActive && (
-        <div className="mb-4 px-3 py-2 rounded-lg text-sm" style={{ background: 'rgba(255,69,96,0.1)', border: '1px solid var(--pe-danger)', color: 'var(--pe-danger)' }}>
-          Turnier aktiv — Löschen gesperrt. Namen können noch geändert werden.
-        </div>
-      )}
-
-      {addMode && !isActive && (
+      {addMode === 'new' && (
         <div className="p-4 rounded-xl mb-6" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
-
-          {/* Mode: search */}
-          {addMode === 'search' && !confirmPlayer && (
-            <>
-              <input
-                type="text"
-                autoFocus
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Name oder Nickname suchen…"
-                className="w-full p-3 rounded-lg outline-none mb-3"
-                style={inputStyle}
-              />
-              {searchLoading && (
-                <p style={{ fontSize: '12px', color: 'var(--pe-text-muted)', textAlign: 'center', padding: '8px' }}>Suche…</p>
-              )}
-              {!searchLoading && searchQuery.trim().length >= 2 && searchResults.length === 0 && (
-                <p style={{ fontSize: '12px', color: 'var(--pe-text-muted)', textAlign: 'center', padding: '8px' }}>
-                  Keine Spieler gefunden.
-                </p>
-              )}
-              {searchResults.map((p) => (
-                <div
-                  key={p.id}
-                  onClick={() => { setConfirmPlayer(p); setConfirmSeed(''); }}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '10px',
-                    background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)',
-                    borderRadius: 'var(--pe-radius-sm)', padding: '10px 12px', marginBottom: '6px', cursor: 'pointer',
-                  }}
-                >
-                  <div style={{
-                    width: '36px', height: '36px', borderRadius: 'var(--pe-radius-sm)', flexShrink: 0,
-                    background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '11px', fontWeight: 'bold', color: 'var(--pe-cyan-bright)',
-                  }}>
-                    {((p.vorname?.[0] || '') + (p.nachname?.[0] || '')).toUpperCase() || '?'}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--pe-text)' }}>{p.name}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--pe-text-muted)', marginTop: '2px' }}>
-                      {p.tournaments_count} Turnier{p.tournaments_count !== 1 ? 'e' : ''} · {p.wins}S / {p.losses}N
-                      {p.has_walkon ? <WalkonBadge status={p.walkon_status} title={p.walkon_title} artist={p.walkon_artist} /> : null}
-                    </div>
-                  </div>
+          <form onSubmit={handleCreate} className="space-y-3">
+            <input type="text" value={form.vorname} onChange={(e) => setForm({ ...form, vorname: e.target.value })} placeholder="Vorname *" required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+            <input
+              type="text"
+              value={form.nickname}
+              onChange={(e) => setForm({ ...form, nickname: e.target.value })}
+              placeholder="Nickname *"
+              required
+              className="w-full p-3 rounded-lg outline-none"
+              style={inputStyle}
+            />
+            <input type="text" value={form.nachname} onChange={(e) => setForm({ ...form, nachname: e.target.value })} placeholder="Nachname *" required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+            <input type="url" value={form.walk_on_song} onChange={(e) => setForm({ ...form, walk_on_song: e.target.value })} placeholder="Walk-On Song URL (optional)" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+            {form.walk_on_song && (
+              <div className="flex gap-2">
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '11px', color: 'var(--pe-text-muted)', display: 'block', marginBottom: '4px' }}>Startzeit (Sek.)</label>
+                  <input type="number" min="0" value={form.walkon_start} onChange={(e) => setForm({ ...form, walkon_start: e.target.value })} required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
                 </div>
-              ))}
-              <button
-                onClick={() => {
-                  setForm({ vorname: '', nickname: searchQuery.trim(), nachname: '', walk_on_song: '', walkon_start: 0, walkon_duration: 30 });
-                  setAddMode('new');
-                }}
-                style={{
-                  width: '100%', marginTop: '6px', padding: '10px',
-                  border: '1px dashed var(--pe-border)', borderRadius: 'var(--pe-radius-sm)',
-                  background: 'none', color: 'var(--pe-cyan-bright)',
-                  fontSize: '12px', cursor: 'pointer', fontFamily: 'var(--pe-font-body)',
-                }}
-              >
-                + Neuen Spieler anlegen{searchQuery.trim() ? ` "${searchQuery.trim()}"` : ''}
-              </button>
-            </>
-          )}
-
-          {/* Confirm panel after selecting a player */}
-          {addMode === 'search' && confirmPlayer && (
-            <div>
-              <button
-                onClick={() => setConfirmPlayer(null)}
-                style={{ fontSize: '11px', color: 'var(--pe-text-muted)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '12px', fontFamily: 'var(--pe-font-body)' }}
-              >
-                ← Zurück zur Suche
-              </button>
-              <div style={{ background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-cyan-bright)', borderRadius: 'var(--pe-radius-md)', padding: '14px', marginBottom: '12px' }}>
-                <div style={{ fontSize: '10px', color: 'var(--pe-cyan-bright)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Gefundener Spieler</div>
-                <div style={{ fontSize: '15px', fontWeight: 'bold', color: 'var(--pe-text)', marginBottom: '4px' }}>{confirmPlayer.name}</div>
-                <div style={{ fontSize: '11px', color: 'var(--pe-text-sub)', marginBottom: '8px' }}>
-                  {confirmPlayer.tournaments_count} Turnier{confirmPlayer.tournaments_count !== 1 ? 'e' : ''} · {confirmPlayer.wins} Siege / {confirmPlayer.losses} Niederlagen
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '11px', color: 'var(--pe-text-muted)', display: 'block', marginBottom: '4px' }}>Länge (Sek.)</label>
+                  <input type="number" min="5" max="120" value={form.walkon_duration} onChange={(e) => setForm({ ...form, walkon_duration: e.target.value })} required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
                 </div>
-                {confirmPlayer.has_walkon && (
-                  <WalkonBadge
-                    status={confirmPlayer.walkon_status}
-                    title={confirmPlayer.walkon_title}
-                    artist={confirmPlayer.walkon_artist}
-                  />
-                )}
               </div>
-              <label style={{ fontSize: '11px', color: 'var(--pe-text-muted)', display: 'block', marginBottom: '4px' }}>Setzung (optional)</label>
-              <input
-                type="number"
-                min="1"
-                value={confirmSeed}
-                onChange={(e) => setConfirmSeed(e.target.value)}
-                placeholder="z.B. 1"
-                className="w-full p-3 rounded-lg outline-none mb-3"
-                style={inputStyle}
-              />
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={handleRegisterExisting}
-                  className="flex-1 py-3 rounded-lg font-bold"
-                  style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '48px', fontFamily: 'var(--pe-font-body)' }}
-                >
-                  Anmelden
-                </button>
-                <button
-                  onClick={() => setConfirmPlayer(null)}
-                  className="px-4 py-3 rounded-lg"
-                  style={{ background: 'var(--pe-bg-elevated)', color: 'var(--pe-text-sub)', fontFamily: 'var(--pe-font-body)' }}
-                >
-                  Abbrechen
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Mode: new player form */}
-          {addMode === 'new' && (
-            <form onSubmit={handleCreate} className="space-y-3">
-              <button
-                type="button"
-                onClick={() => setAddMode('search')}
-                style={{ fontSize: '11px', color: 'var(--pe-text-muted)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '4px', fontFamily: 'var(--pe-font-body)' }}
-              >
-                ← Zurück zur Suche
-              </button>
-              <input type="text" value={form.vorname} onChange={(e) => setForm({ ...form, vorname: e.target.value })} placeholder="Vorname *" required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
-              <input
-                type="text"
-                value={form.nickname}
-                onChange={(e) => setForm({ ...form, nickname: e.target.value })}
-                placeholder="Nickname *"
-                required
-                className="w-full p-3 rounded-lg outline-none"
-                style={inputStyle}
-              />
-              <input type="text" value={form.nachname} onChange={(e) => setForm({ ...form, nachname: e.target.value })} placeholder="Nachname *" required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
-              <input type="url" value={form.walk_on_song} onChange={(e) => setForm({ ...form, walk_on_song: e.target.value })} placeholder="Walk-On Song URL (optional)" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
-              {form.walk_on_song && (
-                <div className="flex gap-2">
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: '11px', color: 'var(--pe-text-muted)', display: 'block', marginBottom: '4px' }}>Startzeit (Sek.)</label>
-                    <input type="number" min="0" value={form.walkon_start} onChange={(e) => setForm({ ...form, walkon_start: e.target.value })} required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: '11px', color: 'var(--pe-text-muted)', display: 'block', marginBottom: '4px' }}>Länge (Sek.)</label>
-                    <input type="number" min="5" max="120" value={form.walkon_duration} onChange={(e) => setForm({ ...form, walkon_duration: e.target.value })} required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
-                  </div>
-                </div>
-              )}
-              {form.vorname && form.nickname && form.nachname && (
-                <p style={{ fontSize: '12px', color: 'var(--pe-text-muted)' }}>
-                  Angezeigt als: <strong style={{ color: 'var(--pe-text)' }}>{form.vorname.trim()} &ldquo;{form.nickname.trim()}&rdquo; {form.nachname.trim()}</strong>
-                </p>
-              )}
-              <button type="submit" disabled={!form.vorname.trim() || !form.nickname.trim() || !form.nachname.trim()} className="w-full py-3 rounded-lg font-bold disabled:opacity-50" style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '48px', fontFamily: 'var(--pe-font-body)' }}>
-                {selectedTournament ? 'Spieler anlegen & anmelden' : 'Spielerprofil anlegen'}
-              </button>
-            </form>
-          )}
+            )}
+            {form.vorname && form.nickname && form.nachname && (
+              <p style={{ fontSize: '12px', color: 'var(--pe-text-muted)' }}>
+                Angezeigt als: <strong style={{ color: 'var(--pe-text)' }}>{form.vorname.trim()} &ldquo;{form.nickname.trim()}&rdquo; {form.nachname.trim()}</strong>
+              </p>
+            )}
+            <button type="submit" disabled={!form.vorname.trim() || !form.nickname.trim() || !form.nachname.trim()} className="w-full py-3 rounded-lg font-bold disabled:opacity-50" style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '48px', fontFamily: 'var(--pe-font-body)' }}>
+              Spielerprofil anlegen
+            </button>
+          </form>
         </div>
       )}
 
@@ -841,13 +627,12 @@ function PlayersTab() {
                     )}
                     <button
                       type="button"
-                      disabled={isActive}
                       onClick={async () => {
                         if (!confirm(`${p.name} löschen?`)) return;
-                        try { await api.del(`/tournaments/${selectedTournament}/players/${p.id}`); await loadPlayers(); }
+                        try { await api.del(`/players/${p.id}`); await loadPlayers(); }
                         catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
                       }}
-                      style={{ ...btnSmall, padding: '6px', fontSize: '10px', cursor: isActive ? 'not-allowed' : 'pointer', color: isActive ? 'var(--pe-text-muted)' : 'var(--pe-danger)', opacity: isActive ? 0.4 : 1 }}
+                      style={{ ...btnSmall, padding: '6px', fontSize: '10px', cursor: 'pointer', color: 'var(--pe-danger)' }}
                     >
                       Löschen
                     </button>
@@ -876,7 +661,6 @@ function PlayersTab() {
                     artist={p.walkon_artist}
                   />
                 )}
-                <span className="ml-3 text-xs" style={{ color: 'var(--pe-text-muted)' }}>Seed: {p.seed || '—'}</span>
               </div>
               <div className="flex gap-2">
                 {/* Walk-On Play/Stop button — only when ready */}
@@ -924,13 +708,12 @@ function PlayersTab() {
                   Bearbeiten
                 </button>
                 <button
-                  disabled={isActive}
                   onClick={async () => {
                     if (!confirm(`${p.name} löschen?`)) return;
-                    try { await api.del(`/tournaments/${selectedTournament}/players/${p.id}`); await loadPlayers(); }
+                    try { await api.del(`/players/${p.id}`); await loadPlayers(); }
                     catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
                   }}
-                  style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: isActive ? 'var(--pe-text-muted)' : 'var(--pe-danger)', minHeight: '36px', cursor: isActive ? 'not-allowed' : 'pointer', opacity: isActive ? 0.4 : 1 }}
+                  style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', minHeight: '36px', cursor: 'pointer' }}
                 >
                   Löschen
                 </button>
