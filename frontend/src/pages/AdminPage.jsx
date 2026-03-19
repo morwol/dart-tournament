@@ -551,7 +551,7 @@ function PlayersTab() {
             const isExpanded = editingPlayer?.id === p.id;
             const effectiveWalkonStatus = walkonStatuses[p.id] ?? p.walkon_status ?? (p.has_walkon ? 'ready' : null);
             return (
-              <div key={p.id} style={{ background: 'var(--pe-bg-card)', border: `1px solid ${isExpanded || playingId === p.id ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, borderRadius: 'var(--pe-radius-md)', padding: '12px', boxShadow: playingId === p.id ? '0 0 8px var(--pe-cyan-bright)' : 'none', transition: 'box-shadow 0.2s, border-color 0.2s' }}>
+              <div key={p.id} style={{ background: 'var(--pe-bg-card)', border: `1px solid ${isExpanded || playingId === p.id ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, borderRadius: 'var(--pe-radius-md)', padding: '12px', boxShadow: playingId === p.id ? '0 0 8px var(--pe-cyan-bright)' : 'none', transition: 'box-shadow 0.2s, border-color 0.2s', minWidth: 0, overflow: 'hidden' }}>
                 {/* Collapsed header — always visible */}
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   {/* Avatar circle — initials */}
