@@ -43,6 +43,7 @@ export default function GastronomyPage() {
   const [guestOpenOrders, setGuestOpenOrders] = useState(null);
   const [lockLoading, setLockLoading] = useState(false);
   const [allGuests, setAllGuests] = useState([]);
+  const [activeTournamentId, setActiveTournamentId] = useState(null);
   const timerRef = useRef(null);
 
   const isBlocked = guest != null && (guest.active === 0 || guest.active === false);
@@ -86,6 +87,7 @@ export default function GastronomyPage() {
     if (!token) return;
     api.get('/products').then(setProducts).catch(() => {});
     api.get('/nfc/guests').then(setAllGuests).catch(() => {});
+    api.get('/tournaments/active').then((t) => { if (t?.id) setActiveTournamentId(t.id); }).catch(() => {});
   }, [token]);
 
   // Fetch open orders for a guest
@@ -353,11 +355,13 @@ export default function GastronomyPage() {
             <GuestSelector
               guests={allGuests}
               onGuestSelect={selectGuest}
-              onCreateGuest={(name) =>
-                api.post('/nfc/create-manual', { name })
+              onCreateGuest={(name) => {
+                const payload = { name };
+                if (activeTournamentId) payload.tournament_id = activeTournamentId;
+                return api.post('/nfc/create-manual', payload)
                   .then((g) => { selectGuest(g); setAllGuests((prev) => [...prev, g]); })
-                  .catch((err) => addToast({ type: 'error', message: err.message }))
-              }
+                  .catch((err) => addToast({ type: 'error', message: err.message }));
+              }}
               nfcAvailable={'NDEFReader' in window}
               onRequestNfcScan={handleNFCScan}
               scanning={scanning}
