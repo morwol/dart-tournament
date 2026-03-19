@@ -1608,11 +1608,15 @@ function TournamentExtendedTab() {
     board_count: '1',
   });
   const [savingConfig, setSavingConfig] = useState(false);
-  const [playerForm, setPlayerForm] = useState({ vorname: '', nickname: '', nachname: '', seed: '' });
+  const [playerForm, setPlayerForm] = useState({ vorname: '', nickname: '', nachname: '', seed: '', walk_on_song: '', walkon_start: 0, walkon_duration: 30 });
   const [players, setPlayers] = useState([]);
   const [mockCount, setMockCount] = useState('8');
   const [wizardError, setWizardError] = useState(''); // inline error for wizard steps
   const [openGroups, setOpenGroups] = useState(new Set()); // collapsible group cards — default all collapsed
+  const [addPlayerMode, setAddPlayerMode] = useState(null); // null | 'search' | 'new'
+  const [playerSearch, setPlayerSearch] = useState('');
+  const [playerSearchResults, setPlayerSearchResults] = useState([]);
+  const [playerSearchLoading, setPlayerSearchLoading] = useState(false);
 
   const loadTournaments = () => {
     api.get('/tournaments').then((t) => {
@@ -1650,6 +1654,23 @@ function TournamentExtendedTab() {
   }, [selectedId, tournaments.length]);
 
   const selectedTournament = tournaments.find((t) => String(t.id) === String(selectedId));
+
+  useEffect(() => {
+    if (!playerSearch.trim() || addPlayerMode !== 'search') {
+      setPlayerSearchResults([]);
+      return;
+    }
+    const tid = newTournament?.id || selectedId;
+    const timer = setTimeout(async () => {
+      setPlayerSearchLoading(true);
+      try {
+        const results = await api.get(`/players/search?q=${encodeURIComponent(playerSearch.trim())}&tournament_id=${tid}`);
+        setPlayerSearchResults(results);
+      } catch { setPlayerSearchResults([]); }
+      finally { setPlayerSearchLoading(false); }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [playerSearch, addPlayerMode, newTournament, selectedId]);
 
   // --- Wizard Step 1: Turnier anlegen ---
   const handleCreate = async (e) => {
@@ -1707,16 +1728,40 @@ function TournamentExtendedTab() {
     const tid = newTournament?.id || selectedId;
     setWizardError('');
     try {
-      await api.post(`/tournaments/${tid}/players`, {
+      const res = await api.post(`/tournaments/${tid}/players`, {
         vorname: playerForm.vorname.trim(),
         nickname: playerForm.nickname.trim(),
         nachname: playerForm.nachname.trim(),
         seed: playerForm.seed ? parseInt(playerForm.seed) : undefined,
       });
-      setPlayerForm({ vorname: '', nickname: '', nachname: '', seed: '' });
+      const newPlayerId = res.id || res.player_id || res.player?.id;
+      if (playerForm.walk_on_song && newPlayerId) {
+        try {
+          await api.post(`/walkon/${newPlayerId}`, {
+            url: playerForm.walk_on_song,
+            start: Number(playerForm.walkon_start) || 0,
+            duration: Number(playerForm.walkon_duration) || 30,
+          });
+        } catch (err) { console.warn('Walk-On Job konnte nicht gestartet werden:', err.message); }
+      }
+      setPlayerForm({ vorname: '', nickname: '', nachname: '', seed: '', walk_on_song: '', walkon_start: 0, walkon_duration: 30 });
+      setAddPlayerMode(null);
       const updated = await api.get(`/tournaments/${tid}/players`);
       setPlayers(updated);
     } catch (err) { setWizardError(err.message || 'Spieler konnte nicht hinzugefügt werden – bitte erneut versuchen.'); }
+  };
+
+  const registerExistingPlayer = async (player) => {
+    const tid = newTournament?.id || selectedId;
+    setWizardError('');
+    try {
+      await api.post(`/tournaments/${tid}/players`, { player_id: player.id });
+      setPlayerSearch('');
+      setPlayerSearchResults([]);
+      setAddPlayerMode(null);
+      const updated = await api.get(`/tournaments/${tid}/players`);
+      setPlayers(updated);
+    } catch (err) { setWizardError(err.message || 'Anmeldung fehlgeschlagen'); }
   };
 
   const deletePlayer = async (playerId) => {
@@ -1938,24 +1983,102 @@ function TournamentExtendedTab() {
         {wizardStep === 3 && (
           <div>
             <div style={card}>
-              <p style={{ color: 'var(--pe-text-sub)', fontSize: '13px', marginBottom: '12px' }}>Spieler anlegen oder Simulation für Tests nutzen.</p>
-              <form onSubmit={addPlayer} style={{ marginBottom: '12px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', marginBottom: '6px' }}>
-                  <input type="text" value={playerForm.vorname} onChange={e => setPlayerForm({...playerForm, vorname: e.target.value})} placeholder="Vorname *" required style={{ ...inputStyle, padding: '10px 12px' }} />
-                  <input type="text" value={playerForm.nickname} onChange={e => setPlayerForm({...playerForm, nickname: e.target.value})} placeholder="Nickname *" required style={{ ...inputStyle, padding: '10px 12px' }} />
-                  <input type="text" value={playerForm.nachname} onChange={e => setPlayerForm({...playerForm, nachname: e.target.value})} placeholder="Nachname *" required style={{ ...inputStyle, padding: '10px 12px' }} />
+              <p style={{ color: 'var(--pe-text-sub)', fontSize: '13px', marginBottom: '12px' }}>Spieler anmelden oder Simulation für Tests nutzen.</p>
+
+              {/* Add player buttons */}
+              {!addPlayerMode && (
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                  <button type="button" onClick={() => setAddPlayerMode('search')}
+                    style={{ flex: 1, padding: '10px', borderRadius: 8, background: 'var(--pe-bg-elevated)',
+                             border: '1px solid var(--pe-border)', color: 'var(--pe-text)', cursor: 'pointer',
+                             fontFamily: 'var(--pe-font-body)', minHeight: 48 }}>
+                    🔍 Bestehenden Spieler anmelden
+                  </button>
+                  <button type="button" onClick={() => setAddPlayerMode('new')}
+                    style={{ flex: 1, padding: '10px', borderRadius: 8, background: 'var(--pe-bg-elevated)',
+                             border: '1px solid var(--pe-border)', color: 'var(--pe-text)', cursor: 'pointer',
+                             fontFamily: 'var(--pe-font-body)', minHeight: 48 }}>
+                    + Neuen Spieler anlegen
+                  </button>
                 </div>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  {(newTournament?.use_seed || createForm.use_seed) && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', borderRadius: 'var(--pe-radius-sm)', padding: '4px 8px' }}>
-                    <button type="button" onClick={() => setPlayerForm({...playerForm, seed: String(Math.max(1, (parseInt(playerForm.seed) || 1) - 1))})} style={{ minHeight: '44px', minWidth: '36px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '6px', fontWeight: 'bold', fontSize: '18px', cursor: 'pointer', fontFamily: 'var(--pe-font-body)' }}>−</button>
-                    <span style={{ minWidth: '32px', textAlign: 'center', color: 'var(--pe-text)', fontWeight: 'bold', fontSize: '14px' }}>{playerForm.seed || '—'}</span>
-                    <button type="button" onClick={() => setPlayerForm({...playerForm, seed: String((parseInt(playerForm.seed) || 0) + 1)})} style={{ minHeight: '44px', minWidth: '36px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: '6px', fontWeight: 'bold', fontSize: '18px', cursor: 'pointer', fontFamily: 'var(--pe-font-body)' }}>+</button>
-                  </div>
-                )}
-                  <button type="submit" disabled={!playerForm.vorname.trim() || !playerForm.nickname.trim() || !playerForm.nachname.trim()} style={{ flex: 1, padding: '10px 16px', borderRadius: 'var(--pe-radius-sm)', background: 'var(--pe-gradient)', color: 'var(--pe-text)', border: 'none', fontFamily: 'var(--pe-font-body)', fontWeight: 'bold', cursor: 'pointer', minHeight: '48px', fontSize: '13px', opacity: (!playerForm.vorname.trim() || !playerForm.nickname.trim() || !playerForm.nachname.trim()) ? 0.5 : 1 }}>+ Spieler hinzufügen</button>
+              )}
+
+              {/* Search mode */}
+              {addPlayerMode === 'search' && (
+                <div style={{ marginBottom: 12 }}>
+                  <button type="button" onClick={() => { setAddPlayerMode(null); setPlayerSearch(''); setPlayerSearchResults([]); }}
+                    style={{ fontSize: 11, color: 'var(--pe-text-muted)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: 4, fontFamily: 'var(--pe-font-body)' }}>
+                    ← Abbrechen
+                  </button>
+                  <input
+                    type="text" value={playerSearch}
+                    onChange={(e) => setPlayerSearch(e.target.value)}
+                    placeholder='Spieler suchen (Vorname, Nickname, Nachname)…'
+                    autoFocus
+                    style={inputStyle}
+                    className="w-full p-3 rounded-lg outline-none"
+                  />
+                  {playerSearchLoading && <p style={{ color: 'var(--pe-text-muted)', fontSize: 12, marginTop: 4 }}>Suche…</p>}
+                  {playerSearchResults.map(p => (
+                    <button key={p.id} type="button" onClick={() => registerExistingPlayer(p)}
+                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                               width: '100%', padding: '10px 14px', marginTop: 4, borderRadius: 8,
+                               background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)',
+                               color: 'var(--pe-text)', cursor: 'pointer', fontFamily: 'var(--pe-font-body)',
+                               minHeight: 48, textAlign: 'left' }}>
+                      <span>{p.name}</span>
+                      <span style={{ color: 'var(--pe-text-muted)', fontSize: 12 }}>anmelden →</span>
+                    </button>
+                  ))}
+                  {playerSearch.trim() && !playerSearchLoading && playerSearchResults.length === 0 && (
+                    <p style={{ color: 'var(--pe-text-muted)', fontSize: 12, marginTop: 4 }}>Keine Spieler gefunden.</p>
+                  )}
                 </div>
-              </form>
+              )}
+
+              {/* New player form */}
+              {addPlayerMode === 'new' && (
+                <form onSubmit={addPlayer} style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <button type="button" onClick={() => setAddPlayerMode(null)}
+                    style={{ fontSize: 11, color: 'var(--pe-text-muted)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: 4, fontFamily: 'var(--pe-font-body)', alignSelf: 'flex-start' }}>
+                    ← Abbrechen
+                  </button>
+                  <input type="text" value={playerForm.vorname} onChange={e => setPlayerForm({...playerForm, vorname: e.target.value})}
+                    placeholder="Vorname *" required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+                  <input type="text" value={playerForm.nickname} onChange={e => setPlayerForm({...playerForm, nickname: e.target.value})}
+                    placeholder="Nickname *" required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+                  <input type="text" value={playerForm.nachname} onChange={e => setPlayerForm({...playerForm, nachname: e.target.value})}
+                    placeholder="Nachname *" required className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+                  <input type="url" value={playerForm.walk_on_song} onChange={e => setPlayerForm({...playerForm, walk_on_song: e.target.value})}
+                    placeholder="Walk-On Song URL (optional)" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+                  {playerForm.walk_on_song && (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: 11, color: 'var(--pe-text-muted)', display: 'block', marginBottom: 4 }}>Startzeit (Sek.)</label>
+                        <input type="number" min="0" value={playerForm.walkon_start}
+                          onChange={e => setPlayerForm({...playerForm, walkon_start: e.target.value})}
+                          className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: 11, color: 'var(--pe-text-muted)', display: 'block', marginBottom: 4 }}>Länge (Sek.)</label>
+                        <input type="number" min="5" max="120" value={playerForm.walkon_duration}
+                          onChange={e => setPlayerForm({...playerForm, walkon_duration: e.target.value})}
+                          className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
+                      </div>
+                    </div>
+                  )}
+                  {playerForm.vorname && playerForm.nickname && playerForm.nachname && (
+                    <p style={{ fontSize: 12, color: 'var(--pe-text-muted)' }}>
+                      Angezeigt als: <strong style={{ color: 'var(--pe-text)' }}>{playerForm.vorname.trim()} &quot;{playerForm.nickname.trim()}&quot; {playerForm.nachname.trim()}</strong>
+                    </p>
+                  )}
+                  <button type="submit" disabled={!playerForm.vorname.trim() || !playerForm.nickname.trim() || !playerForm.nachname.trim()}
+                    className="w-full py-3 rounded-lg font-bold disabled:opacity-50"
+                    style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: 48, fontFamily: 'var(--pe-font-body)' }}>
+                    Spieler anlegen &amp; anmelden
+                  </button>
+                </form>
+              )}
               {/* Mock */}
               <div style={{ display: 'flex', gap: '8px', padding: '10px', borderRadius: 'var(--pe-radius-sm)', background: 'var(--pe-bg-elevated)', border: '1px dashed var(--pe-border)' }}>
                 <input
