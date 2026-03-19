@@ -27,7 +27,7 @@ echo -e "${GREEN}>>> git pull (dev)...${NC}"
 cd "$APP_DIR"
 git fetch origin || (sleep 10 && git fetch origin) || (sleep 30 && git fetch origin)
 git checkout dev
-git pull origin dev
+git reset --hard origin/dev
 
 # --- 2. Update backend dependencies ---
 echo -e "${GREEN}>>> Backend: npm install...${NC}"
