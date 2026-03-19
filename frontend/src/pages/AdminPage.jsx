@@ -554,12 +554,12 @@ function PlayersTab() {
               <div key={p.id} style={{ background: 'var(--pe-bg-card)', border: `1px solid ${isExpanded || playingId === p.id ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, borderRadius: 'var(--pe-radius-md)', padding: '12px', boxShadow: playingId === p.id ? '0 0 8px var(--pe-cyan-bright)' : 'none', transition: 'box-shadow 0.2s, border-color 0.2s' }}>
                 {/* Collapsed header — always visible */}
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  {/* Seed circle */}
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0, background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '13px', color: p.seed ? 'var(--pe-cyan-bright)' : 'var(--pe-text-muted)' }}>
-                    {p.seed ? `#${p.seed}` : '—'}
+                  {/* Avatar circle — initials */}
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0, background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '11px', color: 'var(--pe-cyan-bright)', letterSpacing: '0.5px' }}>
+                    {`${(p.vorname || '')[0] || ''}${(p.nachname || '')[0] || ''}`.toUpperCase() || '?'}
                   </div>
                   {/* Name + walk-on status */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
                     <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--pe-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
                     {(p.has_walkon || p.walkon_youtube) && (
                       <WalkonBadge
@@ -652,8 +652,8 @@ function PlayersTab() {
         <div className="space-y-2">
           {players.map((p) => (
             <div key={p.id} className="p-3 rounded-lg flex justify-between items-center" style={{ background: 'var(--pe-bg-card)', border: `1px solid ${playingId === p.id ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, boxShadow: playingId === p.id ? '0 0 8px var(--pe-cyan-bright)' : 'none', transition: 'box-shadow 0.2s, border-color 0.2s' }}>
-              <div>
-                <span className="font-bold" style={{ color: 'var(--pe-text)' }}>{p.name}</span>
+              <div style={{ minWidth: 0, overflow: 'hidden', flex: 1 }}>
+                <span className="font-bold" style={{ color: 'var(--pe-text)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
                 {(p.has_walkon || p.walkon_youtube) && (
                   <WalkonBadge
                     status={walkonStatuses[p.id] ?? p.walkon_status ?? (p.has_walkon ? 'ready' : null)}
