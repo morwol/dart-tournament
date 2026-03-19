@@ -301,51 +301,45 @@ export default function GastronomyPage() {
         />
       )}
 
-      {/* Station header bar: badge + switch button */}
+      {/* Station switcher: both chips side by side, active one highlighted */}
       <div
         style={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          gap: '8px',
           padding: '8px 16px',
           margin: '0 0 4px',
         }}
       >
-        {badge && (
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 14px',
-              borderRadius: 'var(--pe-radius-xl)',
-              background: badge.accentBg,
-              border: `1px solid ${badge.accentBorder}`,
-            }}
-          >
-            <span style={{ fontSize: '16px' }}>{badge.icon}</span>
-            <span style={{ color: badge.accent, fontWeight: 'bold', fontSize: '14px' }}>
-              {badge.label}
-            </span>
-          </div>
-        )}
-        <button
-          onClick={clearStation}
-          style={{
-            minHeight: 64,
-            padding: '0 20px',
-            background: 'var(--pe-bg-elevated)',
-            border: '1px solid var(--pe-border)',
-            borderRadius: 'var(--pe-radius-md)',
-            color: 'var(--pe-text-sub)',
-            fontFamily: 'var(--pe-font-body)',
-            fontSize: 14,
-            fontWeight: 'bold',
-            cursor: 'pointer',
-          }}
-        >
-          ⇄ Station wechseln
-        </button>
+        {Object.entries(badgeConfig).map(([key, cfg]) => {
+          const isActive = station === key;
+          return (
+            <button
+              key={key}
+              onClick={() => selectStation(key)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                minHeight: '64px',
+                padding: '0 24px',
+                borderRadius: 'var(--pe-radius-xl)',
+                background: isActive ? cfg.accentBg : 'var(--pe-bg-elevated)',
+                border: `1px solid ${isActive ? cfg.accentBorder : 'var(--pe-border)'}`,
+                color: isActive ? cfg.accent : 'var(--pe-text-muted)',
+                fontFamily: 'var(--pe-font-body)',
+                fontWeight: 'bold',
+                fontSize: '15px',
+                cursor: isActive ? 'default' : 'pointer',
+                opacity: isActive ? 1 : 0.6,
+                transition: 'opacity 0.15s, border-color 0.15s',
+              }}
+            >
+              <span style={{ fontSize: '18px' }}>{cfg.icon}</span>
+              <span>{cfg.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* ===== BAR STATION ===== */}
