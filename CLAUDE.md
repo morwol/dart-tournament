@@ -117,7 +117,10 @@ docs/kurze-beschreibung      # Nur Dokumentation
 5. gh pr create --base dev --head fix/mein-bug
 6. PR mergen
 7. git checkout dev && git pull origin dev  (dev aktuell halten)
+8. git fetch --prune && git branch -d fix/mein-bug  (lokalen Branch löschen)
 ```
+
+**Warum Schritt 8 wichtig ist:** GitHub löscht nach dem Merge nur den Remote-Branch — der lokale Branch bleibt liegen und sammelt sich über Zeit an. `--prune` bereinigt veraltete Remote-Tracking-Refs, `-d` löscht den lokalen Branch sauber (schlägt fehl wenn nicht gemergt = Sicherheitsnetz).
 
 ### Sprache — ENGLISCH PFLICHT
 Alles was auf GitHub landet wird auf **Englisch** verfasst — public repo, soll für alle nachvollziehbar sein:
