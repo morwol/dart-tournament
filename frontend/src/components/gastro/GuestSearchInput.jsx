@@ -4,8 +4,11 @@ export default function GuestSearchInput({
   placeholder = 'Name suchen…',
   onCreateNew,
   createLabel = '+ Neu',
+  createDisabled = false,
   disabled = false,
 }) {
+  const btnDisabled = disabled || createDisabled;
+
   return (
     <div style={{ display: 'flex', gap: '8px' }}>
       <input
@@ -32,18 +35,20 @@ export default function GuestSearchInput({
         <button
           type="button"
           onClick={onCreateNew}
-          disabled={disabled}
+          disabled={btnDisabled}
           style={{
             minHeight: '64px',
             padding: '0 20px',
-            background: 'var(--pe-blue-mid)',
-            color: 'var(--pe-text)',
-            border: 'none',
+            background: btnDisabled ? 'var(--pe-bg-elevated)' : 'var(--pe-blue-mid)',
+            color: btnDisabled ? 'var(--pe-text-muted)' : 'var(--pe-text)',
+            border: btnDisabled ? '1px solid var(--pe-border)' : 'none',
             borderRadius: 'var(--pe-radius-md)',
             fontFamily: 'var(--pe-font-body)',
             fontWeight: 'bold',
-            cursor: disabled ? 'not-allowed' : 'pointer',
+            cursor: btnDisabled ? 'not-allowed' : 'pointer',
             whiteSpace: 'nowrap',
+            opacity: btnDisabled ? 0.6 : 1,
+            transition: 'background 0.15s, color 0.15s, opacity 0.15s',
           }}
         >
           {createLabel}
