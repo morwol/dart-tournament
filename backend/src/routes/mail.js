@@ -49,7 +49,8 @@ router.get('/templates', requireAuth, (req, res) => {
     const templates = db.prepare('SELECT * FROM mail_templates ORDER BY created_at DESC').all();
     return res.json(templates);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[mail]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -68,7 +69,8 @@ router.post('/templates', requireAdmin, (req, res) => {
     const template = db.prepare('SELECT * FROM mail_templates WHERE id = ?').get(result.lastInsertRowid);
     return res.status(201).json(template);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[mail]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -91,7 +93,8 @@ router.post('/send-test', requireAdmin, async (req, res) => {
 
     return res.json({ success: true, ...result });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[mail]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -168,7 +171,8 @@ router.post('/send-event-summary', requireAdmin, async (req, res) => {
 
     return res.json({ success: true, ...result });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[mail]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

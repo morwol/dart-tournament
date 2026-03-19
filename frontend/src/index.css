@@ -18,15 +18,63 @@
   --pe-success: #00E5A0;
   --pe-warning: #FFB020;
   --pe-danger: #FF4560;
+  --pe-font-body: 'Inter', system-ui, sans-serif;
+  --pe-font-display: 'Barlow Condensed', system-ui, sans-serif;
+}
+
+/* Display font utility — used for stats, numbers, headings */
+.pe-font-display {
+  font-family: var(--pe-font-display);
+}
+
+/* Thin overlay scrollbar — no reserved gutter space */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(168,189,214,0.25); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(168,189,214,0.45); }
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(168,189,214,0.25) transparent;
 }
 
 body {
   background: var(--pe-bg);
   color: var(--pe-text);
-  font-family: Verdana, Geneva, sans-serif;
+  font-family: var(--pe-font-body);
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── PE Typography Tokens ──────────────────────────────────── */
+:root {
+  /* Font sizes */
+  --pe-text-xs:   11px;
+  --pe-text-sm:   13px;
+  --pe-text-base: 15px;
+  --pe-text-lg:   17px;
+  --pe-text-xl:   20px;
+  --pe-text-2xl:  24px;
+  --pe-text-3xl:  30px;
+  --pe-text-4xl:  36px;
+
+  /* Border radius scale */
+  --pe-radius-sm:  8px;
+  --pe-radius-md:  12px;
+  --pe-radius-lg:  16px;
+  --pe-radius-xl:  20px;
+  --pe-radius-pill: 9999px;
+
+  /* Spacing scale */
+  --pe-space-1: 4px;
+  --pe-space-2: 8px;
+  --pe-space-3: 12px;
+  --pe-space-4: 16px;
+  --pe-space-5: 20px;
+  --pe-space-6: 24px;
 }
 
 * {
@@ -38,4 +86,120 @@ body {
   .mobile-tiles-grid { display: none !important; }
   .mobile-back-bar { display: none !important; }
   .content-area { display: flex !important; }
+}
+
+/* ─── PE Interactive Utilities ─────────────────────────────── */
+
+/* Hover: interactive cards (tournament, player, board cards) */
+.pe-card-interactive {
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+  cursor: pointer;
+}
+.pe-card-interactive:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 4px 20px rgba(0, 184, 255, 0.12);
+}
+.pe-card-interactive:active {
+  transform: scale(0.98);
+}
+
+/* Hover: buttons */
+.pe-btn {
+  transition: border-color 150ms ease, color 150ms ease,
+              background 150ms ease, transform 150ms ease;
+}
+.pe-btn:hover {
+  border-color: var(--pe-cyan-bright);
+  color: var(--pe-cyan-bright);
+}
+.pe-btn:active {
+  transform: scale(0.97);
+}
+
+/* Page entry animation (applied to shell page root divs) */
+.pe-page-enter {
+  animation: pe-fade-in 200ms ease forwards;
+}
+@keyframes pe-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Hide scrollbar utility */
+.pe-scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.pe-scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ─── Shared Animations ─────────────────────────────────────── */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ─── Toast Notifications ───────────────────────────────────── */
+@keyframes toast-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.toast-enter {
+  animation: toastIn 200ms ease-out forwards;
+}
+.toast-exit {
+  animation: toastOut 150ms ease-in forwards;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes toastOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* ─── Responsive nav wrappers ─── */
+/* Desktop TopNav: shown only on ≥768px */
+.pe-topnav-wrap { display: none; }
+@media (min-width: 768px) {
+  .pe-topnav-wrap { display: block; }
+}
+
+/* Mobile BottomNav: shown only on <768px */
+.pe-bottomnav-wrap { display: block; }
+@media (min-width: 768px) {
+  .pe-bottomnav-wrap { display: none; }
+}
+
+/* Mobile content area: pad bottom to clear fixed BottomNav */
+@media (max-width: 767px) {
+  main { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+}
+
+/* ─── PE Display Font Utility ───────────────────────────────── */
+/* Use .pe-font-display for score numbers, tournament titles */
+.pe-font-display {
+  font-family: var(--pe-font-display);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+/* Score display — large numbers */
+.pe-score {
+  font-family: var(--pe-font-display);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+/* Label utility — uppercase tracking for section headers */
+.pe-label {
+  font-family: var(--pe-font-body);
+  font-size: var(--pe-text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--pe-text-muted);
 }

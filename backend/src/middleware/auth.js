@@ -24,44 +24,41 @@ function verifyToken(req, res, next) {
 // NEU: Auth-Middleware die nur Authentifizierung prueft (alle Rollen erlaubt)
 const requireAuth = verifyToken;
 
-// NEU: Rollen-basierte Middleware — prueft ob User die Rolle 'admin' hat
-// Kompatibel mit alten Admin-JWTs (ohne role-Feld) und neuen User-JWTs
+// Prueft ob User explizit die Rolle 'admin' hat — kein Fallback auf fehlende Rolle
 const requireAdmin = (req, res, next) => {
   verifyToken(req, res, () => {
-    // Alte Admin-JWTs haben kein role-Feld — diese sind immer admin
-    if (!req.user.role || req.user.role === 'admin') {
+    if (req.user.role === 'admin') {
       return next();
     }
     return res.status(403).json({ error: 'Keine Admin-Berechtigung für diese Aktion' });
   });
 };
 
-// NEU: Middleware-Factory fuer eine bestimmte Rolle
+// Middleware-Factory fuer eine bestimmte Rolle — kein Fallback auf fehlende Rolle
 const requireRole = (role) => (req, res, next) => {
   verifyToken(req, res, () => {
-    if (req.user.role === role || (!req.user.role && role === 'admin')) {
+    if (req.user.role === role) {
       return next();
     }
     return res.status(403).json({ error: 'Keine Berechtigung für diese Aktion' });
   });
 };
 
-// NEU: Middleware-Factory fuer mehrere erlaubte Rollen
+// Middleware-Factory fuer mehrere erlaubte Rollen — 403 wenn role fehlt oder nicht enthalten
 const requireAny = (roles) => (req, res, next) => {
   verifyToken(req, res, () => {
-    // Alte Admin-JWTs (ohne role) gelten als 'admin'
-    const userRole = req.user.role || 'admin';
-    if (roles.includes(userRole)) {
-      return next();
+    const userRole = req.user.role;
+    if (!userRole || !roles.includes(userRole)) {
+      return res.status(403).json({ error: 'Keine Berechtigung für diese Aktion' });
     }
-    return res.status(403).json({ error: 'Keine Berechtigung für diese Aktion' });
+    return next();
   });
 };
 
 // Admin oder Turnierleitung — für alle Turnier-Management-Operationen
 const requireAdminOrDirector = (req, res, next) => {
   verifyToken(req, res, () => {
-    const role = req.user.role || 'admin';
+    const role = req.user.role;
     if (role === 'admin' || role === 'director') return next();
     return res.status(403).json({ error: 'Keine Berechtigung – Admin oder Turnierleitung erforderlich' });
   });

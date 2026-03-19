@@ -20,7 +20,6 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 CYAN='\033[0;36m'
 BOLD='\033[1m'
-MUTED='\033[0;90m'
 NC='\033[0m'
 
 # --- Root check ---
@@ -77,8 +76,10 @@ if [ -z "$ADMIN_PASS" ]; then
   echo -e "${RED}Admin password cannot be empty.${NC}"; exit 1
 fi
 
-# JWT Secret + Webhook Secret (auto-generate)
+# JWT Secret (auto-generate)
 JWT_SECRET=$(openssl rand -hex 48)
+
+# Webhook Secret (auto-generate, only used on dev branch)
 WEBHOOK_SECRET=$(openssl rand -hex 32)
 
 # Summary
@@ -91,9 +92,6 @@ echo -e "  Domain:     ${BOLD}$DOMAIN${NC}"
 echo -e "  Branch:     ${BOLD}$BRANCH${NC}"
 echo -e "  App path:   ${BOLD}$APP_DIR${NC}"
 echo -e "  Service:    ${BOLD}$SERVICE_NAME${NC}"
-if [ "$BRANCH" = "dev" ]; then
-echo -e "  Webhook:    ${BOLD}https://$DOMAIN/webhook${NC}"
-fi
 echo -e "${CYAN}──────────────────────────────────────────────${NC}"
 echo ""
 read -p "Continue? [Enter to confirm / Ctrl+C to abort] " _
@@ -101,10 +99,7 @@ read -p "Continue? [Enter to confirm / Ctrl+C to abort] " _
 # ── 1. System packages ──────────────────────────────────────
 
 echo ""
-STEPS=10
-[ "$BRANCH" = "dev" ] && STEPS=11
-
-echo -e "${GREEN}[1/$STEPS] Installing system packages...${NC}"
+echo -e "${GREEN}[1/10] Installing system packages...${NC}"
 apt update -q
 DEBIAN_FRONTEND=noninteractive apt upgrade -y -q
 apt install -y curl git nginx ufw openssl
@@ -129,29 +124,11 @@ echo -e "${GREEN}    ✓ Packages installed${NC}"
 
 # ── 2. Firewall ─────────────────────────────────────────────
 
-echo -e "${GREEN}[2/$STEPS] Configuring firewall (ufw + iptables)...${NC}"
+echo -e "${GREEN}[2/10] Configuring firewall (ufw + iptables)...${NC}"
 
-# Oracle Cloud (and some other providers) inject a REJECT rule into iptables
-# that runs BEFORE ufw chains — blocking all traffic except SSH.
-# Detect and remove it so nginx can serve HTTP/HTTPS.
-if iptables -L INPUT -n | grep -q "reject-with icmp-host-prohibited"; then
-  # Find and delete the reject rule
-  REJECT_LINE=$(iptables -L INPUT -n --line-numbers | awk '/reject-with icmp-host-prohibited/{print $1; exit}')
-  if [ -n "$REJECT_LINE" ]; then
-    iptables -D INPUT "$REJECT_LINE"
-    echo "    Removed Oracle Cloud iptables REJECT rule (line $REJECT_LINE)"
-  fi
-fi
-
-# Ensure ports 80 + 443 are explicitly allowed at iptables level
-iptables -C INPUT -p tcp --dport 80 -j ACCEPT 2>/dev/null  || iptables -I INPUT 1 -p tcp --dport 80  -j ACCEPT
-iptables -C INPUT -p tcp --dport 443 -j ACCEPT 2>/dev/null || iptables -I INPUT 1 -p tcp --dport 443 -j ACCEPT
-
-# Persist iptables rules across reboots
-apt-get install -y -q iptables-persistent
-netfilter-persistent save
-
-# ufw on top
+# ufw manages iptables and persists rules across reboots on its own.
+# Oracle Cloud injects a REJECT rule — ufw --force reset flushes the entire
+# INPUT chain and rebuilds it cleanly, removing the Oracle rule in the process.
 ufw --force reset
 ufw default deny incoming
 ufw default allow outgoing
@@ -162,7 +139,7 @@ echo -e "${GREEN}    ✓ Firewall configured (SSH + HTTP/HTTPS open)${NC}"
 
 # ── 3. Service user ─────────────────────────────────────────
 
-echo -e "${GREEN}[3/$STEPS] Creating service user...${NC}"
+echo -e "${GREEN}[3/10] Creating service user...${NC}"
 if ! id "$SERVICE_NAME" &>/dev/null; then
   useradd -r -s /bin/false -d "$APP_DIR" "$SERVICE_NAME"
 fi
@@ -170,7 +147,7 @@ echo -e "${GREEN}    ✓ User '$SERVICE_NAME' ready${NC}"
 
 # ── 4. Clone repository ─────────────────────────────────────
 
-echo -e "${GREEN}[4/$STEPS] Cloning repository (branch: $BRANCH)...${NC}"
+echo -e "${GREEN}[4/10] Cloning repository (branch: $BRANCH)...${NC}"
 if [ -d "$APP_DIR/.git" ]; then
   echo "    Repository already exists — pulling latest..."
   cd "$APP_DIR"
@@ -186,7 +163,7 @@ echo -e "${GREEN}    ✓ Code ready at $APP_DIR${NC}"
 
 # ── 5. Environment file ─────────────────────────────────────
 
-echo -e "${GREEN}[5/$STEPS] Creating .env...${NC}"
+echo -e "${GREEN}[5/10] Creating .env...${NC}"
 ENV_FILE="$APP_DIR/backend/.env"
 if [ ! -f "$ENV_FILE" ]; then
   cat > "$ENV_FILE" <<EOF
@@ -205,7 +182,7 @@ echo -e "${GREEN}    ✓ .env created${NC}"
 
 # ── 6. Backend setup ────────────────────────────────────────
 
-echo -e "${GREEN}[6/$STEPS] Installing backend dependencies...${NC}"
+echo -e "${GREEN}[6/10] Installing backend dependencies...${NC}"
 cd "$APP_DIR/backend"
 npm install --omit=dev
 mkdir -p "$APP_DIR/backend/data/walkon"
@@ -214,7 +191,7 @@ echo -e "${GREEN}    ✓ Backend ready${NC}"
 
 # ── 7. Frontend build ───────────────────────────────────────
 
-echo -e "${GREEN}[7/$STEPS] Building frontend...${NC}"
+echo -e "${GREEN}[7/10] Building frontend...${NC}"
 cd "$APP_DIR/frontend"
 npm install
 npm run build
@@ -222,7 +199,7 @@ echo -e "${GREEN}    ✓ Frontend built${NC}"
 
 # ── 8. nginx configuration ──────────────────────────────────
 
-echo -e "${GREEN}[8/$STEPS] Configuring nginx...${NC}"
+echo -e "${GREEN}[8/10] Configuring nginx...${NC}"
 NGINX_CONF="/etc/nginx/sites-available/dartevent"
 
 cat > "$NGINX_CONF" <<EOF
@@ -254,14 +231,16 @@ server {
             add_header Cache-Control "public, immutable";
         }
     }
-$([ "$BRANCH" = "dev" ] && cat <<'WEBHOOK'
+$([ "$BRANCH" = "dev" ] && cat <<'WEBHOOK_BLOCK'
     location /webhook {
         proxy_pass http://127.0.0.1:9001/webhook;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
-WEBHOOK
+WEBHOOK_BLOCK
 )
 }
 EOF
@@ -275,13 +254,13 @@ echo -e "${GREEN}    ✓ nginx configured for $DOMAIN${NC}"
 
 # ── 9. SSL certificate ──────────────────────────────────────
 
-echo -e "${GREEN}[9/$STEPS] Obtaining SSL certificate...${NC}"
+echo -e "${GREEN}[9/10] Obtaining SSL certificate...${NC}"
 certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email --redirect
 echo -e "${GREEN}    ✓ SSL certificate installed${NC}"
 
 # ── 10. systemd service ─────────────────────────────────────
 
-echo -e "${GREEN}[10/$STEPS] Installing systemd service...${NC}"
+echo -e "${GREEN}[10/10] Installing systemd service...${NC}"
 cat > /etc/systemd/system/dartevent.service <<EOF
 [Unit]
 Description=DartEvent Manager Backend
@@ -314,20 +293,13 @@ systemctl daemon-reload
 systemctl enable --now dartevent
 sleep 2
 
-# ── 11. Webhook service (dev only) ──────────────────────────
+# ── Webhook service (dev branch only) ───────────────────────
 
 if [ "$BRANCH" = "dev" ]; then
-  echo -e "${GREEN}[11/$STEPS] Installing webhook service...${NC}"
-  cp "$APP_DIR/deploy/dartevent-webhook.service" /etc/systemd/system/dartevent-webhook.service
+  cp "$APP_DIR/deploy/dartevent-webhook.service" /etc/systemd/system/
   systemctl daemon-reload
   systemctl enable --now dartevent-webhook
-  sleep 1
-  if systemctl is-active --quiet dartevent-webhook; then
-    echo -e "${GREEN}    ✓ Webhook receiver running on port 9001${NC}"
-  else
-    echo -e "${YELLOW}    ⚠ Webhook service failed to start (non-fatal)${NC}"
-    echo "      journalctl -u dartevent-webhook -n 20"
-  fi
+  echo -e "${GREEN}    ✓ Webhook service installed and running${NC}"
 fi
 
 # ── Final status ────────────────────────────────────────────
@@ -345,19 +317,19 @@ echo ""
 echo -e "  ${BOLD}URL:${NC}     https://$DOMAIN"
 echo -e "  ${BOLD}Branch:${NC}  $BRANCH"
 echo -e "  ${BOLD}Admin:${NC}   $ADMIN_USER"
-if [ "$BRANCH" = "dev" ]; then
-echo ""
-echo -e "  ${BOLD}GitHub Webhook setup:${NC}"
-echo -e "    URL:     ${CYAN}https://$DOMAIN/webhook${NC}"
-echo -e "    Secret:  ${YELLOW}$WEBHOOK_SECRET${NC}"
-echo -e "    Events:  Just the push event"
-echo -e "    ${MUTED}(Settings → Webhooks → Add webhook)${NC}"
-fi
 echo ""
 echo -e "  Update: ${CYAN}sudo bash $APP_DIR/deploy/update-dev.sh${NC}   (dev)"
 echo -e "         ${CYAN}sudo bash $APP_DIR/deploy/update.sh${NC}        (prod)"
 echo ""
 echo -e "  Logs:   ${CYAN}journalctl -u dartevent -f${NC}"
-[ "$BRANCH" = "dev" ] && echo -e "          ${CYAN}journalctl -u dartevent-webhook -f${NC}"
+if [ "$BRANCH" = "dev" ]; then
+  echo ""
+  echo -e "  ${BOLD}${YELLOW}GitHub Webhook (auto-deploy):${NC}"
+  echo -e "  Payload URL:  ${CYAN}https://$DOMAIN/webhook${NC}"
+  echo -e "  Secret:       ${CYAN}$WEBHOOK_SECRET${NC}"
+  echo -e "  Content type: application/json"
+  echo -e "  Event:        Just the push event"
+  echo -e "  ${BOLD}→ GitHub → Repo → Settings → Webhooks → Add webhook${NC}"
+fi
 echo -e "${CYAN}══════════════════════════════════════════════${NC}"
 echo ""

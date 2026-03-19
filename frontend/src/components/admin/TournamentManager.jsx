@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
+import { useToastStore } from '../../store/toasts';
 
 export default function TournamentManager() {
+  const { addToast } = useToastStore();
   const [tournaments, setTournaments] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', date: '', format: '501', checkout: 'double_out' });
@@ -23,7 +25,7 @@ export default function TournamentManager() {
       setShowForm(false);
       loadTournaments();
     } catch (err) {
-      alert(err.message || 'Fehler');
+      addToast({ type: 'error', message: err.message || 'Fehler' });
     } finally {
       setSubmitting(false);
     }
@@ -34,7 +36,7 @@ export default function TournamentManager() {
       await api.put(`/tournaments/${id}/start`);
       loadTournaments();
     } catch (err) {
-      alert(err.message || 'Fehler beim Starten');
+      addToast({ type: 'error', message: err.message || 'Fehler beim Starten' });
     }
   };
 
@@ -42,8 +44,19 @@ export default function TournamentManager() {
     background: 'var(--pe-bg-card)',
     border: '1px solid var(--pe-border)',
     color: 'var(--pe-text)',
-    minHeight: '48px',
-    fontFamily: 'Verdana, Geneva, sans-serif',
+    minHeight: '64px',
+    fontFamily: 'var(--pe-font-body)',
+  };
+
+  const selectStyle = {
+    ...inputStyle,
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235A7394' d='M6 8L1 3h10z'/%3E%3C%2Fsvg%3E")`,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 10px center',
+    paddingRight: '30px',
+    cursor: 'pointer',
   };
 
   return (
@@ -52,8 +65,8 @@ export default function TournamentManager() {
         <h2 className="text-lg font-bold" style={{ color: 'var(--pe-cyan-bright)' }}>Turniere</h2>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 rounded-lg text-sm font-bold"
-          style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif' }}
+          className="px-4 rounded-lg text-sm font-bold"
+          style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'var(--pe-font-body)', minHeight: '64px' }}
         >
           {showForm ? 'Abbrechen' : '+ Neu'}
         </button>
@@ -81,7 +94,7 @@ export default function TournamentManager() {
               value={form.format}
               onChange={(e) => setForm({ ...form, format: e.target.value })}
               className="p-3 rounded-lg outline-none"
-              style={inputStyle}
+              style={selectStyle}
             >
               <option value="501">501</option>
               <option value="301">301</option>
@@ -90,7 +103,7 @@ export default function TournamentManager() {
               value={form.checkout}
               onChange={(e) => setForm({ ...form, checkout: e.target.value })}
               className="p-3 rounded-lg outline-none"
-              style={inputStyle}
+              style={selectStyle}
             >
               <option value="double_out">Double Out</option>
               <option value="single_out">Single Out</option>
@@ -100,7 +113,7 @@ export default function TournamentManager() {
             type="submit"
             disabled={submitting || !form.name.trim()}
             className="w-full py-3 rounded-lg font-bold disabled:opacity-50"
-            style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '48px', fontFamily: 'Verdana, Geneva, sans-serif' }}
+            style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '64px', fontFamily: 'var(--pe-font-body)' }}
           >
             Turnier erstellen
           </button>
@@ -127,7 +140,7 @@ export default function TournamentManager() {
               <button
                 onClick={() => handleStart(t.id)}
                 className="w-full py-3 rounded-lg font-bold text-sm mt-2"
-                style={{ background: 'var(--pe-success)', color: '#000', minHeight: '48px', fontFamily: 'Verdana, Geneva, sans-serif' }}
+                style={{ background: 'var(--pe-success)', color: '#000', minHeight: '64px', fontFamily: 'var(--pe-font-body)' }}
               >
                 Turnier starten
               </button>

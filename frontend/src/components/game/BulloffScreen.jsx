@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { api } from '../../api/client';
+import { useToastStore } from '../../store/toasts';
 
 export default function BulloffScreen({ game, onComplete }) {
+  const { addToast } = useToastStore();
   const [submitting, setSubmitting] = useState(false);
 
   const handleBulloff = async (playerId, score) => {
@@ -10,7 +12,7 @@ export default function BulloffScreen({ game, onComplete }) {
       await api.post(`/games/${game.id}/bulloff`, { player_id: playerId, score });
       onComplete();
     } catch (err) {
-      alert(err.message || 'Fehler beim Ausbullen');
+      addToast({ type: 'error', message: err.message || 'Fehler beim Ausbullen' });
     } finally {
       setSubmitting(false);
     }
@@ -54,7 +56,7 @@ function BulloffPlayer({ name, playerId, onScore, disabled }) {
             border: '1px solid var(--pe-border)',
             color: 'var(--pe-warning)',
             minHeight: '64px',
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
           }}
         >
           25
@@ -68,7 +70,7 @@ function BulloffPlayer({ name, playerId, onScore, disabled }) {
             border: '1px solid var(--pe-border)',
             color: 'var(--pe-success)',
             minHeight: '64px',
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
           }}
         >
           50
@@ -82,7 +84,7 @@ function BulloffPlayer({ name, playerId, onScore, disabled }) {
             border: '1px solid var(--pe-border)',
             color: 'var(--pe-danger)',
             minHeight: '64px',
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
           }}
         >
           Miss

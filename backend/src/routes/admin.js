@@ -2,19 +2,21 @@
 const express = require('express');
 const router = express.Router();
 const { db } = require('../db/db');
-const { requireAdmin, requireAdminOrDirector } = require('../middleware/auth');
+const { requireAdmin, requireAdminOrDirector, requireAny } = require('../middleware/auth');
 const { auditLog } = require('../lib/auditLog');
 
 // POST /api/admin/wipe — Alle Turnierdaten löschen (Boards + Users + Produkte bleiben)
 router.post('/wipe', requireAdmin, (req, res) => {
   const wipeTx = db.transaction(() => {
     db.prepare('DELETE FROM throws').run();
+    try { db.prepare('DELETE FROM legs').run(); } catch (_) {}
     db.prepare('DELETE FROM group_players').run();
     db.prepare('DELETE FROM games').run();
     db.prepare('DELETE FROM groups').run();
     db.prepare('DELETE FROM tournament_registrations').run();
     try { db.prepare('DELETE FROM schedule').run(); } catch (_) {}
     db.prepare('DELETE FROM tournaments').run();
+    // tournament_results intentionally NOT deleted — history survives WIPE
     // Spielerprofile bleiben erhalten (persistent über Turniere)
     // Boards zurücksetzen aber behalten
     try { db.prepare("UPDATE boards SET is_final = 0").run(); } catch (_) {}
@@ -25,8 +27,8 @@ router.post('/wipe', requireAdmin, (req, res) => {
   });
 
   wipeTx();
-  auditLog(req, 'system', 'WIPE', 'Alle Turnierdaten gelöscht (Spielerprofile, Boards, User, Produkte bleiben)');
-  res.json({ success: true, message: 'Alle Turnierdaten wurden gelöscht. Spielerprofile, Admins, User, Boards und Produkte bleiben erhalten.' });
+  auditLog(req, 'system', 'WIPE', 'Alle Turnierdaten geloescht (Spielerprofile, Boards, User, Produkte, Turnierergebnisse bleiben)');
+  res.json({ success: true, message: 'Alle Turnierdaten wurden geloescht. Spielerprofile, Admins, User, Boards, Produkte und Turnierergebnisse bleiben erhalten.' });
 });
 
 // GET /api/admin/logs — Audit-Log abrufen (Admin + Director)
@@ -78,6 +80,76 @@ router.get('/logs/export', requireAdmin, (req, res) => {
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   res.send(csv);
+});
+
+// GET /api/admin/reports/gastro — Gastro report (admin/gastro only)
+router.get('/reports/gastro', requireAny(['admin', 'gastro']), (req, res) => {
+  try {
+    const revenue = db.prepare(`
+      SELECT
+        COALESCE(SUM(o.quantity * p.price), 0) AS total_revenue,
+        COALESCE(SUM(CASE WHEN o.status = 'paid' THEN o.quantity * p.price ELSE 0 END), 0) AS paid_revenue,
+        COALESCE(SUM(CASE WHEN o.status = 'open' THEN o.quantity * p.price ELSE 0 END), 0) AS open_revenue,
+        COUNT(DISTINCT o.id) AS total_orders,
+        COUNT(DISTINCT o.guest_id) AS total_guests
+      FROM orders o
+      JOIN products p ON o.product_id = p.id
+    `).get();
+
+    const topProducts = db.prepare(`
+      SELECT
+        p.id, p.name, p.category, p.price,
+        COALESCE(SUM(o.quantity), 0) AS total_quantity,
+        COALESCE(SUM(o.quantity * p.price), 0) AS total_revenue
+      FROM products p
+      LEFT JOIN orders o ON o.product_id = p.id
+      GROUP BY p.id
+      HAVING total_quantity > 0
+      ORDER BY total_revenue DESC
+    `).all();
+
+    const ordersPerGuest = db.prepare(`
+      SELECT
+        g.id AS guest_id, g.name AS guest_name,
+        COUNT(o.id) AS order_count,
+        COALESCE(SUM(o.quantity), 0) AS total_items,
+        COALESCE(SUM(o.quantity * p.price), 0) AS total_spent,
+        COALESCE(SUM(CASE WHEN o.status = 'open' THEN o.quantity * p.price ELSE 0 END), 0) AS open_amount,
+        COALESCE(SUM(CASE WHEN o.status = 'paid' THEN o.quantity * p.price ELSE 0 END), 0) AS paid_amount
+      FROM guests g
+      JOIN orders o ON o.guest_id = g.id
+      JOIN products p ON o.product_id = p.id
+      GROUP BY g.id
+      ORDER BY total_spent DESC
+    `).all();
+
+    const byCategory = db.prepare(`
+      SELECT
+        p.category,
+        COALESCE(SUM(o.quantity), 0) AS total_quantity,
+        COALESCE(SUM(o.quantity * p.price), 0) AS total_revenue
+      FROM orders o
+      JOIN products p ON o.product_id = p.id
+      GROUP BY p.category
+      ORDER BY total_revenue DESC
+    `).all();
+
+    const settlements = db.prepare(`
+      SELECT COUNT(*) AS count, COALESCE(SUM(total_amount), 0) AS total
+      FROM settlements
+    `).get();
+
+    res.json({
+      revenue,
+      top_products: topProducts,
+      orders_per_guest: ordersPerGuest,
+      by_category: byCategory,
+      settlements,
+    });
+  } catch (err) {
+    console.error('[admin/reports/gastro]', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 module.exports = router;

@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS tournaments (
   format TEXT NOT NULL,
   checkout TEXT NOT NULL,
   status TEXT DEFAULT 'open',
+  use_seed BOOLEAN DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -104,10 +105,12 @@ CREATE TABLE IF NOT EXISTS users (
 -- NEU: Dartscheiben
 CREATE TABLE IF NOT EXISTS boards (
   id INTEGER PRIMARY KEY,
-  number INTEGER UNIQUE NOT NULL,
+  number INTEGER NOT NULL,
   name TEXT,
   active BOOLEAN DEFAULT 1,
-  tournament_id INTEGER REFERENCES tournaments(id)
+  is_final BOOLEAN DEFAULT 0,
+  tournament_id INTEGER REFERENCES tournaments(id),
+  UNIQUE(number, tournament_id)
 );
 
 -- NEU: Spielplan / Scheduling
@@ -161,4 +164,26 @@ CREATE TABLE IF NOT EXISTS settlements (
   settled_by INTEGER REFERENCES users(id),
   settled_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   note TEXT
+);
+
+-- NEU: Leg-Tracking fuer Multi-Leg-Matches
+CREATE TABLE IF NOT EXISTS legs (
+  id INTEGER PRIMARY KEY,
+  game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  leg_number INTEGER NOT NULL,
+  winner_id INTEGER REFERENCES players(id),
+  finished_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- NEU: Persistente Turnierergebnisse (ueberleben WIPE)
+CREATE TABLE IF NOT EXISTS tournament_results (
+  id INTEGER PRIMARY KEY,
+  tournament_id INTEGER NOT NULL,
+  player_id INTEGER REFERENCES players(id),
+  rank INTEGER,
+  wins INTEGER DEFAULT 0,
+  losses INTEGER DEFAULT 0,
+  legs_won INTEGER DEFAULT 0,
+  legs_lost INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

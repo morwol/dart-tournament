@@ -4,10 +4,29 @@ const router = express.Router();
 const { db } = require('../db/db');
 const { requireAdmin, requireAdminOrDirector, requireAny } = require('../middleware/auth');
 
-// NEU: Alle Scheiben auflisten
+// NEU: Alle Scheiben auflisten — gefiltert nach ?tournament_id=X oder aktives Turnier
 router.get('/', (req, res) => {
-  const boards = db.prepare('SELECT * FROM boards ORDER BY number').all();
-  res.json(boards);
+  const { tournament_id } = req.query;
+  let boards;
+  if (tournament_id !== undefined && tournament_id !== '') {
+    boards = db.prepare('SELECT * FROM boards WHERE tournament_id = ? ORDER BY number').all(parseInt(tournament_id, 10));
+  } else {
+    // Default: only boards of the currently active tournament
+    const active = db.prepare("SELECT id FROM tournaments WHERE status = 'active' ORDER BY id DESC LIMIT 1").get();
+    if (active) {
+      boards = db.prepare('SELECT * FROM boards WHERE tournament_id = ? ORDER BY number').all(active.id);
+    } else {
+      boards = [];
+    }
+  }
+  // Enrich with current active game
+  const enriched = boards.map(b => {
+    const activeGame = db.prepare(
+      "SELECT id FROM games WHERE board_id = ? AND status IN ('active', 'bulloff') LIMIT 1"
+    ).get(b.id);
+    return { ...b, current_game_id: activeGame ? activeGame.id : null };
+  });
+  res.json(enriched);
 });
 
 // NEU: Scheibe anlegen (nur admin)
@@ -18,7 +37,13 @@ router.post('/', requireAdmin, (req, res) => {
     return res.status(400).json({ error: 'Missing required field: number' });
   }
 
-  const existing = db.prepare('SELECT id FROM boards WHERE number = ?').get(number);
+  // Uniqueness check is scoped to the tournament (if tournament_id provided)
+  let existing;
+  if (tournament_id) {
+    existing = db.prepare('SELECT id FROM boards WHERE number = ? AND tournament_id = ?').get(number, tournament_id);
+  } else {
+    existing = db.prepare('SELECT id FROM boards WHERE number = ? AND tournament_id IS NULL').get(number);
+  }
   if (existing) {
     return res.status(409).json({ error: 'Diese Board-Nummer ist bereits vergeben' });
   }
@@ -34,6 +59,20 @@ router.post('/', requireAdmin, (req, res) => {
     active: 1,
     tournament_id: tournament_id || null
   });
+});
+
+// Resolve a board by its display number for the currently active tournament
+router.get('/by-number/:number', (req, res) => {
+  const number = parseInt(req.params.number, 10);
+  if (isNaN(number)) return res.status(400).json({ error: 'Invalid board number' });
+
+  const activeTournament = db.prepare("SELECT id FROM tournaments WHERE status = 'active' LIMIT 1").get();
+  if (!activeTournament) return res.status(404).json({ error: 'No active tournament' });
+
+  const board = db.prepare('SELECT * FROM boards WHERE number = ? AND tournament_id = ?').get(number, activeTournament.id);
+  if (!board) return res.status(404).json({ error: 'Board not found' });
+
+  res.json(board);
 });
 
 // Aktuelles Spiel auf einer Scheibe — nur laufende Partien (bulloff oder active)
@@ -71,6 +110,7 @@ router.get('/:id/next-game', (req, res) => {
     LEFT JOIN players p1 ON g.player1_id = p1.id
     LEFT JOIN players p2 ON g.player2_id = p2.id
     WHERE s.board_id = ? AND s.status = 'scheduled'
+      AND g.status NOT IN ('bulloff', 'active', 'finished')
     ORDER BY s.scheduled_at ASC, s.id ASC
     LIMIT 1
   `).get(id);
@@ -104,14 +144,15 @@ router.delete('/:id', requireAdmin, (req, res) => {
   const board = db.prepare('SELECT * FROM boards WHERE id = ?').get(req.params.id);
   if (!board) return res.status(404).json({ error: 'Scheibe nicht gefunden' });
 
-  // Schutz: Keine Löschung wenn aktives oder laufendes Spiel auf dieser Scheibe
-  const activeGame = db.prepare(
-    "SELECT id FROM games WHERE board_id = ? AND status IN ('bulloff', 'active', 'pending')"
+  // Schutz: Keine Löschung wenn ein Spiel aktiv/laufend auf dieser Scheibe
+  const runningGame = db.prepare(
+    "SELECT id FROM games WHERE board_id = ? AND status IN ('bulloff', 'active')"
   ).get(req.params.id);
-  if (activeGame) {
-    return res.status(409).json({ error: 'Scheibe kann nicht gelöscht werden – es sind noch Spiele zugewiesen. Bitte erst alle Spiele abschließen oder neu zuweisen.' });
+  if (runningGame) {
+    return res.status(409).json({ error: 'Scheibe kann nicht gelöscht werden – es läuft gerade ein Spiel. Bitte erst das Spiel abschließen oder im Turnierleiter-Tab freigeben.' });
   }
 
+  // Ausstehende Zuweisungen automatisch aufheben
   db.prepare('UPDATE games SET board_id = NULL WHERE board_id = ?').run(req.params.id);
   try { db.prepare('DELETE FROM schedule WHERE board_id = ?').run(req.params.id); } catch (_) {}
   db.prepare('DELETE FROM boards WHERE id = ?').run(req.params.id);
@@ -125,7 +166,12 @@ router.put('/:id/final', requireAdminOrDirector, (req, res) => {
   if (!board) return res.status(404).json({ error: 'Scheibe nicht gefunden' });
 
   if (is_final) {
-    const existingFinal = db.prepare('SELECT id FROM boards WHERE is_final = 1 AND id != ?').get(req.params.id);
+    let existingFinal;
+    if (board.tournament_id != null) {
+      existingFinal = db.prepare('SELECT id FROM boards WHERE is_final = 1 AND id != ? AND tournament_id = ?').get(req.params.id, board.tournament_id);
+    } else {
+      existingFinal = db.prepare('SELECT id FROM boards WHERE is_final = 1 AND id != ? AND tournament_id IS NULL').get(req.params.id);
+    }
     if (existingFinal) {
       return res.status(400).json({ error: 'Es kann nur ein Final-Board geben. Bitte zuerst das andere Board als Final deaktivieren.' });
     }
@@ -165,7 +211,8 @@ router.get('/:id/player-stats/:playerId', (req, res) => {
       fav_double_count: favDouble ? favDouble.cnt : 0,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[boards]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

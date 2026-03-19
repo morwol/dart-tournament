@@ -1,33 +1,34 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import TournamentPage from './pages/TournamentPage';
 import PlayerRegistrationPage from './pages/PlayerRegistrationPage';
-import GamePage from './pages/GamePage';
 import NFCScanPage from './pages/NFCScanPage';
 import OrderPage from './pages/OrderPage';
 import AdminPage from './pages/AdminPage';
+import LoginSelectionPage from './pages/LoginSelectionPage';
 // NEU: Board-Ansicht importieren
 import CurrentGameView from './pages/CurrentGameView';
+import AppShell from './components/AppShell';
+import { parseJwt, isTokenValid } from './lib/parseJwt';
+import Toaster from './components/Toaster';
 
 // NEU: Lazy imports für Seiten die von frontend-referee-admin erstellt werden
 const RefereePage = lazy(() => import('./pages/RefereePage'));
 const GastronomyPage = lazy(() => import('./pages/GastronomyPage'));
 const CancelRegistrationPage = lazy(() => import('./pages/CancelRegistrationPage'));
+const RefereeEntryPage = lazy(() => import('./pages/RefereeEntryPage'));
+const TournamentHistoryPage = lazy(() => import('./pages/TournamentHistoryPage'));
+const TournamentDetailPage = lazy(() => import('./pages/TournamentDetailPage'));
+const PlayerProfilePage = lazy(() => import('./pages/PlayerProfilePage'));
+const AdminReportsPage = lazy(() => import('./pages/AdminReportsPage'));
 
-// NEU: JWT Payload dekodieren (ohne Verifikation — Verifikation passiert im Backend)
-function parseJwt(token) {
-  try {
-    return JSON.parse(atob(token.split('.')[1]));
-  } catch { return null; }
-}
-
-// NEU: Protected Route mit Rollenprüfung
+// Protected Route mit Rollenprüfung und Expiry-Check
 function ProtectedRoute({ element, roles }) {
   const token = localStorage.getItem('token');
-  if (!token) return null;
+  if (!isTokenValid(token)) return <Navigate to="/" replace />;
   const payload = parseJwt(token);
-  if (!payload || (roles && !roles.includes(payload.role))) return null;
+  if (!payload || (roles && !roles.includes(payload.role))) return <Navigate to="/" replace />;
   return element;
 }
 
@@ -76,30 +77,39 @@ function ThemeLoader() {
 
 export default function App() {
   return (
-    <Suspense fallback={<LazyFallback />}>
-      <ThemeLoader />
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/tournament/:id" element={<TournamentPage />} />
-        <Route path="/tournament/:id/register" element={<PlayerRegistrationPage />} />
-        <Route path="/game/:id" element={<GamePage />} />
-        <Route path="/nfc" element={<NFCScanPage />} />
-        {/* NEU: NFC-Scan alternative Route */}
-        <Route path="/nfc-scan" element={<NFCScanPage />} />
-        <Route path="/orders/:uid" element={<OrderPage />} />
-        {/* NEU: Board-Ansicht für Beamer/TV (öffentlich) */}
-        <Route path="/board/:boardId" element={<CurrentGameView />} />
-        {/* Admin Users Tab — AdminPage hat eigenen Login */}
-        <Route path="/admin/users" element={<AdminPage tab="users" />} />
-        {/* NEU: Referee-Seite (eigener Login auf der Seite) */}
-        <Route path="/referee/:boardId" element={<RefereePage />} />
-        {/* NEU: Gastronomy Routen (eigener Login auf der Seite) */}
-        <Route path="/gastronomy" element={<GastronomyPage />} />
-        {/* Spieler-Abmeldung via Token-Link */}
-        <Route path="/cancel/:token" element={<CancelRegistrationPage />} />
-        {/* Admin — AdminPage hat eigenen Login */}
-        <Route path="/admin" element={<AdminPage />} />
-      </Routes>
-    </Suspense>
+    <>
+      <Toaster />
+      <Suspense fallback={<LazyFallback />}>
+        <ThemeLoader />
+        <Routes>
+          {/* ── Shell routes: TopBar + role nav ── */}
+          <Route element={<AppShell />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/tournament/:id" element={<TournamentPage />} />
+            <Route path="/tournament/:id/register" element={<PlayerRegistrationPage />} />
+            <Route path="/gastronomy" element={<GastronomyPage />} />
+            <Route path="/login" element={<LoginSelectionPage />} />
+            {/* AdminPage has its own AdminLogin gate — no ProtectedRoute needed */}
+            <Route path="/admin" element={<AdminPage />} />
+            {/* /admin/users → redirect to /admin?tab=users */}
+            <Route path="/admin/users" element={<Navigate to="/admin?tab=users" replace />} />
+            <Route path="/admin/reports" element={<ProtectedRoute element={<AdminReportsPage />} roles={['admin', 'gastronomy']} />} />
+            <Route path="/history" element={<TournamentHistoryPage />} />
+            <Route path="/history/:id" element={<TournamentDetailPage />} />
+            <Route path="/players/:id" element={<PlayerProfilePage />} />
+          </Route>
+
+          {/* ── Standalone routes: no shell ── */}
+          {/* /referee: login = no TopBar; board picker = TopBar only (RefereeEntryPage renders it) */}
+          <Route path="/referee" element={<RefereeEntryPage />} />
+          <Route path="/referee/:boardId" element={<RefereePage />} />
+          <Route path="/board/:boardId" element={<CurrentGameView />} />
+          <Route path="/nfc" element={<NFCScanPage />} />
+          <Route path="/nfc-scan" element={<NFCScanPage />} />
+          <Route path="/orders/:uid" element={<OrderPage />} />
+          <Route path="/cancel/:token" element={<CancelRegistrationPage />} />
+        </Routes>
+      </Suspense>
+    </>
   );
 }

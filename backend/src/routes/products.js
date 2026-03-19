@@ -26,7 +26,8 @@ router.post('/', requireAuth, (req, res) => {
     const product = db.prepare('SELECT * FROM products WHERE id = ?').get(result.lastInsertRowid);
     res.status(201).json(product);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[products]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -57,7 +58,8 @@ router.put('/:id', requireAuth, (req, res) => {
     const updated = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
     return res.json(updated);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[products]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -78,7 +80,8 @@ router.delete('/:id', requireAuth, (req, res) => {
     db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
     return res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[products]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

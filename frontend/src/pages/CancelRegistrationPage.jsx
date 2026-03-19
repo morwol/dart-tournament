@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/client';
+import BackButton from '../components/BackButton';
 
 const card = {
   background: 'var(--pe-bg-card)',
   border: '1px solid var(--pe-border)',
-  borderRadius: '16px',
+  borderRadius: 'var(--pe-radius-lg)',
   padding: '24px',
 };
 
@@ -39,11 +40,11 @@ export default function CancelRegistrationPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', padding: '20px', maxWidth: '480px', margin: '0 auto', fontFamily: 'Verdana, Geneva, sans-serif', boxSizing: 'border-box' }}>
+    <div style={{ minHeight: '100vh', padding: '20px', maxWidth: '480px', margin: '0 auto', fontFamily: 'var(--pe-font-body)', boxSizing: 'border-box' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
-        <Link to="/" style={{ color: 'var(--pe-text-muted)', textDecoration: 'none', fontSize: '22px' }}>←</Link>
+        <BackButton to="/" />
         <img src="/logo.jpeg" alt="DartEvent" style={{ height: '38px' }} />
       </div>
 
@@ -61,7 +62,7 @@ export default function CancelRegistrationPage() {
           <p style={{ color: 'var(--pe-text-sub)', fontSize: '14px', marginBottom: '20px' }}>
             {error}
           </p>
-          <Link to="/" style={{ display: 'inline-block', padding: '12px 24px', background: 'var(--pe-blue-deep)', color: '#fff', borderRadius: '10px', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px' }}>
+          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '12px 24px', background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', borderRadius: 'var(--pe-radius-md)', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px', minHeight: '64px' }}>
             Zur Startseite
           </Link>
         </div>
@@ -95,7 +96,7 @@ export default function CancelRegistrationPage() {
             </div>
           </div>
 
-          <div style={{ padding: '14px', borderRadius: '10px', background: 'rgba(255,69,96,0.08)', border: '1px solid rgba(255,69,96,0.3)' }}>
+          <div style={{ padding: '14px', borderRadius: 'var(--pe-radius-md)', background: 'rgba(255,69,96,0.08)', border: '1px solid rgba(255,69,96,0.3)' }}>
             <p style={{ color: 'var(--pe-text-sub)', fontSize: '14px', margin: 0, lineHeight: '1.5' }}>
               Wenn du auf <strong style={{ color: 'var(--pe-text)' }}>„Abmeldung bestätigen"</strong> klickst, wird deine Teilnahme unwiderruflich storniert. Du kannst dich danach erneut anmelden, solange das Turnier noch offen ist.
             </p>
@@ -108,12 +109,12 @@ export default function CancelRegistrationPage() {
           <button
             onClick={handleCancel}
             disabled={cancelling}
-            style={{ background: 'var(--pe-danger)', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: 'bold', minHeight: '64px', cursor: cancelling ? 'wait' : 'pointer', opacity: cancelling ? 0.7 : 1, fontFamily: 'Verdana, Geneva, sans-serif' }}
+            style={{ background: 'var(--pe-danger)', color: 'var(--pe-text)', border: 'none', borderRadius: 'var(--pe-radius-md)', fontSize: '16px', fontWeight: 'bold', minHeight: '64px', cursor: cancelling ? 'wait' : 'pointer', opacity: cancelling ? 0.7 : 1, fontFamily: 'var(--pe-font-body)' }}
           >
             {cancelling ? 'Wird abgemeldet...' : 'Abmeldung bestätigen'}
           </button>
 
-          <Link to="/" style={{ textAlign: 'center', color: 'var(--pe-text-muted)', fontSize: '14px', textDecoration: 'none' }}>
+          <Link to="/" style={{ textAlign: 'center', color: 'var(--pe-text-muted)', fontSize: '14px', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '64px' }}>
             Abbrechen — zurück zur Startseite
           </Link>
         </div>
@@ -132,7 +133,7 @@ export default function CancelRegistrationPage() {
           <p style={{ color: 'var(--pe-text-sub)', fontSize: '14px', marginBottom: '20px' }}>
             Das Turnier <strong style={{ color: 'var(--pe-text)' }}>{info.tournament_name}</strong> hat bereits begonnen. Eine Abmeldung ist nicht mehr möglich.
           </p>
-          <Link to="/" style={{ display: 'inline-block', padding: '12px 24px', background: 'var(--pe-blue-deep)', color: '#fff', borderRadius: '10px', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px' }}>
+          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '12px 24px', background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', borderRadius: 'var(--pe-radius-md)', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px', minHeight: '64px' }}>
             Zur Startseite
           </Link>
         </div>
@@ -151,7 +152,7 @@ export default function CancelRegistrationPage() {
           <p style={{ color: 'var(--pe-text-muted)', fontSize: '13px', marginBottom: '24px' }}>
             Du kannst dich jederzeit erneut anmelden, solange die Registrierung noch offen ist.
           </p>
-          <Link to="/" style={{ display: 'inline-block', padding: '14px 28px', background: 'var(--pe-gradient)', color: '#fff', borderRadius: '10px', textDecoration: 'none', fontWeight: 'bold', fontSize: '15px' }}>
+          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '14px 28px', background: 'var(--pe-gradient)', color: 'var(--pe-text)', borderRadius: 'var(--pe-radius-md)', textDecoration: 'none', fontWeight: 'bold', fontSize: '15px', minHeight: '64px' }}>
             Zur Startseite
           </Link>
         </div>

@@ -6,9 +6,9 @@ const inp = {
   background: 'var(--pe-bg-card)',
   border: '1px solid var(--pe-border)',
   color: 'var(--pe-text)',
-  fontFamily: 'Verdana, Geneva, sans-serif',
+  fontFamily: 'var(--pe-font-body)',
   fontSize: '16px',
-  borderRadius: '12px',
+  borderRadius: 'var(--pe-radius-md)',
   padding: '16px',
   width: '100%',
   boxSizing: 'border-box',
@@ -74,14 +74,10 @@ export default function PlayerRegistrationPage() {
     const cancelLink = `${appBaseUrl}/cancel/${registered.cancelToken}`;
 
     return (
-      <div style={{ minHeight: '100vh', padding: '20px', maxWidth: '480px', margin: '0 auto', fontFamily: 'Verdana, Geneva, sans-serif', boxSizing: 'border-box' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
-          <Link to="/" style={{ color: 'var(--pe-text-muted)', textDecoration: 'none', fontSize: '22px' }}>←</Link>
-          <img src="/logo.jpeg" alt="DartEvent" style={{ height: '38px' }} />
-        </div>
+      <div style={{ minHeight: '100vh', padding: '20px', maxWidth: '480px', margin: '0 auto', fontFamily: 'var(--pe-font-body)', boxSizing: 'border-box' }}>
 
         {/* Erfolgs-Card */}
-        <div style={{ background: 'var(--pe-bg-card)', border: '2px solid var(--pe-success)', borderRadius: '16px', padding: '24px', marginBottom: '16px', textAlign: 'center' }}>
+        <div style={{ background: 'var(--pe-bg-card)', border: '2px solid var(--pe-success)', borderRadius: 'var(--pe-radius-lg)', padding: '24px', marginBottom: '16px', textAlign: 'center' }}>
           <div style={{ fontSize: '48px', marginBottom: '12px' }}>🎯</div>
           <h2 style={{ color: 'var(--pe-success)', fontWeight: 'bold', fontSize: '20px', margin: '0 0 8px' }}>
             Anmeldung erfolgreich!
@@ -97,14 +93,14 @@ export default function PlayerRegistrationPage() {
         </div>
 
         {/* Abmelde-Link */}
-        <div style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', borderRadius: '16px', padding: '20px', marginBottom: '16px' }}>
+        <div style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', borderRadius: 'var(--pe-radius-lg)', padding: '20px', marginBottom: '16px' }}>
           <p style={{ fontSize: '12px', color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 8px', fontWeight: 'bold' }}>
             Dein persönlicher Abmelde-Link
           </p>
           <p style={{ color: 'var(--pe-text-sub)', fontSize: '13px', margin: '0 0 12px', lineHeight: '1.5' }}>
             Speichere diesen Link, um deine Anmeldung später widerrufen zu können. Der Link ist nur für dich gültig.
           </p>
-          <div style={{ background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', borderRadius: '8px', padding: '12px', wordBreak: 'break-all', marginBottom: '10px' }}>
+          <div style={{ background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', borderRadius: 'var(--pe-radius-sm)', padding: '12px', wordBreak: 'break-all', marginBottom: '10px' }}>
             <span style={{ fontSize: '12px', color: 'var(--pe-cyan-bright)', fontFamily: 'monospace' }}>
               {cancelLink}
             </span>
@@ -113,7 +109,7 @@ export default function PlayerRegistrationPage() {
             href={cancelLink}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ display: 'block', textAlign: 'center', padding: '10px', borderRadius: '8px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-text-sub)', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold', border: '1px solid var(--pe-border)' }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px', borderRadius: 'var(--pe-radius-sm)', background: 'var(--pe-bg-elevated)', color: 'var(--pe-text-sub)', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold', border: '1px solid var(--pe-border)', minHeight: '64px' }}
           >
             Link öffnen / testen
           </a>
@@ -121,7 +117,7 @@ export default function PlayerRegistrationPage() {
 
         <Link
           to="/"
-          style={{ display: 'block', textAlign: 'center', padding: '16px', borderRadius: '12px', background: 'var(--pe-gradient)', color: '#fff', textDecoration: 'none', fontWeight: 'bold', fontSize: '16px', minHeight: '56px', lineHeight: '24px' }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', borderRadius: 'var(--pe-radius-md)', background: 'var(--pe-gradient)', color: 'var(--pe-text)', textDecoration: 'none', fontWeight: 'bold', fontSize: '16px', minHeight: '64px' }}
         >
           Zur Turnier-Übersicht
         </Link>
@@ -131,13 +127,8 @@ export default function PlayerRegistrationPage() {
 
   // ── Anmelde-Formular ───────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100vh', padding: '20px', maxWidth: '480px', margin: '0 auto', fontFamily: 'Verdana, Geneva, sans-serif', boxSizing: 'border-box' }}>
+    <div style={{ minHeight: '100vh', padding: '20px', maxWidth: '480px', margin: '0 auto', fontFamily: 'var(--pe-font-body)', boxSizing: 'border-box' }}>
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <Link to={`/tournament/${id}`} style={{ color: 'var(--pe-text-muted)', textDecoration: 'none', fontSize: '22px' }}>←</Link>
-        <img src="/logo.jpeg" alt="DartEvent" style={{ height: '38px' }} />
-      </div>
 
       {/* Turnier-Info */}
       {tournament && (
@@ -186,14 +177,14 @@ export default function PlayerRegistrationPage() {
 
         {/* Live Preview */}
         {previewName && (
-          <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)' }}>
+          <div style={{ padding: '12px 16px', borderRadius: 'var(--pe-radius-md)', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)' }}>
             <span style={{ fontSize: '12px', color: 'var(--pe-text-muted)', display: 'block', marginBottom: '2px' }}>Angezeigter Name:</span>
             <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--pe-text)' }}>{previewName}</span>
           </div>
         )}
 
         {error && (
-          <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(255,69,96,0.1)', border: '1px solid var(--pe-danger)' }}>
+          <div style={{ padding: '12px 16px', borderRadius: 'var(--pe-radius-md)', background: 'rgba(255,69,96,0.1)', border: '1px solid var(--pe-danger)' }}>
             <p style={{ color: 'var(--pe-danger)', fontSize: '14px', margin: 0 }}>{error}</p>
           </div>
         )}
@@ -203,15 +194,15 @@ export default function PlayerRegistrationPage() {
           disabled={submitting || !canSubmit || (tournament && tournament.status !== 'open')}
           style={{
             background: canSubmit ? 'var(--pe-gradient)' : 'var(--pe-bg-elevated)',
-            color: '#fff',
+            color: 'var(--pe-text)',
             border: 'none',
-            borderRadius: '12px',
+            borderRadius: 'var(--pe-radius-md)',
             fontSize: '16px',
             fontWeight: 'bold',
             minHeight: '64px',
             cursor: canSubmit ? 'pointer' : 'not-allowed',
             opacity: submitting ? 0.6 : 1,
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            fontFamily: 'var(--pe-font-body)',
             marginTop: '8px',
           }}
         >

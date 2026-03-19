@@ -4,12 +4,16 @@ const fs = require('fs');
 const bcrypt = require('bcryptjs');
 
 const dbPath = process.env.DB_PATH || './data/dartevent.db';
-const absoluteDbPath = path.resolve(__dirname, '../../', dbPath);
+const absoluteDbPath = dbPath === ':memory:'
+  ? ':memory:'
+  : path.resolve(__dirname, '../../', dbPath);
 
-// Ensure data directory exists
-const dbDir = path.dirname(absoluteDbPath);
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
+// Ensure data directory exists (skip for in-memory DB)
+if (absoluteDbPath !== ':memory:') {
+  const dbDir = path.dirname(absoluteDbPath);
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+  }
 }
 
 const db = new Database(absoluteDbPath);
@@ -86,9 +90,19 @@ function initialize() {
     "ALTER TABLE users ADD COLUMN nickname TEXT",
     "ALTER TABLE users ADD COLUMN nachname TEXT",
     "ALTER TABLE players ADD COLUMN walkon_file TEXT",
+    "ALTER TABLE players ADD COLUMN walkon_title TEXT",
+    "ALTER TABLE players ADD COLUMN walkon_artist TEXT",
     "ALTER TABLE players ADD COLUMN walkon_start INTEGER DEFAULT 0",
     "ALTER TABLE players ADD COLUMN walkon_duration INTEGER DEFAULT 30",
+    "ALTER TABLE guests ADD COLUMN active BOOLEAN DEFAULT 1",
+    "ALTER TABLE tournaments ADD COLUMN use_seed BOOLEAN DEFAULT 0",
+    "ALTER TABLE tournaments ADD COLUMN legs_to_win INTEGER DEFAULT 1",
+    "ALTER TABLE games ADD COLUMN legs_won_p1 INTEGER DEFAULT 0",
+    "ALTER TABLE games ADD COLUMN legs_won_p2 INTEGER DEFAULT 0",
+    "ALTER TABLE games ADD COLUMN current_leg INTEGER DEFAULT 1",
+    "ALTER TABLE throws ADD COLUMN leg INTEGER DEFAULT 1",
   ];
+
 
   for (const stmt of alterStatements) {
     try {
@@ -96,6 +110,30 @@ function initialize() {
     } catch (e) {
       // Spalte existiert bereits — ignorieren
     }
+  }
+
+  // Migrate boards table: replace global UNIQUE(number) with UNIQUE(number, tournament_id)
+  try {
+    const hasOldConstraint = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='boards'").get();
+    if (hasOldConstraint && /number INTEGER UNIQUE/i.test(hasOldConstraint.sql)) {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS boards_new (
+          id INTEGER PRIMARY KEY,
+          number INTEGER NOT NULL,
+          name TEXT,
+          active BOOLEAN DEFAULT 1,
+          is_final BOOLEAN DEFAULT 0,
+          tournament_id INTEGER REFERENCES tournaments(id),
+          UNIQUE(number, tournament_id)
+        );
+        INSERT OR IGNORE INTO boards_new (id, number, name, active, is_final, tournament_id)
+          SELECT id, number, name, active, COALESCE(is_final, 0), tournament_id FROM boards;
+        DROP TABLE boards;
+        ALTER TABLE boards_new RENAME TO boards;
+      `);
+    }
+  } catch (e) {
+    // Migration already done or not needed
   }
 
   // Walk-On Jobs Tabelle anlegen
@@ -107,6 +145,32 @@ function initialize() {
       error_msg TEXT,
       started_at DATETIME,
       finished_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Leg-Tracking fuer Multi-Leg-Matches
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS legs (
+      id INTEGER PRIMARY KEY,
+      game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+      leg_number INTEGER NOT NULL,
+      winner_id INTEGER REFERENCES players(id),
+      finished_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Persistente Turnierergebnisse (ueberleben WIPE)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tournament_results (
+      id INTEGER PRIMARY KEY,
+      tournament_id INTEGER NOT NULL,
+      player_id INTEGER REFERENCES players(id),
+      rank INTEGER,
+      wins INTEGER DEFAULT 0,
+      losses INTEGER DEFAULT 0,
+      legs_won INTEGER DEFAULT 0,
+      legs_lost INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -156,7 +220,8 @@ function initialize() {
   if (adminExists.count === 0) {
     const username = process.env.ADMIN_USERNAME || 'admin';
     const password = process.env.ADMIN_PASSWORD || 'admin';
-    const hash = bcrypt.hashSync(password, 10);
+    const rounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
+    const hash = bcrypt.hashSync(password, rounds);
     db.prepare('INSERT INTO admins (username, password_hash) VALUES (?, ?)').run(username, hash);
     console.log(`Default admin "${username}" created.`);
   }

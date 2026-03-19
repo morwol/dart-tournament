@@ -1,110 +1,207 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { api } from '../api/client';
-import ProductList from '../components/order/ProductList';
-import Cart from '../components/order/Cart';
 import BackButton from '../components/BackButton';
 
 export default function OrderPage() {
   const { uid } = useParams();
-  const [products, setProducts] = useState([]);
-  const [orders, setOrders] = useState([]);
-  const [cart, setCart] = useState([]);
+  const [statement, setStatement] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    Promise.all([
-      api.get('/products'),
-      api.get(`/nfc/${uid}/orders`),
-    ])
-      .then(([p, o]) => { setProducts(p); setOrders(o); })
-      .catch(() => {})
+    api.get(`/nfc/${uid}/statement`)
+      .then(setStatement)
+      .catch((err) => setError(err.message || 'Kontoauszug konnte nicht geladen werden.'))
       .finally(() => setLoading(false));
   }, [uid]);
 
-  const addToCart = (product) => {
-    setCart((prev) => {
-      const existing = prev.find((item) => item.product_id === product.id);
-      if (existing) {
-        return prev.map((item) =>
-          item.product_id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      return [...prev, { product_id: product.id, name: product.name, price: product.price, quantity: 1 }];
-    });
+  const cardStyle = {
+    background: 'var(--pe-bg-card)',
+    border: '1px solid var(--pe-border)',
+    borderRadius: 'var(--pe-radius-md)',
+    padding: '16px',
+    fontFamily: 'var(--pe-font-body)',
   };
 
-  const removeFromCart = (productId) => {
-    setCart((prev) =>
-      prev
-        .map((item) => item.product_id === productId ? { ...item, quantity: item.quantity - 1 } : item)
-        .filter((item) => item.quantity > 0)
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--pe-font-body)' }}>
+        <p style={{ color: 'var(--pe-text-sub)' }}>Lade...</p>
+      </div>
     );
-  };
+  }
 
-  const submitOrder = async () => {
-    try {
-      for (const item of cart) {
-        await api.post('/orders', {
-          guest_uid: uid,
-          product_id: item.product_id,
-          quantity: item.quantity,
-        });
-      }
-      setCart([]);
-      const updatedOrders = await api.get(`/nfc/${uid}/orders`);
-      setOrders(updatedOrders);
-    } catch (err) {
-      alert(err.message || 'Fehler beim Bestellen');
-    }
-  };
+  if (error) {
+    return (
+      <div style={{ minHeight: '100vh', padding: '16px', maxWidth: '480px', margin: '0 auto', fontFamily: 'var(--pe-font-body)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+          <BackButton to="/" />
+          <img src="/logo.jpeg" alt="DartEvent" style={{ height: '40px' }} />
+        </div>
+        <div style={{ ...cardStyle, border: '1px solid var(--pe-danger)', textAlign: 'center', padding: '32px 16px' }}>
+          <p style={{ color: 'var(--pe-danger)', fontWeight: 'bold', marginBottom: '8px' }}>Fehler</p>
+          <p style={{ color: 'var(--pe-text-sub)', fontSize: '14px' }}>{error}</p>
+        </div>
+      </div>
+    );
+  }
 
-  if (loading) return <div className="p-4 text-center" style={{ color: 'var(--pe-text-sub)' }}>Lade...</div>;
+  const { guest, orders = [], total_open = 0, total_paid = 0 } = statement || {};
+  const isBlocked = guest?.active === 0 || guest?.active === false;
 
   return (
-    <div className="min-h-screen p-4 max-w-lg mx-auto pb-48">
-      <div className="flex items-center gap-3 mb-6">
+    <div style={{ minHeight: '100vh', padding: '16px', maxWidth: '480px', margin: '0 auto', fontFamily: 'var(--pe-font-body)' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
         <BackButton to="/" />
-        <img src="/logo.jpeg" alt="DartEvent" className="h-10" />
+        <img src="/logo.jpeg" alt="DartEvent" style={{ height: '40px' }} />
       </div>
 
       <h1
-        className="text-xl font-bold mb-6"
-        style={{ background: 'var(--pe-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+        style={{
+          background: 'var(--pe-gradient)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          fontWeight: 'bold',
+          fontSize: '20px',
+          marginBottom: '20px',
+        }}
       >
-        Bestellungen
+        Kontoauszug
       </h1>
 
-      {orders.length > 0 && (
-        <section className="mb-6">
-          <h2 className="text-lg font-bold mb-3" style={{ color: 'var(--pe-cyan-bright)' }}>Deine Bestellungen</h2>
-          <div className="space-y-2">
-            {orders.map((o) => (
+      {/* Gast-Info */}
+      {guest && (
+        <div style={{ ...cardStyle, marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <p style={{ fontWeight: 'bold', fontSize: '16px', color: 'var(--pe-text)', margin: 0 }}>{guest.name || 'Gast'}</p>
+            <p style={{ fontSize: '12px', color: 'var(--pe-text-muted)', margin: '4px 0 0' }}>#{guest.id}</p>
+          </div>
+          {isBlocked ? (
+            <span
+              style={{
+                background: 'rgba(255,69,96,0.15)',
+                color: 'var(--pe-danger)',
+                border: '1px solid var(--pe-danger)',
+                borderRadius: 'var(--pe-radius-xl)',
+                padding: '6px 14px',
+                fontSize: '13px',
+                fontWeight: 'bold',
+              }}
+            >
+              Gesperrt
+            </span>
+          ) : (
+            <span
+              style={{
+                background: 'rgba(0,229,160,0.12)',
+                color: 'var(--pe-success)',
+                border: '1px solid var(--pe-success)',
+                borderRadius: 'var(--pe-radius-xl)',
+                padding: '6px 14px',
+                fontSize: '13px',
+                fontWeight: 'bold',
+              }}
+            >
+              Aktiv
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Bestellungen */}
+      {orders.length === 0 ? (
+        <div style={{ ...cardStyle, textAlign: 'center', padding: '48px 16px' }}>
+          <p style={{ color: 'var(--pe-text-muted)', fontSize: '15px' }}>Noch keine Bestellungen</p>
+        </div>
+      ) : (
+        <div style={{ marginBottom: '20px' }}>
+          <p
+            style={{
+              fontSize: '11px',
+              fontWeight: 'bold',
+              color: 'var(--pe-text-muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              marginBottom: '10px',
+            }}
+          >
+            Bestellungen
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {orders.map((order) => (
               <div
-                key={o.id}
-                className="flex justify-between items-center p-3 rounded-lg"
-                style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}
+                key={order.id}
+                style={{
+                  ...cardStyle,
+                  padding: '12px 16px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '12px',
+                }}
               >
-                <span>{o.product_name} x{o.quantity}</span>
-                <span
-                  className="text-xs px-2 py-1 rounded-full font-bold"
-                  style={{
-                    color: o.status === 'paid' ? 'var(--pe-success)' : 'var(--pe-warning)',
-                    border: `1px solid ${o.status === 'paid' ? 'var(--pe-success)' : 'var(--pe-warning)'}`,
-                  }}
-                >
-                  {o.status === 'paid' ? 'Bezahlt' : 'Offen'}
-                </span>
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: 0, fontWeight: 'bold', fontSize: '14px', color: 'var(--pe-text)' }}>
+                    {order.product_name}
+                  </p>
+                  <p style={{ margin: '3px 0 0', fontSize: '12px', color: 'var(--pe-text-muted)' }}>
+                    {order.quantity} &times; {parseFloat(order.price ?? (order.total / order.quantity)).toFixed(2)} EUR
+                  </p>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                  <span style={{ fontWeight: 'bold', fontSize: '14px', color: 'var(--pe-text-sub)' }}>
+                    {parseFloat(order.total ?? (order.price * order.quantity)).toFixed(2)} EUR
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      padding: '3px 10px',
+                      borderRadius: 'var(--pe-radius-xl)',
+                      color: order.status === 'paid' ? 'var(--pe-success)' : 'var(--pe-warning)',
+                      border: `1px solid ${order.status === 'paid' ? 'var(--pe-success)' : 'var(--pe-warning)'}`,
+                      background: order.status === 'paid' ? 'rgba(0,229,160,0.08)' : 'rgba(255,176,32,0.08)',
+                    }}
+                  >
+                    {order.status === 'paid' ? 'Bezahlt' : 'Offen'}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
-        </section>
+        </div>
       )}
 
-      <ProductList products={products} onAdd={addToCart} />
-
-      {cart.length > 0 && (
-        <Cart items={cart} onRemove={removeFromCart} onSubmit={submitOrder} />
+      {/* Zusammenfassung */}
+      {orders.length > 0 && (
+        <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <p
+            style={{
+              fontSize: '11px',
+              fontWeight: 'bold',
+              color: 'var(--pe-text-muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              margin: 0,
+            }}
+          >
+            Zusammenfassung
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '14px', color: 'var(--pe-text-sub)' }}>Offen</span>
+            <span style={{ fontWeight: 'bold', fontSize: '16px', color: 'var(--pe-warning)' }}>
+              {parseFloat(total_open).toFixed(2)} EUR
+            </span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--pe-border)', paddingTop: '10px' }}>
+            <span style={{ fontSize: '14px', color: 'var(--pe-text-sub)' }}>Bereits bezahlt</span>
+            <span style={{ fontWeight: 'bold', fontSize: '16px', color: 'var(--pe-success)' }}>
+              {parseFloat(total_paid).toFixed(2)} EUR
+            </span>
+          </div>
+        </div>
       )}
     </div>
   );

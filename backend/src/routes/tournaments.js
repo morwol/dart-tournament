@@ -14,7 +14,7 @@ router.get('/', (req, res) => {
 
 // POST /api/tournaments (Admin)
 router.post('/', verifyToken, requireFields(['name', 'format', 'checkout']), (req, res) => {
-  const { name, date, format, checkout } = req.body;
+  const { name, date, format, checkout, use_seed } = req.body;
 
   if (!['501', '301'].includes(format)) {
     return res.status(400).json({ error: 'Format must be 501 or 301' });
@@ -23,9 +23,11 @@ router.post('/', verifyToken, requireFields(['name', 'format', 'checkout']), (re
     return res.status(400).json({ error: 'Checkout must be single_out or double_out' });
   }
 
+  const useSeedValue = use_seed ? 1 : 0;
+
   const result = db.prepare(
-    'INSERT INTO tournaments (name, date, format, checkout) VALUES (?, ?, ?, ?)'
-  ).run(name, date || null, format, checkout);
+    'INSERT INTO tournaments (name, date, format, checkout, use_seed) VALUES (?, ?, ?, ?, ?)'
+  ).run(name, date || null, format, checkout, useSeedValue);
 
   const tournament = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(result.lastInsertRowid);
   auditLog(req, 'tournament', 'CREATE', `Turnier "${name}" angelegt`, tournament.id);
@@ -45,7 +47,7 @@ router.get('/active', (req, res) => {
     WHERE g.tournament_id = ? ORDER BY g.round, g.id
   `).all(tournament.id);
   const players = db.prepare(`
-    SELECT p.*, tr.seed, tr.registered_at as registered_at, tr.cancel_token
+    SELECT p.*, tr.seed, tr.registered_at as registered_at
     FROM players p JOIN tournament_registrations tr ON tr.player_id = p.id
     WHERE tr.tournament_id = ? ORDER BY tr.seed, tr.registered_at
   `).all(tournament.id);
@@ -73,7 +75,7 @@ router.get('/:id', (req, res) => {
   `).all(req.params.id);
 
   const players = db.prepare(`
-    SELECT p.*, tr.seed, tr.registered_at as registered_at, tr.cancel_token
+    SELECT p.*, tr.seed, tr.registered_at as registered_at
     FROM players p JOIN tournament_registrations tr ON tr.player_id = p.id
     WHERE tr.tournament_id = ? ORDER BY tr.seed, tr.registered_at
   `).all(req.params.id);
@@ -86,7 +88,7 @@ router.put('/:id', verifyToken, (req, res) => {
   const tournament = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(req.params.id);
   if (!tournament) return res.status(404).json({ error: 'Tournament not found' });
 
-  const allowed = ['prelim_format','prelim_legs','qf_format','qf_legs','sf_format','sf_legs','final_format','final_legs','board_count','name','date'];
+  const allowed = ['prelim_format','prelim_legs','qf_format','qf_legs','sf_format','sf_legs','final_format','final_legs','board_count','name','date','use_seed'];
   const updates = {};
   for (const key of allowed) {
     if (req.body[key] !== undefined) updates[key] = req.body[key];
@@ -203,7 +205,9 @@ router.delete('/:id', requireAdmin, (req, res) => {
   const deleteTx = db.transaction(() => {
     const games = db.prepare('SELECT id FROM games WHERE tournament_id = ?').all(req.params.id);
     for (const game of games) {
+      db.prepare('DELETE FROM schedule WHERE game_id = ?').run(game.id);
       db.prepare('DELETE FROM throws WHERE game_id = ?').run(game.id);
+      try { db.prepare('DELETE FROM legs WHERE game_id = ?').run(game.id); } catch (_) {}
     }
     db.prepare('DELETE FROM games WHERE tournament_id = ?').run(req.params.id);
     const groups = db.prepare('SELECT id FROM groups WHERE tournament_id = ?').all(req.params.id);
@@ -212,6 +216,7 @@ router.delete('/:id', requireAdmin, (req, res) => {
     }
     db.prepare('DELETE FROM groups WHERE tournament_id = ?').run(req.params.id);
     db.prepare('DELETE FROM tournament_registrations WHERE tournament_id = ?').run(req.params.id);
+    db.prepare('DELETE FROM boards WHERE tournament_id = ?').run(req.params.id);
     db.prepare('DELETE FROM tournaments WHERE id = ?').run(req.params.id);
   });
 
@@ -256,6 +261,25 @@ router.post('/:id/draw-groups', requireAdminOrDirector, (req, res) => {
     // Gruppennamen: A, B, C, ...
     const groupNames = Array.from({ length: numGroups }, (_, i) => String.fromCharCode(65 + i));
 
+    // Determine draw order based on tournament.use_seed setting
+    let orderedPlayers;
+    if (tournament.use_seed) {
+      // Seed-aware draw: sort by seed (nulls last), then snake-draft across groups
+      orderedPlayers = [...players].sort((a, b) => {
+        if (a.seed == null && b.seed == null) return 0;
+        if (a.seed == null) return 1;
+        if (b.seed == null) return -1;
+        return a.seed - b.seed;
+      });
+    } else {
+      // Completely random draw: Fisher-Yates shuffle
+      orderedPlayers = [...players];
+      for (let i = orderedPlayers.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [orderedPlayers[i], orderedPlayers[j]] = [orderedPlayers[j], orderedPlayers[i]];
+      }
+    }
+
     const drawTransaction = db.transaction(() => {
       // Gruppen anlegen
       const groupIds = [];
@@ -266,24 +290,25 @@ router.post('/:id/draw-groups', requireAdminOrDirector, (req, res) => {
         groupIds.push(result.lastInsertRowid);
       }
 
-      // Serpentinen-Verteilung: 1->A, 2->B, ..., N->B, N+1->A (umgekehrt)
-      let direction = 1; // 1 = vorwaerts, -1 = rueckwaerts
+      // Snake-draft distribution: 1->A, 2->B, ..., N->N, N+1->N (reverse), ...
+      // Ensures top seeds (or random players) spread across different groups
+      let direction = 1; // 1 = forward, -1 = backward
       let groupIndex = 0;
-      for (const player of players) {
+      for (const player of orderedPlayers) {
         db.prepare(
           'INSERT INTO group_players (group_id, player_id) VALUES (?, ?)'
         ).run(groupIds[groupIndex], player.id);
 
-        // Naechste Gruppe
+        // Advance to next group (snake direction)
         if (direction === 1) {
           if (groupIndex >= numGroups - 1) {
-            direction = -1; // Umkehren
+            direction = -1;
           } else {
             groupIndex++;
           }
         } else {
           if (groupIndex <= 0) {
-            direction = 1; // Umkehren
+            direction = 1;
           } else {
             groupIndex--;
           }
@@ -311,7 +336,8 @@ router.post('/:id/draw-groups', requireAdminOrDirector, (req, res) => {
 
     return res.json({ groups: result, num_groups: numGroups });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[tournaments]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -339,7 +365,8 @@ router.get('/:id/groups', (req, res) => {
 
     return res.json({ groups: result, group_draw_done: !!tournament.group_draw_done });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[tournaments]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -371,8 +398,14 @@ router.post('/:id/generate-group-schedule', requireAdminOrDirector, (req, res) =
       `).all(req.params.id, g.id)
     }));
 
-    const boards = db.prepare('SELECT * FROM boards ORDER BY number').all();
-    if (boards.length === 0) return res.status(400).json({ error: 'No boards configured. Please add boards first.' });
+    let boards = db.prepare('SELECT * FROM boards WHERE tournament_id = ? ORDER BY number').all(req.params.id);
+    if (boards.length === 0) {
+      const count = tournament.board_count || 1;
+      for (let i = 1; i <= count; i++) {
+        db.prepare('INSERT INTO boards (number, tournament_id) VALUES (?, ?)').run(i, req.params.id);
+      }
+      boards = db.prepare('SELECT * FROM boards WHERE tournament_id = ? ORDER BY number').all(req.params.id);
+    }
 
     // Randomly shuffle boards for the draw
     const shuffled = [...boards].sort(() => Math.random() - 0.5);
@@ -439,6 +472,7 @@ router.post('/:id/generate-group-schedule', requireAdminOrDirector, (req, res) =
     // Delete any existing group-phase games (round = 0) for this tournament
     const existingGroupGames = db.prepare('SELECT id FROM games WHERE tournament_id = ? AND round = 0').all(req.params.id);
     for (const g of existingGroupGames) {
+      db.prepare('DELETE FROM schedule WHERE game_id = ?').run(g.id);
       db.prepare('DELETE FROM throws WHERE game_id = ?').run(g.id);
       db.prepare('DELETE FROM games WHERE id = ?').run(g.id);
     }
@@ -449,9 +483,14 @@ router.post('/:id/generate-group-schedule', requireAdminOrDirector, (req, res) =
     const insertGames = db.transaction(() => {
       for (const [boardId, pairs] of Object.entries(boardGameList)) {
         for (const [p1, p2] of pairs) {
-          db.prepare(
+          const gameResult = db.prepare(
             'INSERT INTO games (tournament_id, round, player1_id, player2_id, start_score, board_id, status) VALUES (?, 0, ?, ?, ?, ?, ?)'
           ).run(req.params.id, p1.id, p2.id, startScore, parseInt(boardId), 'pending');
+
+          db.prepare(
+            'INSERT INTO schedule (tournament_id, game_id, board_id, scheduled_at, status) VALUES (?, ?, ?, ?, ?)'
+          ).run(req.params.id, gameResult.lastInsertRowid, parseInt(boardId), null, 'scheduled');
+
           totalCreated++;
         }
       }
@@ -467,7 +506,8 @@ router.post('/:id/generate-group-schedule', requireAdminOrDirector, (req, res) =
       board_assignments: groupBoardAssignments,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[tournaments]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -561,7 +601,8 @@ router.post('/:id/generate-bracket', requireAdminOrDirector, (req, res) => {
     const games = db.prepare('SELECT * FROM games WHERE tournament_id = ? ORDER BY round, id').all(req.params.id);
     return res.json({ bracket_size: bracketSize, players: bracketPlayers.length, games });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[tournaments]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -577,7 +618,90 @@ router.put('/:id/lock', requireAdminOrDirector, (req, res) => {
     auditLog(req, 'tournament', 'LOCK', `Turnier "${tournament.name}" abgeschlossen`, tournament.id);
     return res.json(updated);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[tournaments]', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/tournaments/:id/finish — Manually finish a tournament
+// Returns HTTP 409 if open games exist (unless ?force=true cancels them)
+// Persists final standings into tournament_results for history after WIPE
+router.put('/:id/finish', requireAdminOrDirector, (req, res) => {
+  try {
+    const tournamentId = parseInt(req.params.id, 10);
+    const tournament = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(tournamentId);
+    if (!tournament) return res.status(404).json({ error: 'Tournament not found' });
+
+    if (tournament.status === 'finished') {
+      return res.status(400).json({ error: 'Tournament is already finished' });
+    }
+
+    const openGames = db.prepare(`
+      SELECT id, round, player1_id, player2_id, status FROM games
+      WHERE tournament_id = ? AND status IN ('pending', 'bulloff', 'active')
+    `).all(tournamentId);
+
+    const force = req.query.force === 'true';
+
+    if (openGames.length > 0 && !force) {
+      return res.status(409).json({
+        error: 'Cannot finish tournament: open games exist',
+        open_games: openGames,
+        hint: 'Use ?force=true to cancel open games and finish the tournament anyway',
+      });
+    }
+
+    const finishTx = db.transaction(() => {
+      if (openGames.length > 0 && force) {
+        db.prepare(`
+          UPDATE games SET status = 'cancelled'
+          WHERE tournament_id = ? AND status IN ('pending', 'bulloff', 'active')
+        `).run(tournamentId);
+      }
+
+      db.prepare("UPDATE tournaments SET status = 'finished', locked = 1 WHERE id = ?").run(tournamentId);
+
+      // Persist final standings into tournament_results (survives WIPE)
+      db.prepare('DELETE FROM tournament_results WHERE tournament_id = ?').run(tournamentId);
+
+      const players = db.prepare(`
+        SELECT DISTINCT p.id FROM players p
+        JOIN tournament_registrations tr ON tr.player_id = p.id
+        WHERE tr.tournament_id = ?
+      `).all(tournamentId);
+
+      const stmtWins = db.prepare(`
+        SELECT COUNT(*) as cnt FROM games
+        WHERE tournament_id = ? AND status = 'finished' AND winner_id = ?
+      `);
+      const stmtLosses = db.prepare(`
+        SELECT COUNT(*) as cnt FROM games
+        WHERE tournament_id = ? AND status = 'finished'
+          AND (player1_id = ? OR player2_id = ?) AND winner_id != ?
+      `);
+
+      const playerStats = players.map(p => {
+        const wins = stmtWins.get(tournamentId, p.id).cnt;
+        const losses = stmtLosses.get(tournamentId, p.id, p.id, p.id).cnt;
+        return { player_id: p.id, wins, losses };
+      }).sort((a, b) => b.wins - a.wins || a.losses - b.losses);
+
+      const insertResult = db.prepare(
+        'INSERT INTO tournament_results (tournament_id, player_id, rank, wins, losses) VALUES (?, ?, ?, ?, ?)'
+      );
+      playerStats.forEach((p, index) => {
+        insertResult.run(tournamentId, p.player_id, index + 1, p.wins, p.losses);
+      });
+    });
+
+    finishTx();
+
+    const updated = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(tournamentId);
+    auditLog(req, 'tournament', 'FINISH', `Tournament "${tournament.name}" manually finished${force ? ' (force)' : ''}`, tournamentId);
+    return res.json(updated);
+  } catch (err) {
+    console.error('[tournaments]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -589,7 +713,10 @@ router.post('/:id/reset', requireAdmin, (req, res) => {
 
     const resetTx = db.transaction(() => {
       const games = db.prepare('SELECT id FROM games WHERE tournament_id = ?').all(req.params.id);
-      for (const g of games) db.prepare('DELETE FROM throws WHERE game_id = ?').run(g.id);
+      for (const g of games) {
+        db.prepare('DELETE FROM throws WHERE game_id = ?').run(g.id);
+        try { db.prepare('DELETE FROM legs WHERE game_id = ?').run(g.id); } catch (_) {}
+      }
       db.prepare('DELETE FROM games WHERE tournament_id = ?').run(req.params.id);
       const groups = db.prepare('SELECT id FROM groups WHERE tournament_id = ?').all(req.params.id);
       for (const g of groups) db.prepare('DELETE FROM group_players WHERE group_id = ?').run(g.id);
@@ -601,7 +728,8 @@ router.post('/:id/reset', requireAdmin, (req, res) => {
     const updated = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(req.params.id);
     return res.json(updated);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[tournaments]', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

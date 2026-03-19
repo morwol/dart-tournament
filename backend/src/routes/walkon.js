@@ -84,6 +84,29 @@ async function downloadWalkon(playerId, url, start, duration, jobId) {
     // 7. walkon_file in players aktualisieren
     db.prepare('UPDATE players SET walkon_file = ? WHERE id = ?').run(finalPath, playerId);
 
+    // Metadaten extrahieren (artist, title) — unkritisch, kein Fehler bei Fehlschlag
+    try {
+      const currentJob = db.prepare('SELECT id FROM walkon_jobs WHERE player_id = ? ORDER BY id DESC LIMIT 1').get(playerId);
+      if (currentJob && currentJob.id === jobId) {
+        const meta = await new Promise((resolve) => {
+          const dlpMeta = spawn('yt-dlp', [
+            '--no-playlist',
+            '--print', '%(artist,uploader)s',
+            '--print', 'title',
+            url
+          ]);
+          let out = '';
+          dlpMeta.stdout.on('data', (d) => { out += d.toString(); });
+          dlpMeta.on('close', () => resolve(out));
+          dlpMeta.on('error', () => resolve(''));
+        });
+        const lines = meta.trim().split(/\r?\n/).map(l => l.trim());
+        const artist = (lines[0] && lines[0] !== 'NA') ? lines[0] : null;
+        const title  = (lines[1] && lines[1] !== 'NA') ? lines[1] : null;
+        db.prepare('UPDATE players SET walkon_artist = ?, walkon_title = ? WHERE id = ?').run(artist, title, playerId);
+      }
+    } catch (_) { /* stilles Fallback — kein Einfluss auf Download-Status */ }
+
     // 8. Job status → 'ready', finished_at setzen
     db.prepare(
       "UPDATE walkon_jobs SET status = 'ready', finished_at = CURRENT_TIMESTAMP WHERE id = ?"
@@ -150,7 +173,7 @@ router.get('/:playerId/status', (req, res) => {
   const playerId = parseInt(req.params.playerId, 10);
 
   const player = db.prepare(
-    'SELECT id, walkon_file, walkon_start, walkon_duration, walkon_youtube FROM players WHERE id = ?'
+    'SELECT id, walkon_file, walkon_start, walkon_duration, walkon_youtube, walkon_title, walkon_artist FROM players WHERE id = ?'
   ).get(playerId);
   if (!player) {
     return res.status(404).json({ error: 'Spieler nicht gefunden' });
@@ -166,6 +189,8 @@ router.get('/:playerId/status', (req, res) => {
     walkon_start:    player.walkon_start,
     walkon_duration: player.walkon_duration,
     walkon_url:      player.walkon_youtube,
+    walkon_title:    player.walkon_title,
+    walkon_artist:   player.walkon_artist,
     job:             job || null
   });
 });
@@ -228,7 +253,7 @@ router.delete('/:playerId', requireAdmin, (req, res) => {
 
   // Spalten in players zurücksetzen
   db.prepare(
-    'UPDATE players SET walkon_file = NULL, walkon_youtube = NULL, walkon_start = NULL, walkon_duration = NULL WHERE id = ?'
+    'UPDATE players SET walkon_file = NULL, walkon_youtube = NULL, walkon_start = NULL, walkon_duration = NULL, walkon_title = NULL, walkon_artist = NULL WHERE id = ?'
   ).run(playerId);
 
   // Alle Jobs für diesen Spieler löschen

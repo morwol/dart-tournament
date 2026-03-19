@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/client';
 import Bracket from '../components/tournament/Bracket';
-import BackButton from '../components/BackButton';
 
 export default function TournamentPage() {
   const { id } = useParams();
@@ -33,14 +32,10 @@ export default function TournamentPage() {
 
   return (
     <div className="min-h-screen p-4 max-w-2xl mx-auto">
-      <div className="flex items-center gap-3 mb-4">
-        <BackButton to="/" />
-        <img src="/logo.jpeg" alt="DartEvent" className="h-10" />
-      </div>
 
       <h1
-        className="text-xl font-bold mb-1"
-        style={{ background: 'var(--pe-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+        className="text-xl mb-1 pe-font-display"
+        style={{ background: 'var(--pe-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 700 }}
       >
         {tournament.name}
       </h1>
@@ -51,8 +46,8 @@ export default function TournamentPage() {
       {tournament.status === 'open' && (
         <Link
           to={`/tournament/${id}/register`}
-          className="block text-center py-3 rounded-xl font-bold mb-6 no-underline"
-          style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)' }}
+          className="flex items-center justify-center rounded-xl font-bold mb-6 no-underline"
+          style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '64px' }}
         >
           Jetzt anmelden
         </Link>

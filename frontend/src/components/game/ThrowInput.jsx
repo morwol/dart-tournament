@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { api } from '../../api/client';
+import { useToastStore } from '../../store/toasts';
 
 const numpadKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', 'OK'];
 
 export default function ThrowInput({ game, onThrow }) {
+  const { addToast } = useToastStore();
   const [value, setValue] = useState('');
   const [isDouble, setIsDouble] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -38,7 +40,7 @@ export default function ThrowInput({ game, onThrow }) {
       setIsDouble(false);
       onThrow();
     } catch (err) {
-      alert(err.message || 'Fehler beim Eintragen');
+      addToast({ type: 'error', message: err.message || 'Fehler beim Eintragen' });
     } finally {
       setSubmitting(false);
     }
@@ -47,8 +49,8 @@ export default function ThrowInput({ game, onThrow }) {
   return (
     <div className="mt-4">
       <div
-        className="text-center text-3xl font-bold p-4 rounded-xl mb-3"
-        style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', minHeight: '64px' }}
+        className="text-center p-4 rounded-xl mb-3 pe-score"
+        style={{ fontSize: '2rem', background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', minHeight: '64px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
         {value || '0'}
       </div>
@@ -61,8 +63,8 @@ export default function ThrowInput({ game, onThrow }) {
             background: isDouble ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)',
             border: `1px solid ${isDouble ? 'var(--pe-blue-mid)' : 'var(--pe-border)'}`,
             color: isDouble ? 'var(--pe-text)' : 'var(--pe-text-sub)',
-            minHeight: '48px',
-            fontFamily: 'Verdana, Geneva, sans-serif',
+            minHeight: '64px',
+            fontFamily: 'var(--pe-font-body)',
           }}
         >
           {isDouble ? 'Double Out: AN' : 'Double Out: AUS'}
@@ -81,7 +83,7 @@ export default function ThrowInput({ game, onThrow }) {
               border: '1px solid var(--pe-border)',
               color: key === 'OK' || key === 'C' ? '#000' : 'var(--pe-text)',
               minHeight: '64px',
-              fontFamily: 'Verdana, Geneva, sans-serif',
+              fontFamily: 'var(--pe-font-body)',
             }}
           >
             {key}

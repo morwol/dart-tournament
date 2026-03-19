@@ -114,10 +114,13 @@ docs/kurze-beschreibung      # Nur Dokumentation
 2. git checkout -b fix/mein-bug
 3. Änderungen machen + committen
 4. git push origin fix/mein-bug
-5. gh pr create --base main --head fix/mein-bug
+5. gh pr create --base dev --head fix/mein-bug
 6. PR mergen
 7. git checkout dev && git pull origin dev  (dev aktuell halten)
+8. git fetch --prune && git branch -d fix/mein-bug  (lokalen Branch löschen)
 ```
+
+**Warum Schritt 8 wichtig ist:** GitHub löscht nach dem Merge nur den Remote-Branch — der lokale Branch bleibt liegen und sammelt sich über Zeit an. `--prune` bereinigt veraltete Remote-Tracking-Refs, `-d` löscht den lokalen Branch sauber (schlägt fehl wenn nicht gemergt = Sicherheitsnetz).
 
 ### Sprache — ENGLISCH PFLICHT
 Alles was auf GitHub landet wird auf **Englisch** verfasst — public repo, soll für alle nachvollziehbar sein:
@@ -136,9 +139,56 @@ refactor: short description   # restructuring without behavior change
 
 ---
 
+## Plugins & Skills (Aktiv)
+
+Diese Plugins sind installiert und müssen in den Workflow integriert werden.
+
+### Wann welchen Skill/Command nutzen
+
+| Aufgabe | Skill/Command |
+|---------|--------------|
+| Neues Feature (komplex, mehrere Dateien) | `/feature-dev <beschreibung>` |
+| Kreative UI-Komponente oder neue Page | `frontend-design` Skill (automatisch getriggert) |
+| PR vor dem Merge reviewen | `/code-review` |
+| Debugging (unklarer Bug, Test-Failures) | `superpowers:systematic-debugging` |
+| Großes Feature planen | `superpowers:writing-plans` → `superpowers:executing-plans` |
+| Ideen explorieren | `superpowers:brainstorming` |
+| Parallele unabhängige Tasks | `superpowers:dispatching-parallel-agents` |
+| Code vereinfachen | `code-simplifier` Agent |
+
+### KRITISCH: frontend-design Skill — PE Design Override
+
+Der `frontend-design` Skill hat eigene Design-Vorgaben, die **für dieses Projekt NICHT gelten**.
+Folgende Punkte des Skills werden durch PE Corporate Design **überschrieben**:
+
+- **Schrift:** Skill sagt "avoid Arial/Verdana" → IGNORIEREN. Hier gilt Verdana, Geneva, sans-serif — PFLICHT
+- **Farben:** Skill schlägt eigene Paletten vor → IGNORIEREN. Nur PE CSS Tokens verwenden (siehe Design-Sektion)
+- **Theme:** Skill variiert zwischen light/dark → IGNORIEREN. Immer Dark Mode (`--pe-bg: #090E1A`)
+- **Gestaltungsfreiheit:** Nur bei Layout, Animationen, Spatial Composition — dort darf der Skill kreativ sein
+
+**Kurzregel:** Frontend-Design Skill = kreative Layouts & Animationen in PE Corporate Design.
+
+### feature-dev Workflow
+
+7-Phasen Prozess: Discovery → Codebase Exploration → Clarifying Questions → Architecture Design → Implementation → Quality Review → Summary.
+
+- Nutzen bei: neuen Features, Architekturentscheidungen, unklaren Requirements
+- **Nicht** nutzen bei: einzelne Bugfixes, Trivial-Änderungen, Hotfixes
+- Agents: `code-explorer`, `code-architect`, `code-reviewer` laufen automatisch parallel
+
+### code-review Workflow
+
+Startet 4 parallele Review-Agents (CLAUDE.md-Compliance × 2, Bug-Scan, Git-Blame-Analyse).
+Filtert Issues unter Confidence 80 heraus — nur echte, hochwahrscheinliche Probleme werden gepostet.
+
+- Laufen lassen: vor jedem nicht-trivialen PR-Merge
+- Ergebnis: GitHub Comment mit konkreten Issues + File-Links
+
+---
+
 ## Design — P Entertainment Corporate Design (PFLICHT)
 
-**Schrift:** Verdana, Geneva, sans-serif — keine andere
+**Schrift:** Space Grotesk (Body) + Rajdhani (Display) via Google Fonts — `--pe-font-body: 'Space Grotesk', system-ui, sans-serif` / `--pe-font-display: 'Rajdhani', system-ui, sans-serif`
 
 **CSS Tokens (immer verwenden):**
 ```css
@@ -365,7 +415,7 @@ GET    /api/orders/summary
 
 ## UI-Komponenten (Konventionen)
 
-- `BackButton` Komponente: `frontend/src/components/BackButton.jsx` — immer verwenden statt `←` Links
+- Navigation zurück: `usePageMeta({ parentLink: { href, label } })` aus `components/layout/AppLayout` — zeigt Link oben in TopBar. BackButton.jsx ist deprecated.
 - Admin-Header: Username klickbar → Dropdown mit Abmelden (User-Kontext-Popover)
 - Echtzeit-Updates: Polling alle 5 Sekunden
 

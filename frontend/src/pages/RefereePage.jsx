@@ -1,6 +1,8 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
+import { useToastStore } from '../store/toasts';
+import { useStore } from '../store';
 
 const NUMBERS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];
 const MOD = { Single: 'S', Double: 'D', Triple: 'T' };
@@ -28,61 +30,100 @@ function useTabletLandscape() {
   return is;
 }
 
+// Emergency logout — fixed ⚙ button, visible in full-screen scoring view (no AppShell)
+function EmergencyLogout() {
+  const { logout } = useStore();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
+  }, [open]);
+
+  const handleLogout = () => {
+    setOpen(false);
+    logout();
+    navigate('/referee');
+  };
+
+  return (
+    <div ref={ref} style={{ position: 'fixed', top: '12px', right: '12px', zIndex: 200 }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        aria-label="Menü öffnen"
+        style={{
+          width: '64px', height: '64px',
+          borderRadius: '50%',
+          background: 'var(--pe-bg-elevated)',
+          border: '1px solid var(--pe-border)',
+          color: 'var(--pe-text-muted)',
+          fontSize: '18px',
+          cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: 'var(--pe-font-body)',
+        }}
+      >
+        ⚙
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+          background: 'var(--pe-bg-elevated)',
+          border: '1px solid var(--pe-border)',
+          borderRadius: 'var(--pe-radius-md)',
+          padding: '8px',
+          minWidth: '140px',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+          fontFamily: 'var(--pe-font-body)',
+        }}>
+          <button
+            onClick={handleLogout}
+            style={{
+              width: '100%', minHeight: '64px',
+              padding: '10px 12px',
+              background: 'none',
+              border: '1px solid var(--pe-border)',
+              borderRadius: 'var(--pe-radius-sm)',
+              color: 'var(--pe-danger)',
+              cursor: 'pointer',
+              fontSize: '13px', fontWeight: 'bold',
+              fontFamily: 'var(--pe-font-body)',
+              textAlign: 'left',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'color-mix(in srgb, var(--pe-danger) 10%, transparent)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+          >
+            Abmelden
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Shared styles ──────────────────────────────────────────────────────────
 const btn = (extra = {}) => ({
-  fontFamily: 'Verdana, Geneva, sans-serif',
-  borderRadius: '10px',
+  fontFamily: 'var(--pe-font-body)',
+  borderRadius: 'var(--pe-radius-md)',
   fontWeight: 'bold',
   cursor: 'pointer',
   border: '1px solid var(--pe-border)',
   ...extra,
 });
 
-// ── Login ──────────────────────────────────────────────────────────────────
-function RefereeLogin({ onLogin }) {
-  const [form, setForm] = useState({ username: '', password: '' });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const submit = async (e) => {
-    e.preventDefault();
-    setLoading(true); setError('');
-    try {
-      const data = await api.post('/auth/login', form);
-      if (!['admin', 'referee'].includes(data.user?.role)) {
-        setError('Keine Berechtigung für Schiedsrichter-Modus.'); return;
-      }
-      localStorage.setItem('token', data.token);
-      onLogin(data.token);
-    } catch (err) { setError(err.message || 'Login fehlgeschlagen'); }
-    finally { setLoading(false); }
-  };
-
-  return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', fontFamily: 'Verdana, Geneva, sans-serif' }}>
-      <div style={{ width: '100%', maxWidth: '360px' }}>
-        <img src="/logo.jpeg" alt="" style={{ height: '56px', display: 'block', margin: '0 auto 24px' }} />
-        <h1 style={{ textAlign: 'center', background: 'var(--pe-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 'bold', fontSize: '20px', marginBottom: '24px' }}>
-          Schiedsrichter Login
-        </h1>
-        <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <input type="text" value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} placeholder="Benutzername"
-            style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif', borderRadius: '10px', padding: '0 14px', outline: 'none', minHeight: '56px', width: '100%', boxSizing: 'border-box' }} />
-          <input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="Passwort"
-            style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif', borderRadius: '10px', padding: '0 14px', outline: 'none', minHeight: '56px', width: '100%', boxSizing: 'border-box' }} />
-          {error && <p style={{ color: 'var(--pe-danger)', fontSize: '14px', textAlign: 'center' }}>{error}</p>}
-          <button type="submit" disabled={loading || !form.username || !form.password}
-            style={btn({ background: 'var(--pe-gradient)', color: '#fff', minHeight: '56px', border: 'none', fontSize: '16px', opacity: loading ? 0.6 : 1 })}>
-            {loading ? 'Anmelden...' : 'Anmelden'}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
-
 // ── Bulloff Panel ──────────────────────────────────────────────────────────
 function BulloffPanel({ gameId, player1, player2, onDone, isTablet }) {
+  const { addToast } = useToastStore();
   const [p1score, setP1score] = useState(null);
   const [p2score, setP2score] = useState(null);
   const [missWinner, setMissWinner] = useState(null);
@@ -101,7 +142,7 @@ function BulloffPanel({ gameId, player1, player2, onDone, isTablet }) {
       const res = await api.post(`/games/${gameId}/bulloff`, body);
       if (res.status === 'bulloff') reset('Gleichstand — erneut werfen!');
       else onDone();
-    } catch (err) { alert(err.message || 'Fehler'); }
+    } catch (err) { addToast({ type: 'error', message: err.message || 'Fehler' }); }
     finally { setSaving(false); }
   };
 
@@ -121,7 +162,7 @@ function BulloffPanel({ gameId, player1, player2, onDone, isTablet }) {
       </div>
 
       {tieMsg && (
-        <div style={{ background: 'rgba(255,176,32,0.15)', border: '1px solid var(--pe-warning)', borderRadius: '10px', padding: '10px', textAlign: 'center', color: 'var(--pe-warning)', fontWeight: 'bold', fontSize: '14px' }}>
+        <div style={{ background: 'rgba(255,176,32,0.15)', border: '1px solid var(--pe-warning)', borderRadius: 'var(--pe-radius-md)', padding: '10px', textAlign: 'center', color: 'var(--pe-warning)', fontWeight: 'bold', fontSize: '14px' }}>
           {tieMsg}
         </div>
       )}
@@ -144,12 +185,12 @@ function BulloffPanel({ gameId, player1, player2, onDone, isTablet }) {
       </div>
 
       {bothMiss && (
-        <div style={{ background: 'rgba(255,176,32,0.1)', border: '1px solid var(--pe-warning)', borderRadius: '10px', padding: '12px' }}>
+        <div style={{ background: 'rgba(255,176,32,0.1)', border: '1px solid var(--pe-warning)', borderRadius: 'var(--pe-radius-md)', padding: '12px' }}>
           <p style={{ color: 'var(--pe-warning)', fontSize: '13px', fontWeight: 'bold', textAlign: 'center', margin: '0 0 10px' }}>Beide MISS — wer war näher am Bull?</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             {[player1, player2].map(p => (
               <button key={p.id} onClick={() => setMissWinner(p.id)}
-                style={btn({ minHeight: '56px', background: missWinner === p.id ? 'var(--pe-warning)' : 'var(--pe-bg-card)', color: missWinner === p.id ? '#000' : 'var(--pe-text)', fontSize: '14px', borderColor: missWinner === p.id ? 'var(--pe-warning)' : 'var(--pe-border)', width: '100%' })}>
+                style={btn({ minHeight: '64px', background: missWinner === p.id ? 'var(--pe-warning)' : 'var(--pe-bg-card)', color: missWinner === p.id ? '#000' : 'var(--pe-text)', fontSize: '14px', borderColor: missWinner === p.id ? 'var(--pe-warning)' : 'var(--pe-border)', width: '100%' })}>
                 {p.name}
               </button>
             ))}
@@ -158,7 +199,7 @@ function BulloffPanel({ gameId, player1, player2, onDone, isTablet }) {
       )}
 
       <button onClick={submit} disabled={saving || !canSubmit}
-        style={btn({ minHeight: isTablet ? '68px' : '56px', background: canSubmit ? 'var(--pe-gradient)' : 'var(--pe-bg-elevated)', color: '#fff', border: 'none', fontSize: isTablet ? '18px' : '16px', opacity: (saving || !canSubmit) ? 0.5 : 1, width: '100%' })}>
+        style={btn({ minHeight: isTablet ? '68px' : '64px', background: canSubmit ? 'var(--pe-gradient)' : 'var(--pe-bg-elevated)', color: 'var(--pe-text)', border: 'none', fontSize: isTablet ? '18px' : '16px', opacity: (saving || !canSubmit) ? 0.5 : 1, width: '100%' })}>
         {saving ? 'Speichern...' : 'Bulloff bestätigen'}
       </button>
     </div>
@@ -167,7 +208,7 @@ function BulloffPanel({ gameId, player1, player2, onDone, isTablet }) {
 
 // ── Dart Number Pad ────────────────────────────────────────────────────────
 function DartPad({ modifier, setModifier, onThrow, disabled, isTablet }) {
-  const btnH = isTablet ? '58px' : '54px';
+  const btnH = isTablet ? '64px' : '58px';
   const numFs = isTablet ? '20px' : '17px';
 
   return (
@@ -176,7 +217,7 @@ function DartPad({ modifier, setModifier, onThrow, disabled, isTablet }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
         {['Single', 'Double', 'Triple'].map(m => (
           <button key={m} onClick={() => setModifier(m)}
-            style={btn({ minHeight: isTablet ? '52px' : '48px', background: modifier === m ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: modifier === m ? 'var(--pe-text)' : 'var(--pe-text-sub)', borderColor: modifier === m ? 'var(--pe-blue-mid)' : 'var(--pe-border)', fontSize: isTablet ? '15px' : '14px' })}>
+            style={btn({ minHeight: isTablet ? '64px' : '56px', background: modifier === m ? 'var(--pe-blue-deep)' : 'var(--pe-bg-elevated)', color: modifier === m ? 'var(--pe-text)' : 'var(--pe-text-sub)', borderColor: modifier === m ? 'var(--pe-blue-mid)' : 'var(--pe-border)', fontSize: isTablet ? '15px' : '14px' })}>
             {m}
           </button>
         ))}
@@ -219,7 +260,7 @@ function RoundThrows({ throws, prevThrow, onUndo, disabled, isTablet }) {
   const displayThrows = showPrev ? [] : throws;
   const total = displayThrows.reduce((s, t) => s + segmentScore(t.segment), 0);
   return (
-    <div style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', borderRadius: '12px', padding: isTablet ? '14px' : '10px' }}>
+    <div style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', borderRadius: 'var(--pe-radius-md)', padding: isTablet ? '14px' : '10px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
         <span style={{ color: 'var(--pe-text-muted)', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
           {showPrev ? 'Letzter Wurf (vorige Runde)' : 'Aktuelle Runde'}
@@ -229,7 +270,7 @@ function RoundThrows({ throws, prevThrow, onUndo, disabled, isTablet }) {
 
       {showPrev ? (
         // Show only the last throw from the previous round with a prominent undo button
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--pe-bg-elevated)', borderRadius: '8px', padding: '10px 12px', border: '1px solid var(--pe-warning)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--pe-bg-elevated)', borderRadius: 'var(--pe-radius-sm)', padding: '10px 12px', border: '1px solid var(--pe-warning)' }}>
           <div style={{ flex: 1 }}>
             <span style={{ fontWeight: 'bold', color: prevThrow.segment === 'BUST' ? 'var(--pe-danger)' : 'var(--pe-text)', fontSize: '16px' }}>{prevThrow.segment}</span>
             <span style={{ fontSize: '12px', color: 'var(--pe-text-muted)', marginLeft: '8px' }}>{segmentScore(prevThrow.segment)} Pkt</span>
@@ -244,7 +285,7 @@ function RoundThrows({ throws, prevThrow, onUndo, disabled, isTablet }) {
           {[0, 1, 2].map(i => {
             const t = displayThrows[i];
             return (
-              <div key={i} style={{ flex: 1, background: 'var(--pe-bg-elevated)', borderRadius: '8px', padding: '8px', minHeight: '52px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', border: `1px solid ${t ? 'var(--pe-blue-mid)' : 'var(--pe-border)'}` }}>
+              <div key={i} style={{ flex: 1, background: 'var(--pe-bg-elevated)', borderRadius: 'var(--pe-radius-sm)', padding: '8px', minHeight: '52px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', border: `1px solid ${t ? 'var(--pe-blue-mid)' : 'var(--pe-border)'}` }}>
                 <span style={{ fontSize: '10px', color: 'var(--pe-text-muted)', textTransform: 'uppercase' }}>Wurf {i + 1}</span>
                 {t ? (
                   <>
@@ -344,10 +385,10 @@ function WalkonPlayButton({ playerId }) {
     <button
       onClick={handlePlay}
       style={{
-        fontFamily: 'Verdana, Geneva, sans-serif',
+        fontFamily: 'var(--pe-font-body)',
         fontSize: '11px',
         fontWeight: 'bold',
-        borderRadius: '8px',
+        borderRadius: 'var(--pe-radius-sm)',
         cursor: 'pointer',
         border: `1px solid ${playing ? 'var(--pe-warning)' : 'var(--pe-success)'}`,
         background: playing ? 'rgba(255,176,32,0.15)' : 'rgba(0,229,160,0.12)',
@@ -385,7 +426,7 @@ function Scoreboard({ player1, player2, currentThrowerId, bullWinnerId, game, is
               {isActive && <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '6px', background: 'var(--pe-success)', color: '#000', fontWeight: 'bold' }}>▶</span>}
             </div>
             <WalkonPlayButton playerId={p.id} />
-            <div style={{ fontSize: isTablet ? '58px' : '46px', fontWeight: 'bold', color: 'var(--pe-text)', lineHeight: 1, margin: '4px 0' }}>{p.remaining}</div>
+            <div style={{ fontSize: isTablet ? '58px' : '46px', fontFamily: 'var(--pe-font-display)', fontWeight: 800, letterSpacing: '-0.01em', color: 'var(--pe-text)', lineHeight: 1, margin: '4px 0' }}>{p.remaining}</div>
             {p.checkout_suggestions?.length > 0 && (
               <div style={{ fontSize: '11px', color: 'var(--pe-success)', marginBottom: '2px' }}>→ {p.checkout_suggestions[0]}</div>
             )}
@@ -400,6 +441,7 @@ function Scoreboard({ player1, player2, currentThrowerId, bullWinnerId, game, is
 
 // ── Game Queue ──────────────────────────────────────────────────────────────
 function GameQueue({ boardId, currentGameId, canSwitch, onSelect, onSkip, isTablet }) {
+  const { addToast } = useToastStore();
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -418,7 +460,7 @@ function GameQueue({ boardId, currentGameId, canSwitch, onSelect, onSkip, isTabl
     try {
       await api.post(`/games/${gameId}/skip`);
       await load();
-    } catch (err) { alert(err.message || 'Fehler beim Überspringen'); }
+    } catch (err) { addToast({ type: 'error', message: err.message || 'Fehler beim Überspringen' }); }
   };
 
   if (loading) return <p style={{ color: 'var(--pe-text-muted)', fontSize: '12px' }}>Lade...</p>;
@@ -436,7 +478,7 @@ function GameQueue({ boardId, currentGameId, canSwitch, onSelect, onSkip, isTabl
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {games.map((g, idx) => (
-            <div key={g.id} style={{ background: 'var(--pe-bg-elevated)', borderRadius: '8px', padding: '8px 10px', border: '1px solid var(--pe-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+            <div key={g.id} style={{ background: 'var(--pe-bg-elevated)', borderRadius: 'var(--pe-radius-sm)', padding: '8px 10px', border: '1px solid var(--pe-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ fontSize: '10px', color: 'var(--pe-text-muted)', display: 'block' }}>#{idx + 1}</span>
                 <span style={{ fontSize: '12px', color: 'var(--pe-text)', fontWeight: 'bold', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.player1_name}</span>
@@ -449,7 +491,7 @@ function GameQueue({ boardId, currentGameId, canSwitch, onSelect, onSkip, isTabl
                 </button>
                 {canSwitch && (
                   <button onClick={() => onSelect(g.id)}
-                    style={btn({ padding: '6px 12px', background: 'var(--pe-blue-deep)', color: '#fff', border: 'none', fontSize: '12px', minHeight: '36px', whiteSpace: 'nowrap' })}>
+                    style={btn({ padding: '6px 12px', background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', border: 'none', fontSize: '12px', minHeight: '36px', whiteSpace: 'nowrap' })}>
                     Starten ▶
                   </button>
                 )}
@@ -458,6 +500,59 @@ function GameQueue({ boardId, currentGameId, canSwitch, onSelect, onSkip, isTabl
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Next Game Preview ──────────────────────────────────────────────────────
+function NextGamePreview({ boardId, currentGameId, isTablet }) {
+  const [nextGame, setNextGame] = useState(null);
+
+  const load = useCallback(async () => {
+    try {
+      const data = await api.get(`/boards/${boardId}/next-game`);
+      // Only show if it's not the current active game
+      if (data && data.game_id !== currentGameId) {
+        setNextGame(data);
+      } else {
+        setNextGame(null);
+      }
+    } catch {
+      setNextGame(null);
+    }
+  }, [boardId, currentGameId]);
+
+  useEffect(() => {
+    load();
+    const iv = setInterval(load, 5000);
+    return () => clearInterval(iv);
+  }, [load]);
+
+  if (!nextGame) return null;
+
+  return (
+    <div style={{
+      background: 'var(--pe-bg-card)',
+      border: '1px solid var(--pe-border)',
+      borderRadius: 'var(--pe-radius-md)',
+      padding: isTablet ? '14px' : '12px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+        <span style={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--pe-warning)' }}>
+          Nächstes Spiel
+        </span>
+      </div>
+      <div style={{ background: 'var(--pe-bg-elevated)', borderRadius: 'var(--pe-radius-sm)', padding: '10px 12px', border: '1px solid var(--pe-border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <span style={{ fontSize: isTablet ? '15px' : '14px', fontWeight: 'bold', color: 'var(--pe-text)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {nextGame.player1_name || 'TBD'}
+          </span>
+          <span style={{ fontSize: '11px', color: 'var(--pe-text-muted)', flexShrink: 0 }}>vs</span>
+          <span style={{ fontSize: isTablet ? '15px' : '14px', fontWeight: 'bold', color: 'var(--pe-text)', flex: 1, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {nextGame.player2_name || 'TBD'}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -472,7 +567,7 @@ function GameInfoBar({ game, isTablet }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
       {tiles.map(({ label, value, color }) => (
-        <div key={label} style={{ textAlign: 'center', padding: isTablet ? '8px 4px' : '6px 4px', borderRadius: '8px', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)' }}>
+        <div key={label} style={{ textAlign: 'center', padding: isTablet ? '8px 4px' : '6px 4px', borderRadius: 'var(--pe-radius-sm)', background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)' }}>
           <span style={{ fontSize: '10px', color: 'var(--pe-text-muted)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</span>
           <span style={{ fontSize: isTablet ? '14px' : '13px', fontWeight: 'bold', color }}>{value}</span>
         </div>
@@ -500,7 +595,8 @@ function getPrevRoundLastThrow(liveData) {
 // ══════════════════════════════════════════════════════════════════════════
 // ── TABLET LAYOUT ─────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════
-function TabletLayout({ boardId, token, onLogout, selectedGameId, setSelectedGameId, liveData, fetchLive, modifier, setModifier, submitting, throwSegment, undoThrow }) {
+function TabletLayout({ boardId, boardNumber, selectedGameId, setSelectedGameId, liveData, fetchLive, modifier, setModifier, submitting, throwSegment, undoThrow }) {
+  const { addToast } = useToastStore();
   const { game, player1, player2, current_round_throws = [] } = liveData || {};
   const currentThrowerId = game?.current_turn || game?.bull_winner_id;
 
@@ -517,23 +613,19 @@ function TabletLayout({ boardId, token, onLogout, selectedGameId, setSelectedGam
     try {
       await api.post(`/games/${game.id}/reset`);
       setSelectedGameId(null);
-    } catch (err) { alert(err.message || 'Fehler'); }
+    } catch (err) { addToast({ type: 'error', message: err.message || 'Fehler' }); }
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: 'Verdana, Geneva, sans-serif', background: 'var(--pe-bg)' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', fontFamily: 'var(--pe-font-body)', background: 'var(--pe-bg)' }}>
+      <EmergencyLogout />
 
       {/* ── LEFT PANEL ── */}
       <div style={{ width: '360px', minWidth: '320px', flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'var(--pe-bg-card)', borderRight: '1px solid var(--pe-border)', overflow: 'hidden', overflowX: 'hidden' }}>
 
-        {/* Header */}
-        <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--pe-border)', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          <img src="/logo.jpeg" alt="" style={{ height: '32px' }} />
-          <span style={{ fontWeight: 'bold', color: 'var(--pe-cyan-bright)', fontSize: '14px', flex: 1 }}>Board {boardId}</span>
-          <Link to="/" style={{ color: 'var(--pe-text-muted)', textDecoration: 'none', fontSize: '18px', lineHeight: 1 }}>←</Link>
-          <button onClick={onLogout} style={btn({ padding: '4px 10px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', fontSize: '12px', minHeight: '30px' })}>
-            Abmelden
-          </button>
+        {/* Board indicator */}
+        <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--pe-border)', flexShrink: 0 }}>
+          <span style={{ fontWeight: 'bold', color: 'var(--pe-cyan-bright)', fontSize: '14px' }}>🎯 Board {boardNumber}</span>
         </div>
 
         {/* Content */}
@@ -557,7 +649,7 @@ function TabletLayout({ boardId, token, onLogout, selectedGameId, setSelectedGam
               )}
 
               {game.status === 'finished' && (
-                <div style={{ textAlign: 'center', padding: '20px', borderRadius: '12px', border: '2px solid var(--pe-success)', background: 'rgba(0,229,160,0.08)' }}>
+                <div style={{ textAlign: 'center', padding: '20px', borderRadius: 'var(--pe-radius-md)', border: '2px solid var(--pe-success)', background: 'rgba(0,229,160,0.08)' }}>
                   <p style={{ color: 'var(--pe-success)', fontWeight: 'bold', fontSize: '18px', margin: '0 0 4px' }}>Spiel beendet!</p>
                   <p style={{ color: 'var(--pe-text)', fontSize: '15px', margin: 0 }}>
                     Gewinner: {(game.winner_id === player1?.id ? player1 : player2)?.name || '—'}
@@ -567,6 +659,11 @@ function TabletLayout({ boardId, token, onLogout, selectedGameId, setSelectedGam
 
               {game.status === 'active' && (
                 <RoundThrows throws={current_round_throws} prevThrow={getPrevRoundLastThrow(liveData)} onUndo={undoThrow} disabled={submitting} isTablet={true} />
+              )}
+
+              {/* Nächstes Spiel Preview */}
+              {(game.status === 'active' || game.status === 'bulloff') && (
+                <NextGamePreview boardId={boardId} currentGameId={game.id} isTablet={true} />
               )}
 
               {/* Skip / Nächste Partie */}
@@ -579,7 +676,7 @@ function TabletLayout({ boardId, token, onLogout, selectedGameId, setSelectedGam
                 )}
                 {(game.status === 'finished' || canSwitch) && (
                   <button onClick={() => { setSelectedGameId(null); setModifier('Single'); }}
-                    style={btn({ minHeight: '36px', background: 'var(--pe-blue-deep)', color: '#fff', fontSize: '13px', border: 'none' })}>
+                    style={btn({ minHeight: '36px', background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontSize: '13px', border: 'none' })}>
                     Andere Partie wählen
                   </button>
                 )}
@@ -625,13 +722,13 @@ function TabletLayout({ boardId, token, onLogout, selectedGameId, setSelectedGam
         {game?.status === 'active' && player1 && player2 && (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {/* Active player banner */}
-            <div style={{ background: 'rgba(26,79,214,0.25)', border: '1px solid var(--pe-blue-mid)', borderRadius: '10px', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ background: 'rgba(26,79,214,0.25)', border: '1px solid var(--pe-blue-mid)', borderRadius: 'var(--pe-radius-md)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{ fontSize: '20px' }}>▶</span>
               <span style={{ fontWeight: 'bold', fontSize: '18px', color: 'var(--pe-text)' }}>
                 {(currentThrowerId === player1.id ? player1 : player2)?.name}
               </span>
               <span style={{ marginLeft: 'auto', fontSize: '13px', color: 'var(--pe-text-muted)' }}>
-                Rest: <strong style={{ color: 'var(--pe-text)', fontSize: '16px' }}>
+                Rest: <strong style={{ color: 'var(--pe-text)', fontSize: '16px', fontFamily: 'var(--pe-font-display)', letterSpacing: '0.01em' }}>
                   {currentThrowerId === player1.id ? player1.remaining : player2.remaining}
                 </strong>
               </span>
@@ -652,7 +749,7 @@ function TabletLayout({ boardId, token, onLogout, selectedGameId, setSelectedGam
               style={btn({
                 minHeight: '60px',
                 background: current_round_throws.length === 3 ? 'var(--pe-gradient)' : 'var(--pe-bg-elevated)',
-                color: '#fff',
+                color: 'var(--pe-text)',
                 border: current_round_throws.length === 3 ? 'none' : '1px solid var(--pe-border)',
                 fontSize: '17px',
                 opacity: current_round_throws.length === 0 ? 0.4 : 1,
@@ -680,28 +777,24 @@ function TabletLayout({ boardId, token, onLogout, selectedGameId, setSelectedGam
 // ══════════════════════════════════════════════════════════════════════════
 // ── PHONE LAYOUT ──────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════
-function PhoneLayout({ boardId, token, onLogout, selectedGameId, setSelectedGameId, liveData, fetchLive, modifier, setModifier, submitting, throwSegment, undoThrow }) {
+function PhoneLayout({ boardId, boardNumber, selectedGameId, setSelectedGameId, liveData, fetchLive, modifier, setModifier, submitting, throwSegment, undoThrow }) {
   const { game, player1, player2, current_round_throws = [] } = liveData || {};
   const currentThrowerId = game?.current_turn || game?.bull_winner_id;
 
   const goToPicker = () => { setSelectedGameId(null); setModifier('Single'); };
 
   return (
-    <div style={{ minHeight: '100vh', padding: '12px', maxWidth: '480px', margin: '0 auto', fontFamily: 'Verdana, Geneva, sans-serif', boxSizing: 'border-box' }}>
+    <div style={{ minHeight: '100vh', padding: '12px', maxWidth: '480px', margin: '0 auto', fontFamily: 'var(--pe-font-body)', boxSizing: 'border-box' }}>
+      <EmergencyLogout />
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-        <Link to="/" style={{ color: 'var(--pe-text-muted)', textDecoration: 'none', fontSize: '20px' }}>←</Link>
-        <img src="/logo.jpeg" alt="" style={{ height: '32px' }} />
-        <span style={{ color: 'var(--pe-text-muted)', fontSize: '13px', fontWeight: 'bold', marginLeft: 'auto' }}>Board {boardId}</span>
+      {/* Board indicator */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+        <span style={{ color: 'var(--pe-cyan-bright)', fontSize: '14px', fontWeight: 'bold' }}>🎯 Board {boardNumber}</span>
         {selectedGameId && game && game.status !== 'active' && (
           <button onClick={goToPicker} style={btn({ padding: '5px 10px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-warning)', fontSize: '11px', minHeight: '30px', borderColor: 'var(--pe-warning)' })}>
             Andere Partie
           </button>
         )}
-        <button onClick={onLogout} style={btn({ padding: '5px 10px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', fontSize: '11px', minHeight: '30px' })}>
-          Abmelden
-        </button>
       </div>
 
       {/* No game — picker */}
@@ -721,13 +814,13 @@ function PhoneLayout({ boardId, token, onLogout, selectedGameId, setSelectedGame
       {/* Finished */}
       {game?.status === 'finished' && (
         <div>
-          <div style={{ textAlign: 'center', padding: '32px', borderRadius: '16px', background: 'var(--pe-bg-card)', border: '2px solid var(--pe-success)', marginBottom: '12px' }}>
+          <div style={{ textAlign: 'center', padding: '32px', borderRadius: 'var(--pe-radius-lg)', background: 'var(--pe-bg-card)', border: '2px solid var(--pe-success)', marginBottom: '12px' }}>
             <p style={{ color: 'var(--pe-success)', fontWeight: 'bold', fontSize: '20px', marginBottom: '8px' }}>Spiel beendet!</p>
             <p style={{ color: 'var(--pe-text)', fontSize: '16px' }}>
               Gewinner: {(game.winner_id === player1?.id ? player1 : player2)?.name || '—'}
             </p>
           </div>
-          <button onClick={goToPicker} style={btn({ width: '100%', minHeight: '56px', background: 'var(--pe-blue-deep)', color: '#fff', border: 'none', fontSize: '16px' })}>
+          <button onClick={goToPicker} style={btn({ width: '100%', minHeight: '64px', background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', border: 'none', fontSize: '16px' })}>
             Nächste Partie wählen
           </button>
         </div>
@@ -751,7 +844,36 @@ function PhoneLayout({ boardId, token, onLogout, selectedGameId, setSelectedGame
             <Scoreboard player1={player1} player2={player2} currentThrowerId={currentThrowerId} bullWinnerId={game.bull_winner_id} game={game} isTablet={false} />
           </div>
 
-          <div style={{ marginBottom: '10px' }}>
+          {/* ── Permanent status bar — bull winner + active player ── */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            height: '44px',
+            minHeight: '44px',
+            flexShrink: 0,
+            background: 'var(--pe-bg-elevated)',
+            border: '1px solid var(--pe-border)',
+            borderRadius: 'var(--pe-radius-md)',
+            padding: '0 12px',
+            marginBottom: '10px',
+            fontFamily: 'var(--pe-font-body)',
+            boxSizing: 'border-box',
+          }}>
+            <span style={{ fontSize: '12px', color: game.bull_winner_id ? 'var(--pe-warning)' : 'var(--pe-text-muted)', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '45%' }}>
+              🎯 {game.bull_winner_id
+                ? (game.bull_winner_id === player1.id ? player1.name : player2.name)
+                : <span style={{ color: 'var(--pe-text-muted)', fontWeight: 'normal' }}>—</span>}
+            </span>
+            <span style={{ fontSize: '12px', color: currentThrowerId ? 'var(--pe-success)' : 'var(--pe-text-muted)', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '45%', textAlign: 'right' }}>
+              {currentThrowerId
+                ? <>▶ {currentThrowerId === player1.id ? player1.name : player2.name}</>
+                : <span style={{ color: 'var(--pe-text-muted)', fontWeight: 'normal' }}>▶ —</span>}
+            </span>
+          </div>
+
+          {/* ── Round throws — fixed min-height so DartPad never jumps ── */}
+          <div style={{ minHeight: '120px', marginBottom: '10px' }}>
             <RoundThrows throws={current_round_throws} prevThrow={getPrevRoundLastThrow(liveData)} onUndo={undoThrow} disabled={submitting} isTablet={false} />
           </div>
 
@@ -769,11 +891,16 @@ function PhoneLayout({ boardId, token, onLogout, selectedGameId, setSelectedGame
             style={btn({
               width: '100%', minHeight: '58px', marginTop: '8px',
               background: current_round_throws.length === 3 ? 'var(--pe-gradient)' : 'var(--pe-bg-card)',
-              color: '#fff', border: `1px solid ${current_round_throws.length === 3 ? 'transparent' : 'var(--pe-border)'}`,
+              color: 'var(--pe-text)', border: `1px solid ${current_round_throws.length === 3 ? 'transparent' : 'var(--pe-border)'}`,
               fontSize: '16px', opacity: current_round_throws.length === 0 ? 0.4 : 1,
             })}>
             Runde abschließen ({current_round_throws.length}/3)
           </button>
+
+          {/* Nächstes Spiel Preview */}
+          <div style={{ marginTop: '12px' }}>
+            <NextGamePreview boardId={boardId} currentGameId={game.id} isTablet={false} />
+          </div>
         </>
       )}
     </div>
@@ -784,21 +911,34 @@ function PhoneLayout({ boardId, token, onLogout, selectedGameId, setSelectedGame
 // ── MAIN PAGE ─────────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════
 export default function RefereePage() {
-  const { boardId } = useParams();
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const { addToast } = useToastStore();
+  const { logout, token } = useStore();
+
+  if (!token) return <Navigate to="/referee" replace />;
+  const { boardId: boardNumber } = useParams();
+  const [resolvedBoardId, setResolvedBoardId] = useState(null);
+  const [boardNotFound, setBoardNotFound] = useState(false);
   const [selectedGameId, setSelectedGameId] = useState(null);
   const [liveData, setLiveData] = useState(null);
   const [modifier, setModifier] = useState('Single');
   const [submitting, setSubmitting] = useState(false);
   const isTablet = useTabletLandscape();
 
-  if (!token) return <RefereeLogin onLogin={setToken} />;
+  // Resolve board number → internal board ID for the active tournament
+  useEffect(() => {
+    setResolvedBoardId(null);
+    setBoardNotFound(false);
+    api.get(`/boards/by-number/${boardNumber}`)
+      .then(board => setResolvedBoardId(board.id))
+      .catch(() => setBoardNotFound(true));
+  }, [boardNumber]);
 
   useEffect(() => {
-    api.get(`/boards/${boardId}/current-game`).then(data => {
+    if (!resolvedBoardId) return;
+    api.get(`/boards/${resolvedBoardId}/current-game`).then(data => {
       if (data?.game_id) setSelectedGameId(data.game_id);
     }).catch(() => {});
-  }, [boardId]);
+  }, [resolvedBoardId]);
 
   const fetchLive = useCallback(async () => {
     if (!selectedGameId) return;
@@ -839,7 +979,7 @@ export default function RefereePage() {
       await api.post(`/games/${game.id}/throw-segment`, { segment, player_id: throwerId });
       await fetchLive();
       setModifier('Single');
-    } catch (err) { alert(err.message || 'Fehler'); }
+    } catch (err) { addToast({ type: 'error', message: err.message || 'Fehler' }); }
     finally { setSubmitting(false); }
   };
 
@@ -849,14 +989,37 @@ export default function RefereePage() {
     try {
       await api.del(`/games/${liveData.game.id}/throw/${throwId}`);
       await fetchLive();
-    } catch (err) { alert(err.message || 'Fehler'); }
+    } catch (err) { addToast({ type: 'error', message: err.message || 'Fehler' }); }
     finally { setSubmitting(false); }
   };
 
-  const onLogout = () => { localStorage.removeItem('token'); setToken(null); };
+  if (boardNotFound || !resolvedBoardId) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--pe-bg)', display: 'flex', flexDirection: 'column', fontFamily: 'var(--pe-font-body)' }}>
+        {/* Content */}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+          {boardNotFound ? (
+            <div style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-danger)', borderRadius: '14px', padding: '32px 24px', maxWidth: '360px', width: '100%', textAlign: 'center' }}>
+              <div style={{ fontSize: '36px', marginBottom: '12px' }}>🎯</div>
+              <div style={{ color: 'var(--pe-danger)', fontWeight: 'bold', fontSize: '18px', marginBottom: '10px' }}>Board {boardNumber} nicht gefunden</div>
+              <div style={{ color: 'var(--pe-text-sub)', fontSize: '13px', marginBottom: '20px', lineHeight: '1.5' }}>
+                Kein aktives Turnier mit Board {boardNumber} gefunden.<br />Bitte den Turnierleiter kontaktieren.
+              </div>
+              <button onClick={() => { setBoardNotFound(false); api.get(`/boards/by-number/${boardNumber}`).then(b => setResolvedBoardId(b.id)).catch(() => setBoardNotFound(true)); }}
+                style={{ background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: 'var(--pe-radius-sm)', padding: '10px 20px', cursor: 'pointer', fontSize: '13px', fontFamily: 'var(--pe-font-body)', fontWeight: 'bold' }}>
+                ↻ Erneut versuchen
+              </button>
+            </div>
+          ) : (
+            <div style={{ color: 'var(--pe-text-muted)', fontSize: '15px' }}>Board wird geladen…</div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const shared = {
-    boardId, token, onLogout,
+    boardId: resolvedBoardId, boardNumber,
     selectedGameId, setSelectedGameId,
     liveData, fetchLive,
     modifier, setModifier,

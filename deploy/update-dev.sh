@@ -40,10 +40,14 @@ cd "$APP_DIR/frontend"
 npm install
 npm run build
 
-# --- 4. Restart service ---
+# --- 4. Fix permissions + restart service ---
+echo -e "${GREEN}>>> Fixing data directory permissions...${NC}"
+mkdir -p "$APP_DIR/backend/data/walkon"
+chown -R "$SERVICE_NAME":"$SERVICE_NAME" "$APP_DIR/backend/data"
+
 echo -e "${GREEN}>>> Restarting service...${NC}"
 systemctl restart "$SERVICE_NAME"
-sleep 2
+sleep 3
 
 # --- 5. Check status ---
 if systemctl is-active --quiet "$SERVICE_NAME"; then

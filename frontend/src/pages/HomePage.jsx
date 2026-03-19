@@ -14,6 +14,7 @@ const statusColors = {
 export default function HomePage() {
   const [tournaments, setTournaments] = useState([]);
   const [activeTournament, setActiveTournament] = useState(null);
+  const [pastTournaments, setPastTournaments] = useState([]);
   const [players, setPlayers] = useState([]);
   const [boards, setBoards] = useState([]);
   const [boardGames, setBoardGames] = useState({});
@@ -22,6 +23,13 @@ export default function HomePage() {
   // NEU: Tab-State für Spielerliste / Bracket / Gruppen
   const [activeTab, setActiveTab] = useState('players');
   const [playerSearch, setPlayerSearch] = useState('');
+  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 768px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const handler = (e) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   // NEU: Turnierdaten laden
   const fetchData = useCallback(async () => {
@@ -29,9 +37,7 @@ export default function HomePage() {
       const allTournaments = await api.get('/tournaments');
       setTournaments(allTournaments);
 
-      // NEU: Aktives Turnier finden (oder das neueste)
-      const active = allTournaments.find((t) => t.status === 'active')
-        || allTournaments[0];
+      const active = allTournaments.find((t) => t.status === 'active') || null;
 
       if (active) {
         setActiveTournament(active);
@@ -40,9 +46,9 @@ export default function HomePage() {
         const tournamentDetail = await api.get(`/tournaments/${active.id}`);
         setPlayers(tournamentDetail.players || []);
 
-        // NEU: Boards laden und aktuelle Spiele pro Board
+        // NEU: Boards laden und aktuelle Spiele pro Board (gefiltert nach aktivem Turnier)
         try {
-          const boardList = await api.get('/boards');
+          const boardList = await api.get(`/boards?tournament_id=${active.id}`);
           setBoards(boardList);
 
           const gameMap = {};
@@ -66,6 +72,14 @@ export default function HomePage() {
           setGroups(groupData.groups?.length > 0 ? groupData.groups : null);
         } catch {
           setGroups(null);
+        }
+      } else {
+        // Kein aktives Turnier — vergangene Turniere laden
+        try {
+          const history = await api.get('/history');
+          setPastTournaments(history);
+        } catch {
+          // ignore
         }
       }
     } catch {
@@ -97,22 +111,66 @@ export default function HomePage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', fontFamily: 'Verdana, Geneva, sans-serif' }}>
-      {/* NEU: Header */}
-      <div style={styles.header}>
-        <img src="/logo.jpeg" alt="DartEvent" style={styles.logo} />
-        <h1 style={styles.title}>DartEvent Manager</h1>
-      </div>
+    <div style={{ minHeight: '100vh', fontFamily: 'var(--pe-font-body)' }}>
 
-      <div style={styles.content}>
+      <div style={{ ...styles.content, maxWidth: isDesktop ? 1200 : 600 }}>
         {loading ? (
           <p style={{ color: 'var(--pe-text-sub)', textAlign: 'center' }}>Lade Turniere...</p>
         ) : !activeTournament ? (
-          <p style={{ color: 'var(--pe-text-sub)', textAlign: 'center' }}>Keine Turniere vorhanden.</p>
+          <div>
+            <h2 style={{ fontSize: 16, fontWeight: 'bold', color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: 1, margin: '8px 0 14px' }}>
+              Vergangene Turniere
+            </h2>
+            {pastTournaments.length === 0 ? (
+              <p style={{ color: 'var(--pe-text-sub)', textAlign: 'center', marginTop: 48 }}>
+                Noch keine abgeschlossenen Turniere vorhanden.
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {pastTournaments.map((t) => (
+                  <Link
+                    key={t.id}
+                    to={`/history/${t.id}`}
+                    className="pe-card-interactive"
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '14px 16px',
+                      borderRadius: 'var(--pe-radius-md)',
+                      background: 'var(--pe-bg-card)',
+                      border: '1px solid var(--pe-border)',
+                      textDecoration: 'none',
+                      minHeight: 64,
+                      gap: 12,
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 'bold', color: 'var(--pe-text)', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {t.name}
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--pe-text-muted)', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {t.date && <span>{t.date}</span>}
+                        {t.format && <span>· {t.format}</span>}
+                        <span>· {t.player_count} Spieler</span>
+                        {t.games_played != null && <span>· {t.games_played} Spiele</span>}
+                      </div>
+                    </div>
+                    {t.winner_name && (
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontSize: 11, color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Sieger</div>
+                        <div style={{ fontSize: 14, fontWeight: 'bold', color: 'var(--pe-cyan-bright)' }}>{t.winner_name}</div>
+                      </div>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         ) : (
           <>
             {/* NEU: Aktuelles Turnier Card */}
-            <div style={styles.tournamentCard}>
+            <div className="pe-card-interactive" style={styles.tournamentCard}>
               <div style={styles.tournamentHeader}>
                 <div>
                   <h2 style={styles.tournamentName}>{activeTournament.name}</h2>
@@ -177,7 +235,7 @@ export default function HomePage() {
                     placeholder="Spieler suchen..."
                     value={playerSearch}
                     onChange={e => setPlayerSearch(e.target.value)}
-                    style={{ width: '100%', boxSizing: 'border-box', marginBottom: 10, padding: '12px 14px', borderRadius: 10, border: '1px solid var(--pe-border)', background: 'var(--pe-bg-card)', color: 'var(--pe-text)', fontFamily: 'Verdana, Geneva, sans-serif', fontSize: 14, outline: 'none' }}
+                    style={{ width: '100%', boxSizing: 'border-box', marginBottom: 10, padding: '12px 14px', borderRadius: 'var(--pe-radius-md)', border: '1px solid var(--pe-border)', background: 'var(--pe-bg-card)', color: 'var(--pe-text)', fontFamily: 'var(--pe-font-body)', fontSize: 14, outline: 'none', minHeight: '64px' }}
                   />
                 )}
               <div style={styles.playerGrid}>
@@ -193,7 +251,7 @@ export default function HomePage() {
                   players.filter(p => p.name.toLowerCase().includes(playerSearch.toLowerCase())).map((player) => {
                     const stats = getPlayerStats(player);
                     return (
-                      <div key={player.id} style={styles.playerCard}>
+                      <div key={player.id} className="pe-card-interactive" style={styles.playerCard}>
                         <div style={styles.playerName}>{player.name}</div>
                         <div style={styles.playerStatsRow}>
                           <div style={styles.playerStat}>
@@ -232,7 +290,8 @@ export default function HomePage() {
                     return (
                       <Link
                         key={board.id}
-                        to={`/board/${board.id}`}
+                        to={`/board/${board.number}`}
+                        className="pe-card-interactive"
                         style={styles.boardCard}
                       >
                         <div style={styles.boardHeader}>
@@ -274,15 +333,21 @@ export default function HomePage() {
             {activeTab === 'groups' && groups && (
               <div style={styles.groupsList}>
                 {(Array.isArray(groups) ? groups : []).map((group, idx) => (
-                  <div key={idx} style={styles.groupCard}>
+                  <div key={idx} className="pe-card-interactive" style={styles.groupCard}>
                     <h3 style={styles.groupName}>{group.name || `Gruppe ${idx + 1}`}</h3>
                     <table style={styles.groupTable}>
+                      <colgroup>
+                        <col style={{ width: '55%' }} />
+                        <col style={{ width: '12%' }} />
+                        <col style={{ width: '12%' }} />
+                        <col style={{ width: '21%' }} />
+                      </colgroup>
                       <thead>
                         <tr>
                           <th style={styles.groupTh}>Spieler</th>
-                          <th style={styles.groupTh}>S</th>
-                          <th style={styles.groupTh}>N</th>
-                          <th style={styles.groupTh}>Pkt</th>
+                          <th style={{ ...styles.groupTh, textAlign: 'center' }}>S</th>
+                          <th style={{ ...styles.groupTh, textAlign: 'center' }}>N</th>
+                          <th style={{ ...styles.groupTh, textAlign: 'center' }}>Pkt</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -324,6 +389,7 @@ export default function HomePage() {
                     <Link
                       key={t.id}
                       to={`/tournament/${t.id}`}
+                      className="pe-card-interactive"
                       style={styles.otherTournamentCard}
                     >
                       <div>
@@ -345,19 +411,43 @@ export default function HomePage() {
                   ))}
               </div>
             )}
+
+            {/* NEU: Turnier-Archiv Link */}
+            <div style={{ marginTop: 24 }}>
+              <h3 style={styles.sectionTitle}>Archiv</h3>
+              <Link
+                to="/history"
+                className="pe-card-interactive"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '16px 18px',
+                  borderRadius: 'var(--pe-radius-md)',
+                  background: 'var(--pe-bg-card)',
+                  border: '1px solid var(--pe-border)',
+                  textDecoration: 'none',
+                  minHeight: 64,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 22 }}>📜</span>
+                  <div>
+                    <span style={{ fontSize: 15, fontWeight: 'bold', color: 'var(--pe-text)', display: 'block' }}>
+                      Turnier-Archiv
+                    </span>
+                    <span style={{ fontSize: 12, color: 'var(--pe-text-sub)' }}>
+                      Vergangene Turniere &amp; Statistiken
+                    </span>
+                  </div>
+                </div>
+                <span style={{ fontSize: 18, color: 'var(--pe-text-muted)' }}>›</span>
+              </Link>
+            </div>
           </>
         )}
       </div>
 
-      {/* NEU: Floating Action Buttons */}
-      <div style={styles.fab}>
-        <Link to="/nfc" style={styles.fabButton} title="NFC Scan">
-          NFC
-        </Link>
-        <Link to="/admin" style={styles.fabButton} title="Admin">
-          &#9881;
-        </Link>
-      </div>
     </div>
   );
 }
@@ -382,7 +472,7 @@ function FetchBracket({ tournamentId }) {
 // NEU: Styles
 const styles = {
   header: {
-    background: 'linear-gradient(135deg, #5DD5FF, #1E7FEB, #1A4FD6)',
+    background: 'var(--pe-gradient)',
     padding: '20px 16px',
     display: 'flex',
     alignItems: 'center',
@@ -391,14 +481,15 @@ const styles = {
   },
   logo: {
     height: 56,
-    borderRadius: 8,
+    borderRadius: 'var(--pe-radius-sm)',
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: 'var(--pe-text)',
     margin: 0,
     textShadow: '0 2px 8px rgba(0,0,0,0.3)',
+    lineHeight: 1.2,
   },
   content: {
     maxWidth: 600,
@@ -407,7 +498,7 @@ const styles = {
   },
   tournamentCard: {
     background: 'var(--pe-bg-card)',
-    borderRadius: 16,
+    borderRadius: 'var(--pe-radius-lg)',
     border: '1px solid var(--pe-border)',
     padding: 16,
     marginBottom: 16,
@@ -419,30 +510,37 @@ const styles = {
     gap: 12,
   },
   tournamentName: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontFamily: 'var(--pe-font-display)',
+    fontWeight: 700,
     color: 'var(--pe-text)',
     margin: 0,
+    lineHeight: 1.3,
+    wordBreak: 'break-word',
+    letterSpacing: '0.01em',
   },
   tournamentMeta: {
-    fontSize: 13,
+    fontSize: 12,
     color: 'var(--pe-text-sub)',
     margin: '4px 0 0',
+    lineHeight: 1.5,
   },
   statusBadge: {
     fontSize: 11,
     fontWeight: 'bold',
     padding: '4px 10px',
-    borderRadius: 20,
-    border: '1px solid',
+    borderRadius: 'var(--pe-radius-xl)',
+    borderWidth: '1px',
+    borderStyle: 'solid',
     whiteSpace: 'nowrap',
   },
   statusBadgeSmall: {
     fontSize: 10,
     fontWeight: 'bold',
     padding: '3px 8px',
-    borderRadius: 16,
-    border: '1px solid',
+    borderRadius: 'var(--pe-radius-lg)',
+    borderWidth: '1px',
+    borderStyle: 'solid',
     whiteSpace: 'nowrap',
   },
   tournamentStats: {
@@ -457,8 +555,10 @@ const styles = {
   },
   statValue: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontFamily: 'var(--pe-font-display)',
+    fontWeight: 700,
     color: 'var(--pe-cyan-bright)',
+    letterSpacing: '0.01em',
   },
   statLabel: {
     fontSize: 11,
@@ -471,10 +571,10 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     padding: '12px 24px',
-    borderRadius: 12,
+    borderRadius: 'var(--pe-radius-md)',
     background: 'var(--pe-blue-deep)',
     color: 'var(--pe-text)',
-    fontFamily: 'Verdana, Geneva, sans-serif',
+    fontFamily: 'var(--pe-font-body)',
     fontSize: 14,
     fontWeight: 'bold',
     textDecoration: 'none',
@@ -485,19 +585,25 @@ const styles = {
     gap: 6,
     marginBottom: 12,
     overflowX: 'auto',
+    WebkitOverflowScrolling: 'touch',
+    scrollbarWidth: 'none',
+    msOverflowStyle: 'none',
   },
   tabButton: {
-    padding: '10px 16px',
-    borderRadius: 10,
-    border: '1px solid var(--pe-border)',
+    padding: '0 18px',
+    borderRadius: 'var(--pe-radius-md)',
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderColor: 'var(--pe-border)',
     background: 'var(--pe-bg-card)',
     color: 'var(--pe-text-sub)',
-    fontFamily: 'Verdana, Geneva, sans-serif',
-    fontSize: 13,
+    fontFamily: 'var(--pe-font-body)',
+    fontSize: 14,
     fontWeight: 'bold',
     cursor: 'pointer',
-    minHeight: 44,
+    minHeight: 64,
     whiteSpace: 'nowrap',
+    flexShrink: 0,
   },
   tabButtonActive: {
     background: 'var(--pe-blue-deep)',
@@ -506,12 +612,12 @@ const styles = {
   },
   playerGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-    gap: 10,
+    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+    gap: 8,
   },
   playerCard: {
     background: 'var(--pe-bg-card)',
-    borderRadius: 12,
+    borderRadius: 'var(--pe-radius-md)',
     border: '1px solid var(--pe-border)',
     padding: 14,
   },
@@ -532,8 +638,10 @@ const styles = {
   },
   playerStatValue: {
     fontSize: 13,
-    fontWeight: 'bold',
+    fontFamily: 'var(--pe-font-display)',
+    fontWeight: 700,
     color: 'var(--pe-cyan-bright)',
+    letterSpacing: '0.01em',
   },
   playerStatLabel: {
     fontSize: 10,
@@ -548,7 +656,7 @@ const styles = {
   boardCard: {
     display: 'block',
     background: 'var(--pe-bg-card)',
-    borderRadius: 12,
+    borderRadius: 'var(--pe-radius-md)',
     border: '1px solid var(--pe-border)',
     padding: 14,
     textDecoration: 'none',
@@ -598,7 +706,7 @@ const styles = {
   },
   groupCard: {
     background: 'var(--pe-bg-card)',
-    borderRadius: 12,
+    borderRadius: 'var(--pe-radius-md)',
     border: '1px solid var(--pe-border)',
     padding: 14,
   },
@@ -610,6 +718,7 @@ const styles = {
   },
   groupTable: {
     width: '100%',
+    tableLayout: 'fixed',
     borderCollapse: 'collapse',
   },
   groupTh: {
@@ -625,6 +734,9 @@ const styles = {
     color: 'var(--pe-text)',
     padding: '6px 8px',
     borderBottom: '1px solid var(--pe-border)',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
   otherTournaments: {
     marginTop: 24,
@@ -642,7 +754,7 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '12px 14px',
-    borderRadius: 10,
+    borderRadius: 'var(--pe-radius-md)',
     background: 'var(--pe-bg-card)',
     border: '1px solid var(--pe-border)',
     textDecoration: 'none',
@@ -660,25 +772,26 @@ const styles = {
   },
   fab: {
     position: 'fixed',
-    bottom: 16,
+    bottom: 20,
     right: 16,
     display: 'flex',
-    gap: 8,
+    gap: 10,
     zIndex: 50,
   },
   fabButton: {
-    width: 56,
-    height: 56,
+    width: 64,
+    height: 64,
     borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 'bold',
     textDecoration: 'none',
     background: 'var(--pe-bg-elevated)',
     border: '1px solid var(--pe-border)',
     color: 'var(--pe-text-sub)',
-    fontFamily: 'Verdana, Geneva, sans-serif',
+    fontFamily: 'var(--pe-font-body)',
+    boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
   },
 };

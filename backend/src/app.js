@@ -10,6 +10,7 @@ const { initialize } = require('./db/db');
 const authRoutes = require('./routes/auth');
 const tournamentRoutes = require('./routes/tournaments');
 const playerRoutes = require('./routes/players');
+const playerSearchRoutes = require('./routes/playerSearch');
 const gameRoutes = require('./routes/games');
 const nfcRoutes = require('./routes/nfc');
 const orderRoutes = require('./routes/orders');
@@ -24,13 +25,24 @@ const productRoutes = require('./routes/products');
 const registrationRoutes = require('./routes/registration');
 const configRoutes = require('./routes/config');
 const walkonRoutes = require('./routes/walkon');
+const historyRoutes = require('./routes/history');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust nginx reverse proxy (required for express-rate-limit + X-Forwarded-For)
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(helmet());
-app.use(cors());
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  maxAge: 86400,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // NEU: Strengeres Rate-Limit für Login (Brute-Force Schutz)
@@ -56,6 +68,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/tournaments', tournamentRoutes);
 app.use('/api/tournaments', playerRoutes);
 app.use('/api/players', playerRoutes);
+app.use('/api/players/search', playerSearchRoutes);
 app.use('/api/games', gameRoutes);
 app.use('/api/nfc', nfcRoutes);
 app.use('/api/orders', orderRoutes);
@@ -70,11 +83,18 @@ app.use('/api/products', productRoutes);
 app.use('/api/registration', registrationRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/walkon', walkonRoutes);
+app.use('/api/history', historyRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Validate JWT_SECRET on startup
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+  console.error('FATAL: JWT_SECRET must be set and at least 32 characters long.');
+  process.exit(1);
+}
 
 // Initialize DB and start server
 initialize();
