@@ -466,9 +466,11 @@ function PlayersTab() {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!form.vorname.trim() || !form.nickname.trim() || !form.nachname.trim() || !selectedTournament) return;
+    if (!form.vorname.trim() || !form.nickname.trim() || !form.nachname.trim()) return;
     try {
-      const res = await api.post(`/tournaments/${selectedTournament}/players`, form);
+      const res = selectedTournament
+        ? await api.post(`/tournaments/${selectedTournament}/players`, form)
+        : await api.post('/players', form);
       const newPlayerId = res.id || res.player_id || res.player?.id;
       if (form.walk_on_song && newPlayerId) {
         try {
@@ -711,7 +713,7 @@ function PlayersTab() {
                 </p>
               )}
               <button type="submit" disabled={!form.vorname.trim() || !form.nickname.trim() || !form.nachname.trim()} className="w-full py-3 rounded-lg font-bold disabled:opacity-50" style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '48px', fontFamily: 'var(--pe-font-body)' }}>
-                Spieler anlegen & anmelden
+                {selectedTournament ? 'Spieler anlegen & anmelden' : 'Spielerprofil anlegen'}
               </button>
             </form>
           )}
