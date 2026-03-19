@@ -176,6 +176,27 @@ router.delete('/:id/players/:playerId', requireAdminOrDirector, (req, res) => {
   res.json({ success: true });
 });
 
+// POST /api/players — Neues Spielerprofil anlegen (ohne Turnier-Anmeldung)
+router.post('/', requireAdminOrDirector, requireFields(['vorname', 'nickname', 'nachname']), (req, res) => {
+  const { vorname, nickname, nachname, walkon_youtube } = req.body;
+  const vn = vorname.trim();
+  const nn = nickname.trim();
+  const na = nachname.trim();
+
+  const existing = db.prepare('SELECT * FROM players WHERE LOWER(TRIM(nickname)) = LOWER(?)').get(nn);
+  if (existing) {
+    return res.status(409).json({ error: `Ein Spieler mit dem Nickname "${nn}" existiert bereits.` });
+  }
+
+  const displayName = `${vn} "${nn}" ${na}`;
+  const result = db.prepare(
+    'INSERT INTO players (name, vorname, nickname, nachname, walkon_youtube) VALUES (?, ?, ?, ?, ?)'
+  ).run(displayName, vn, nn, na, walkon_youtube || null);
+  const player = db.prepare('SELECT * FROM players WHERE id = ?').get(result.lastInsertRowid);
+  auditLog(req, 'player', 'CREATE', `Spielerprofil "${displayName}" angelegt`, player.id);
+  return res.status(201).json(player);
+});
+
 // GET /api/players — Alle Spielerprofile mit Gesamt-Stats
 router.get('/', (req, res) => {
   const players = db.prepare(`
