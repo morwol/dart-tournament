@@ -558,16 +558,23 @@ function PlayersTab() {
                   <div style={{ width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0, background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '11px', color: 'var(--pe-cyan-bright)', letterSpacing: '0.5px' }}>
                     {`${(p.vorname || '')[0] || ''}${(p.nachname || '')[0] || ''}`.toUpperCase() || '?'}
                   </div>
-                  {/* Name + walk-on status */}
+                  {/* Name + badges */}
                   <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
                     <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--pe-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                    {(p.has_walkon || p.walkon_youtube) && (
-                      <WalkonBadge
-                        status={effectiveWalkonStatus}
-                        title={p.walkon_title}
-                        artist={p.walkon_artist}
-                      />
-                    )}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: p.active_tournament_name || p.has_walkon || p.walkon_youtube ? '3px' : 0 }}>
+                      {p.active_tournament_name && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: 'rgba(26,79,214,0.15)', border: '1px solid rgba(26,79,214,0.4)', borderRadius: '6px', padding: '1px 6px', fontSize: '10px', color: 'var(--pe-cyan-light)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+                          🏆 {p.active_tournament_name}
+                        </span>
+                      )}
+                      {(p.has_walkon || p.walkon_youtube) && (
+                        <WalkonBadge
+                          status={effectiveWalkonStatus}
+                          title={p.walkon_title}
+                          artist={p.walkon_artist}
+                        />
+                      )}
+                    </div>
                   </div>
                   {/* Walk-On Play/Stop button — only when ready */}
                   {effectiveWalkonStatus === 'ready' && (
@@ -625,17 +632,19 @@ function PlayersTab() {
                         <input type="number" min="5" max="120" value={editingPlayer.walkon_duration ?? 30} onChange={e => setEditingPlayer({ ...editingPlayer, walkon_duration: e.target.value })} placeholder="Länge (Sek.)" required style={{ ...inputStyle, padding: '6px 8px' }} />
                       </div>
                     )}
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (!confirm(`${p.name} löschen?`)) return;
-                        try { await api.del(`/players/${p.id}`); await loadPlayers(); }
-                        catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
-                      }}
-                      style={{ ...btnSmall, padding: '6px', fontSize: '10px', cursor: 'pointer', color: 'var(--pe-danger)' }}
-                    >
-                      Löschen
-                    </button>
+                    {!p.active_tournament_id && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!confirm(`${p.name} löschen?`)) return;
+                          try { await api.del(`/players/${p.id}`); await loadPlayers(); }
+                          catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
+                        }}
+                        style={{ ...btnSmall, padding: '6px', fontSize: '10px', cursor: 'pointer', color: 'var(--pe-danger)' }}
+                      >
+                        Löschen
+                      </button>
+                    )}
                       <button type="submit" disabled={isSaving} style={{ ...btnSmall, background: 'var(--pe-gradient)', color: 'var(--pe-text)', borderRadius: '6px', padding: '8px', fontSize: '10px', opacity: isSaving ? 0.7 : 1, cursor: isSaving ? 'not-allowed' : 'pointer' }}>
                         {isSaving ? 'Speichert…' : 'Speichern'}
                       </button>
@@ -654,13 +663,20 @@ function PlayersTab() {
             <div key={p.id} className="p-3 rounded-lg flex justify-between items-center" style={{ background: 'var(--pe-bg-card)', border: `1px solid ${playingId === p.id ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, boxShadow: playingId === p.id ? '0 0 8px var(--pe-cyan-bright)' : 'none', transition: 'box-shadow 0.2s, border-color 0.2s' }}>
               <div style={{ minWidth: 0, overflow: 'hidden', flex: 1 }}>
                 <span className="font-bold" style={{ color: 'var(--pe-text)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                {(p.has_walkon || p.walkon_youtube) && (
-                  <WalkonBadge
-                    status={walkonStatuses[p.id] ?? p.walkon_status ?? (p.has_walkon ? 'ready' : null)}
-                    title={p.walkon_title}
-                    artist={p.walkon_artist}
-                  />
-                )}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: p.active_tournament_name || p.has_walkon || p.walkon_youtube ? '3px' : 0 }}>
+                  {p.active_tournament_name && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: 'rgba(26,79,214,0.15)', border: '1px solid rgba(26,79,214,0.4)', borderRadius: '6px', padding: '1px 6px', fontSize: '10px', color: 'var(--pe-cyan-light)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+                      🏆 {p.active_tournament_name}
+                    </span>
+                  )}
+                  {(p.has_walkon || p.walkon_youtube) && (
+                    <WalkonBadge
+                      status={walkonStatuses[p.id] ?? p.walkon_status ?? (p.has_walkon ? 'ready' : null)}
+                      title={p.walkon_title}
+                      artist={p.walkon_artist}
+                    />
+                  )}
+                </div>
               </div>
               <div className="flex gap-2">
                 {/* Walk-On Play/Stop button — only when ready */}
@@ -707,16 +723,18 @@ function PlayersTab() {
                 >
                   Bearbeiten
                 </button>
-                <button
-                  onClick={async () => {
-                    if (!confirm(`${p.name} löschen?`)) return;
-                    try { await api.del(`/players/${p.id}`); await loadPlayers(); }
-                    catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
-                  }}
-                  style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', minHeight: '36px', cursor: 'pointer' }}
-                >
-                  Löschen
-                </button>
+                {!p.active_tournament_id && (
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`${p.name} löschen?`)) return;
+                      try { await api.del(`/players/${p.id}`); await loadPlayers(); }
+                      catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
+                    }}
+                    style={{ ...btnSmall, padding: '4px 12px', background: 'var(--pe-bg-elevated)', color: 'var(--pe-danger)', minHeight: '36px', cursor: 'pointer' }}
+                  >
+                    Löschen
+                  </button>
+                )}
               </div>
             </div>
           ))}

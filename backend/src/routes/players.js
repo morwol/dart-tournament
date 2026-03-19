@@ -231,6 +231,31 @@ router.put('/:id', requireAdminOrDirector, (req, res) => {
   return res.json(updated);
 });
 
+// DELETE /api/players/:id — Spielerprofil löschen (nur wenn in keinem aktiven Turnier)
+router.delete('/:id', requireAdminOrDirector, (req, res) => {
+  const playerId = parseInt(req.params.id, 10);
+  if (!playerId || playerId <= 0) return res.status(400).json({ error: 'Ungültige Spieler-ID' });
+
+  const player = db.prepare('SELECT * FROM players WHERE id = ?').get(playerId);
+  if (!player) return res.status(404).json({ error: 'Spieler nicht gefunden' });
+
+  const activeTournament = db.prepare(`
+    SELECT t.name FROM tournament_registrations tr
+    JOIN tournaments t ON t.id = tr.tournament_id
+    WHERE tr.player_id = ? AND t.status IN ('open', 'active')
+    LIMIT 1
+  `).get(playerId);
+
+  if (activeTournament) {
+    return res.status(409).json({ error: `Spieler ist noch im Turnier "${activeTournament.name}" angemeldet und kann nicht gelöscht werden.` });
+  }
+
+  db.prepare('DELETE FROM tournament_registrations WHERE player_id = ?').run(playerId);
+  db.prepare('DELETE FROM players WHERE id = ?').run(playerId);
+  auditLog(req, 'player', 'DELETE', `Spielerprofil "${player.name}" gelöscht`, playerId);
+  return res.json({ ok: true });
+});
+
 // GET /api/players — Alle Spielerprofile mit Gesamt-Stats
 router.get('/', (req, res) => {
   const players = db.prepare(`
@@ -242,7 +267,15 @@ router.get('/', (req, res) => {
       p.registered_at,
       COUNT(DISTINCT tr.tournament_id) as tournaments_count,
       COUNT(CASE WHEN g.winner_id = p.id THEN 1 END) as wins,
-      COUNT(CASE WHEN g.status = 'finished' AND (g.player1_id = p.id OR g.player2_id = p.id) AND g.winner_id != p.id THEN 1 END) as losses
+      COUNT(CASE WHEN g.status = 'finished' AND (g.player1_id = p.id OR g.player2_id = p.id) AND g.winner_id != p.id THEN 1 END) as losses,
+      (SELECT t.id FROM tournament_registrations tr2
+       JOIN tournaments t ON t.id = tr2.tournament_id
+       WHERE tr2.player_id = p.id AND t.status IN ('open', 'active')
+       ORDER BY t.id DESC LIMIT 1) AS active_tournament_id,
+      (SELECT t.name FROM tournament_registrations tr2
+       JOIN tournaments t ON t.id = tr2.tournament_id
+       WHERE tr2.player_id = p.id AND t.status IN ('open', 'active')
+       ORDER BY t.id DESC LIMIT 1) AS active_tournament_name
     FROM players p
     LEFT JOIN tournament_registrations tr ON tr.player_id = p.id
     LEFT JOIN games g ON (g.player1_id = p.id OR g.player2_id = p.id) AND g.status = 'finished'
