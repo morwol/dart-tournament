@@ -1204,6 +1204,10 @@ function GastroAdminTab() {
   const [summary, setSummary] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', category: 'drink', price: '', sort_order: '0' });
+  const [isSaving, setIsSaving] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({ name: '', price: '' });
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const loadData = () => {
     api.get('/products').then(setProducts).catch(() => {});
@@ -1216,12 +1220,14 @@ function GastroAdminTab() {
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!form.name.trim() || !form.price) return;
+    setIsSaving(true);
     try {
       await api.post('/products', { ...form, price: parseFloat(form.price), sort_order: parseInt(form.sort_order) || 0 });
       setForm({ name: '', category: 'drink', price: '', sort_order: '0' });
       setShowForm(false);
       loadData();
     } catch (err) { addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' }); }
+    finally { setIsSaving(false); }
   };
 
   const toggleAvailable = async (product) => {
@@ -1239,11 +1245,33 @@ function GastroAdminTab() {
     } catch (err) { addToast({ type: 'error', message: err.message || 'Löschen fehlgeschlagen' }); }
   };
 
+  const startEdit = (product) => {
+    setEditingId(product.id);
+    setEditForm({ name: product.name, price: String(parseFloat(product.price).toFixed(2)) });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm({ name: '', price: '' });
+  };
+
+  const handleSaveEdit = async (product) => {
+    if (!editForm.name.trim() || !editForm.price) return;
+    setIsSavingEdit(true);
+    try {
+      await api.put(`/products/${product.id}`, { name: editForm.name.trim(), price: parseFloat(editForm.price) });
+      setEditingId(null);
+      loadData();
+    } catch (err) { addToast({ type: 'error', message: err.message || 'Speichern fehlgeschlagen' }); }
+    finally { setIsSavingEdit(false); }
+  };
+
   const totals = dashboard?.totals || {};
   const summaryProducts = summary?.products || [];
 
   const thStyle = { padding: '10px 14px', textAlign: 'left', fontSize: '11px', color: 'var(--pe-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 'bold', whiteSpace: 'nowrap' };
   const tdStyle = { padding: '10px 14px', fontSize: '13px', borderTop: '1px solid var(--pe-border)' };
+  const inlineInputStyle = { background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)', color: 'var(--pe-text)', borderRadius: 'var(--pe-radius-sm)', padding: '4px 8px', fontFamily: 'var(--pe-font-body)', fontSize: '13px', width: '100%', outline: 'none' };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -1283,8 +1311,8 @@ function GastroAdminTab() {
             </select>
             <input type="number" step="0.01" min="0" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="Preis (€) *" required style={inputStyle} />
             <input type="number" value={form.sort_order} onChange={e => setForm({ ...form, sort_order: e.target.value })} placeholder="Sortierung" style={inputStyle} />
-            <button type="submit" disabled={!form.name.trim() || !form.price} style={{ gridColumn: '1/-1', background: 'var(--pe-gradient)', color: 'var(--pe-text)', border: 'none', borderRadius: 'var(--pe-radius-sm)', padding: '12px', fontFamily: 'var(--pe-font-body)', fontWeight: 'bold', cursor: 'pointer', minHeight: '44px', opacity: (!form.name.trim() || !form.price) ? 0.5 : 1 }}>
-              Produkt anlegen
+            <button type="submit" disabled={isSaving || !form.name.trim() || !form.price} style={{ gridColumn: '1/-1', background: 'var(--pe-gradient)', color: 'var(--pe-text)', border: 'none', borderRadius: 'var(--pe-radius-sm)', padding: '12px', fontFamily: 'var(--pe-font-body)', fontWeight: 'bold', cursor: isSaving ? 'not-allowed' : 'pointer', minHeight: '44px', opacity: (isSaving || !form.name.trim() || !form.price) ? 0.5 : 1 }}>
+              {isSaving ? 'Speichert...' : 'Produkt anlegen'}
             </button>
           </form>
         )}
@@ -1304,27 +1332,54 @@ function GastroAdminTab() {
               {products.length === 0 && (
                 <tr><td colSpan={5} style={{ ...tdStyle, textAlign: 'center', color: 'var(--pe-text-muted)' }}>Keine Produkte vorhanden</td></tr>
               )}
-              {products.map(p => (
-                <tr key={p.id} style={{ background: p.available ? 'var(--pe-bg-card)' : 'var(--pe-bg-elevated)' }}>
-                  <td style={{ ...tdStyle, fontWeight: 'bold', color: p.available ? 'var(--pe-text)' : 'var(--pe-text-muted)' }}>{p.name}</td>
-                  <td style={{ ...tdStyle, textAlign: 'right', color: 'var(--pe-cyan-bright)', fontWeight: 'bold' }}>{parseFloat(p.price).toFixed(2)} €</td>
-                  <td style={{ ...tdStyle, textAlign: 'center' }}>
-                    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: 'var(--pe-radius-sm)', background: p.category === 'drink' ? 'rgba(0,184,255,0.15)' : 'rgba(255,176,32,0.15)', color: p.category === 'drink' ? 'var(--pe-cyan-bright)' : 'var(--pe-warning)' }}>
-                      {p.category === 'drink' ? 'Getränk' : 'Speise'}
-                    </span>
-                  </td>
-                  <td style={{ ...tdStyle, textAlign: 'center' }}>
-                    <button onClick={() => toggleAvailable(p)} style={{ ...btnSmall, background: p.available ? 'var(--pe-success)' : 'var(--pe-bg-card)', color: p.available ? '#000' : 'var(--pe-text-muted)', padding: '3px 10px', border: `1px solid ${p.available ? 'var(--pe-success)' : 'var(--pe-border)'}`, minWidth: '68px' }}>
-                      {p.available ? 'Aktiv' : 'Inaktiv'}
-                    </button>
-                  </td>
-                  <td style={{ ...tdStyle, textAlign: 'center' }}>
-                    <button onClick={() => handleDeleteProduct(p)} style={{ ...btnSmall, background: 'rgba(255,69,96,0.12)', color: 'var(--pe-danger)', border: '1px solid var(--pe-danger)', padding: '3px 10px' }}>
-                      Löschen
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {products.map(p => {
+                const isEditing = editingId === p.id;
+                return (
+                  <tr key={p.id} style={{ background: isEditing ? 'var(--pe-bg-elevated)' : p.available ? 'var(--pe-bg-card)' : 'var(--pe-bg-elevated)' }}>
+                    <td style={{ ...tdStyle, fontWeight: 'bold', color: p.available ? 'var(--pe-text)' : 'var(--pe-text-muted)', minWidth: '120px' }}>
+                      {isEditing
+                        ? <input type="text" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} style={inlineInputStyle} autoFocus />
+                        : p.name}
+                    </td>
+                    <td style={{ ...tdStyle, textAlign: 'right', color: 'var(--pe-cyan-bright)', fontWeight: 'bold', minWidth: '90px' }}>
+                      {isEditing
+                        ? <input type="number" step="0.01" min="0" value={editForm.price} onChange={e => setEditForm({ ...editForm, price: e.target.value })} style={{ ...inlineInputStyle, textAlign: 'right' }} />
+                        : `${parseFloat(p.price).toFixed(2)} €`}
+                    </td>
+                    <td style={{ ...tdStyle, textAlign: 'center' }}>
+                      <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: 'var(--pe-radius-sm)', background: p.category === 'drink' ? 'rgba(0,184,255,0.15)' : 'rgba(255,176,32,0.15)', color: p.category === 'drink' ? 'var(--pe-cyan-bright)' : 'var(--pe-warning)' }}>
+                        {p.category === 'drink' ? 'Getränk' : 'Speise'}
+                      </span>
+                    </td>
+                    <td style={{ ...tdStyle, textAlign: 'center' }}>
+                      <button onClick={() => toggleAvailable(p)} style={{ ...btnSmall, background: p.available ? 'var(--pe-success)' : 'var(--pe-bg-card)', color: p.available ? '#000' : 'var(--pe-text-muted)', padding: '3px 10px', border: `1px solid ${p.available ? 'var(--pe-success)' : 'var(--pe-border)'}`, minWidth: '68px' }}>
+                        {p.available ? 'Aktiv' : 'Inaktiv'}
+                      </button>
+                    </td>
+                    <td style={{ ...tdStyle, textAlign: 'center' }}>
+                      {isEditing ? (
+                        <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                          <button onClick={() => handleSaveEdit(p)} disabled={isSavingEdit || !editForm.name.trim() || !editForm.price} style={{ ...btnSmall, background: 'var(--pe-success)', color: '#000', border: 'none', padding: '3px 10px', opacity: (isSavingEdit || !editForm.name.trim() || !editForm.price) ? 0.5 : 1, cursor: (isSavingEdit || !editForm.name.trim() || !editForm.price) ? 'not-allowed' : 'pointer' }}>
+                            {isSavingEdit ? '...' : 'Speichern'}
+                          </button>
+                          <button onClick={cancelEdit} style={{ ...btnSmall, background: 'var(--pe-bg-elevated)', color: 'var(--pe-text-sub)', padding: '3px 10px' }}>
+                            Abbrechen
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                          <button onClick={() => startEdit(p)} style={{ ...btnSmall, background: 'var(--pe-bg-elevated)', color: 'var(--pe-text-sub)', padding: '3px 10px' }}>
+                            Bearbeiten
+                          </button>
+                          <button onClick={() => handleDeleteProduct(p)} style={{ ...btnSmall, background: 'rgba(255,69,96,0.12)', color: 'var(--pe-danger)', border: '1px solid var(--pe-danger)', padding: '3px 10px' }}>
+                            Löschen
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
