@@ -89,7 +89,7 @@ export default function App() {
             <Route path="/tournament/:id/register" element={<PlayerRegistrationPage />} />
             <Route path="/gastronomy" element={<ProtectedRoute element={<GastronomyPage />} roles={['admin', 'gastronomy']} />} />
             <Route path="/login" element={<LoginSelectionPage />} />
-            {/* AdminPage has its own AdminLogin gate — no ProtectedRoute needed */}
+            {/* AdminPage redirects to /login internally if unauthenticated */}
             <Route path="/admin" element={<AdminPage />} />
             {/* /admin/users → redirect to /admin?tab=users */}
             <Route path="/admin/users" element={<Navigate to="/admin?tab=users" replace />} />
