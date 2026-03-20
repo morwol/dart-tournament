@@ -2,6 +2,7 @@
 // Stations: 'bar' (drinks + ordering), 'register' (settle)
 // Auth is handled by ProtectedRoute in App.jsx — no inline login gate here.
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import StationSelector from '../components/gastro/StationSelector';
 import RegisterView from '../components/gastro/RegisterView';
@@ -12,9 +13,14 @@ import ProductGrid from '../components/gastro/ProductGrid';
 import SessionOrderList from '../components/gastro/SessionOrderList';
 import SettleDialog from '../components/gastro/SettleDialog';
 import { useToastStore } from '../store/toasts';
+import { useStore } from '../store';
 
 export default function GastronomyPage() {
   const { addToast } = useToastStore();
+  const { role, logout } = useStore();
+  const navigate = useNavigate();
+
+  const handleLogout = () => { logout(); navigate('/'); };
 
   // Tablet detection — responsive breakpoint at 768px
   const [isTablet, setIsTablet] = useState(() => window.matchMedia('(min-width: 768px)').matches);
@@ -327,6 +333,30 @@ export default function GastronomyPage() {
             </button>
           );
         })}
+        {role === 'gastronomy' && (
+          <button
+            onClick={handleLogout}
+            style={{
+              marginLeft: 'auto',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: '64px',
+              padding: '0 20px',
+              borderRadius: 'var(--pe-radius-xl)',
+              background: 'none',
+              border: '1px solid var(--pe-border)',
+              color: 'var(--pe-danger)',
+              fontFamily: 'var(--pe-font-body)',
+              fontWeight: 'bold',
+              fontSize: '14px',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            Abmelden
+          </button>
+        )}
       </div>
 
       {/* ===== BAR STATION ===== */}

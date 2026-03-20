@@ -8,7 +8,6 @@ const TABS = {
   public: [
     { icon: '🏠', label: 'Home',          path: '/',                        exact: true },
     { icon: '📜', label: 'Archiv',        path: '/history',                 exact: false },
-    { icon: '👤', label: 'Anmelden',      path: '/login',                   exact: false },
   ],
   referee: [
     { icon: '📋', label: 'Meine Boards',  path: '/referee',                 exact: false },

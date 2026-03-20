@@ -9,6 +9,15 @@ export default function AppShell() {
   const role = useStore(s => s.role);
   const isRailRole = role === 'admin' || role === 'director';
 
+  if (role === 'gastronomy') {
+    // Gastronomy: full-screen, no shell — page handles its own logout
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--pe-bg)' }}>
+        <Outlet />
+      </div>
+    );
+  }
+
   if (isRailRole) {
     // Rail layout: nav left, content right (no TopBar or BottomNav)
     return (

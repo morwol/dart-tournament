@@ -353,6 +353,7 @@ function LastThrows({ throws = [], isTablet }) {
 
 // ── Walk-On Play Button ─────────────────────────────────────────────────────
 function WalkonPlayButton({ playerId }) {
+  const role = useStore(s => s.role);
   const [audio, setAudio] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [available, setAvailable] = useState(null); // null=loading, true/false
@@ -363,6 +364,7 @@ function WalkonPlayButton({ playerId }) {
       .catch(() => setAvailable(false));
   }, [playerId]);
 
+  if (role === 'referee') return null;
   if (!available) return null;
 
   const handlePlay = () => {
