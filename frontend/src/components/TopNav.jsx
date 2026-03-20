@@ -307,9 +307,8 @@ function RailNav({ role }) {
           {showLogout && (
             <div style={{
               position: 'absolute',
-              bottom: 'calc(100% + 8px)',
-              left: '50%',
-              transform: 'translateX(-50%)',
+              bottom: 0,
+              left: 'calc(100% + 8px)',
               background: 'var(--pe-bg-elevated)',
               border: '1px solid var(--pe-border)',
               borderRadius: 8,
