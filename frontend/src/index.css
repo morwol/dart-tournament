@@ -213,3 +213,44 @@ body {
   letter-spacing: 0.08em;
   color: var(--pe-text-muted);
 }
+
+/* ── Rail Nav: flyout animations ────────────────────────── */
+@keyframes rail-flyout-header-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes rail-flyout-item-in {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Rail Nav: tooltip on hover ─────────────────────────── */
+.rail-btn .rail-tooltip {
+  position: absolute;
+  left: 52px;
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+  background: var(--pe-bg-elevated);
+  border: 1px solid var(--pe-border);
+  color: var(--pe-text);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--pe-font-body);
+  padding: 5px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 200;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  transition: opacity 120ms 120ms, transform 120ms 120ms;
+}
+.rail-btn:hover .rail-tooltip {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+/* Hide tooltips when flyout is open (controlled via .rail-no-tooltips class on wrapper) */
+.rail-no-tooltips .rail-tooltip {
+  display: none;
+}
