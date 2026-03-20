@@ -1,113 +1,10 @@
 // frontend/src/pages/RefereeEntryPage.jsx
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store';
 import { api } from '../api/client';
 import TopBar from '../components/TopBar';
 import { useToastStore } from '../store/toasts';
-
-// ── Login form ──────────────────────────────────────────────────────────────
-function RefereeLogin({ onLogin }) {
-  const [form, setForm] = useState({ username: '', password: '' });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const submit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    try {
-      const data = await api.post('/auth/login', form);
-      if (!['admin', 'director', 'referee'].includes(data.user?.role)) {
-        setError('Keine Berechtigung für den Referee-Bereich.');
-        return;
-      }
-      onLogin(data.token);
-    } catch (err) {
-      setError(err.message || 'Login fehlgeschlagen');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const inp = {
-    background: 'var(--pe-bg-card)',
-    border: '1px solid var(--pe-border)',
-    color: 'var(--pe-text)',
-    fontFamily: 'var(--pe-font-body)',
-    minHeight: '64px',
-    borderRadius: 'var(--pe-radius-md)',
-    padding: '0 16px',
-    width: '100%',
-    outline: 'none',
-    fontSize: '16px',
-  };
-
-  return (
-    <div style={{
-      minHeight: '80vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '16px',
-      fontFamily: 'var(--pe-font-body)',
-    }}>
-      <div style={{ width: '100%', maxWidth: '380px' }}>
-        <h2 style={{
-          textAlign: 'center',
-          marginBottom: '24px',
-          fontSize: '18px',
-          background: 'var(--pe-gradient)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          fontWeight: 'bold',
-        }}>
-          Referee Login
-        </h2>
-        <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <input
-            type="text"
-            value={form.username}
-            onChange={e => setForm({ ...form, username: e.target.value })}
-            placeholder="Benutzername"
-            style={inp}
-          />
-          <input
-            type="password"
-            value={form.password}
-            onChange={e => setForm({ ...form, password: e.target.value })}
-            placeholder="Passwort"
-            style={inp}
-          />
-          {error && (
-            <p style={{ color: 'var(--pe-danger)', fontSize: '14px', textAlign: 'center' }}>
-              {error}
-            </p>
-          )}
-          <button
-            type="submit"
-            disabled={loading || !form.username || !form.password}
-            style={{
-              background: 'var(--pe-gradient)',
-              color: 'var(--pe-text)',
-              border: 'none',
-              borderRadius: 'var(--pe-radius-md)',
-              padding: '16px',
-              fontFamily: 'var(--pe-font-body)',
-              fontWeight: 'bold',
-              fontSize: '16px',
-              cursor: 'pointer',
-              minHeight: '64px',
-              opacity: loading ? 0.6 : 1,
-            }}
-          >
-            {loading ? 'Anmelden...' : 'Anmelden'}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
 
 // ── Board picker ────────────────────────────────────────────────────────────
 function BoardPicker() {
@@ -195,12 +92,12 @@ function BoardPicker() {
               )}
               {board.current_game && (
                 <div style={{ fontSize: '11px', color: 'var(--pe-success)', marginTop: '3px' }}>
-                  ● {board.current_game}
+                  {'\u25CF'} {board.current_game}
                 </div>
               )}
               {occupied && (
                 <div style={{ fontSize: '11px', color: 'var(--pe-danger)', marginTop: '2px' }}>
-                  🔒 Referee: {board.referee_name}
+                  Referee: {board.referee_name}
                 </div>
               )}
               {!occupied && !board.current_game && (
@@ -220,27 +117,80 @@ function BoardPicker() {
           Keine Boards eingerichtet.
         </p>
       )}
-
     </div>
   );
 }
 
-// ── Entry point ─────────────────────────────────────────────────────────────
-// Standalone page (no AppShell):
-//   - Login state:       no TopBar, no nav — just the form
-//   - Board picker state: TopBar (logo + avatar) only — no nav
-export default function RefereeEntryPage() {
-  const { setToken, token } = useStore();
+// ── Logout button ────────────────────────────────────────────────────────────
+function LogoutButton() {
+  const navigate = useNavigate();
+  const { logout } = useStore();
 
-  const handleLogin = (newToken) => {
-    setToken(newToken);
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
   };
 
-  if (!token) return <RefereeLogin onLogin={handleLogin} />;
+  return (
+    <button
+      onClick={handleLogout}
+      title="Abmelden"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        background: 'rgba(255,69,96,0.12)',
+        border: '1px solid rgba(255,69,96,0.3)',
+        color: 'var(--pe-danger)',
+        borderRadius: '8px',
+        padding: '0 14px',
+        minHeight: '44px',
+        cursor: 'pointer',
+        fontFamily: 'var(--pe-font-body)',
+        fontSize: '13px',
+        fontWeight: '600',
+        transition: 'background 150ms, border-color 150ms',
+        flexShrink: 0,
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.background = 'rgba(255,69,96,0.22)';
+        e.currentTarget.style.borderColor = 'rgba(255,69,96,0.6)';
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.background = 'rgba(255,69,96,0.12)';
+        e.currentTarget.style.borderColor = 'rgba(255,69,96,0.3)';
+      }}
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+        <polyline points="16 17 21 12 16 7" />
+        <line x1="21" y1="12" x2="9" y2="12" />
+      </svg>
+      Abmelden
+    </button>
+  );
+}
 
+// ── Entry point ─────────────────────────────────────────────────────────────
+// Standalone page (no AppShell). Auth is handled by ProtectedRoute in App.jsx.
+export default function RefereeEntryPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--pe-bg)' }}>
       <TopBar />
+      {/* Sub-header: page title + logout */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '12px 16px',
+        borderBottom: '1px solid var(--pe-border)',
+        fontFamily: 'var(--pe-font-body)',
+      }}>
+        <span style={{ fontSize: '15px', fontWeight: '600', color: 'var(--pe-text)' }}>
+          Referee
+        </span>
+        <LogoutButton />
+      </div>
       <BoardPicker />
     </div>
   );

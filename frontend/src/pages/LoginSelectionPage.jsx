@@ -1,42 +1,67 @@
 // frontend/src/pages/LoginSelectionPage.jsx
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../api/client';
+import { useStore } from '../store';
+import { isTokenValid, parseJwt } from '../lib/parseJwt';
 
-const OPTIONS = [
-  {
-    icon: '📋',
-    label: 'Schiedsrichter',
-    sub: 'Boards verwalten & Würfe eingeben',
-    path: '/referee',
-    color: 'var(--pe-warning)',
-    bg: 'rgba(255,176,32,0.1)',
-    border: 'rgba(255,176,32,0.3)',
-  },
-  {
-    icon: '🛒',
-    label: 'Gastronomy / Kasse',
-    sub: 'Bestellungen & Zahlungen',
-    path: '/gastronomy',
-    color: 'var(--pe-success)',
-    bg: 'rgba(0,229,160,0.1)',
-    border: 'rgba(0,229,160,0.3)',
-  },
-  {
-    icon: '⚙️',
-    label: 'Admin / Veranstalter',
-    sub: 'Turniere, Spieler, Boards verwalten',
-    path: '/admin',
-    color: 'var(--pe-cyan-bright)',
-    bg: 'rgba(0,184,255,0.1)',
-    border: 'rgba(0,184,255,0.3)',
-  },
-];
+function getRoleRedirect(role) {
+  if (role === 'referee') return '/referee';
+  if (role === 'gastronomy') return '/gastronomy';
+  if (role === 'admin' || role === 'director') return '/admin';
+  return '/';
+}
 
-export default function LoginSelectionPage() {
+const inputStyle = {
+  background: 'var(--pe-bg-card)',
+  border: '1px solid var(--pe-border)',
+  color: 'var(--pe-text)',
+  fontFamily: 'var(--pe-font-body)',
+  minHeight: '64px',
+  borderRadius: '10px',
+  padding: '0 16px',
+  width: '100%',
+  outline: 'none',
+  fontSize: '16px',
+  boxSizing: 'border-box',
+};
+
+export default function LoginPage() {
   const navigate = useNavigate();
+  const { token, setToken } = useStore();
+  const [form, setForm] = useState({ username: '', password: '' });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Redirect immediately if already authenticated
+  useEffect(() => {
+    if (isTokenValid(token)) {
+      const payload = parseJwt(token);
+      navigate(getRoleRedirect(payload?.role), { replace: true });
+    }
+  }, [token, navigate]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const data = await api.post('/auth/login', { username: form.username, password: form.password });
+      setToken(data.token);
+      const payload = parseJwt(data.token);
+      navigate(getRoleRedirect(payload?.role), { replace: true });
+    } catch (err) {
+      setError(err.message || 'Login fehlgeschlagen');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isDisabled = loading || !form.username.trim() || !form.password.trim();
 
   return (
     <div style={{
-      minHeight: '70vh',
+      minHeight: '80vh',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -44,49 +69,91 @@ export default function LoginSelectionPage() {
       padding: '24px 16px',
       fontFamily: 'var(--pe-font-body)',
     }}>
-      <p style={{
-        fontSize: '10px',
-        color: 'var(--pe-text-muted)',
-        textTransform: 'uppercase',
-        letterSpacing: '1.5px',
-        marginBottom: '20px',
-      }}>
-        Bereich auswählen
-      </p>
+      <div style={{ width: '100%', maxWidth: '380px' }}>
+        {/* Logo + Title */}
+        <div style={{ textAlign: 'center', marginBottom: '36px' }}>
+          <img
+            src="/logo.jpeg"
+            alt="DartEvent Logo"
+            style={{ width: '72px', height: '72px', objectFit: 'contain', borderRadius: '16px', marginBottom: '16px' }}
+          />
+          <h1 style={{
+            margin: 0,
+            fontSize: '28px',
+            fontWeight: 'bold',
+            fontFamily: 'var(--pe-font-display)',
+            background: 'var(--pe-gradient)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>
+            DartEvent
+          </h1>
+          <p style={{
+            margin: '6px 0 0',
+            fontSize: '13px',
+            color: 'var(--pe-text-muted)',
+          }}>
+            Bitte anmelden um fortzufahren
+          </p>
+        </div>
 
-      <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {OPTIONS.map((opt) => (
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <input
+            type="text"
+            value={form.username}
+            onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
+            placeholder="Benutzername"
+            autoComplete="username"
+            autoFocus
+            style={inputStyle}
+          />
+          <input
+            type="password"
+            value={form.password}
+            onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+            placeholder="Passwort"
+            autoComplete="current-password"
+            style={inputStyle}
+          />
+
+          {error && (
+            <p style={{
+              margin: 0,
+              color: 'var(--pe-danger)',
+              fontSize: '14px',
+              textAlign: 'center',
+              padding: '8px 12px',
+              background: 'rgba(255,69,96,0.1)',
+              border: '1px solid rgba(255,69,96,0.3)',
+              borderRadius: '8px',
+            }}>
+              {error}
+            </p>
+          )}
+
           <button
-            key={opt.path}
-            onClick={() => navigate(opt.path)}
+            type="submit"
+            disabled={isDisabled}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
-              background: opt.bg,
-              border: `1px solid ${opt.border}`,
-              borderRadius: '14px',
-              padding: '18px 20px',
-              cursor: 'pointer',
-              textAlign: 'left',
+              background: isDisabled ? 'var(--pe-bg-elevated)' : 'var(--pe-gradient)',
+              color: isDisabled ? 'var(--pe-text-muted)' : 'var(--pe-text)',
+              border: 'none',
+              borderRadius: '10px',
+              padding: '0 16px',
               fontFamily: 'var(--pe-font-body)',
-              minHeight: '72px',
-              transition: 'opacity 120ms',
+              fontWeight: 'bold',
+              fontSize: '16px',
+              cursor: isDisabled ? 'not-allowed' : 'pointer',
+              minHeight: '64px',
+              transition: 'opacity 150ms, background 150ms',
+              marginTop: '4px',
             }}
-            onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
-            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
           >
-            <span style={{ fontSize: '28px', flexShrink: 0 }}>{opt.icon}</span>
-            <div>
-              <div style={{ fontSize: '15px', fontWeight: 'bold', color: opt.color }}>
-                {opt.label}
-              </div>
-              <div style={{ fontSize: '11px', color: 'var(--pe-text-muted)', marginTop: '2px' }}>
-                {opt.sub}
-              </div>
-            </div>
+            {loading ? 'Anmelden...' : 'Anmelden'}
           </button>
-        ))}
+        </form>
       </div>
     </div>
   );
