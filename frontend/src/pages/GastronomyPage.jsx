@@ -1,8 +1,8 @@
 // GastronomyPage — station-split architecture
 // Stations: 'bar' (drinks + ordering), 'register' (settle)
+// Auth is handled by ProtectedRoute in App.jsx — no inline login gate here.
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { api } from '../api/client';
-import GastronomyLogin from '../components/gastro/GastronomyLogin';
 import StationSelector from '../components/gastro/StationSelector';
 import RegisterView from '../components/gastro/RegisterView';
 import GuestSelector from '../components/gastro/GuestSelector';
@@ -12,11 +12,18 @@ import ProductGrid from '../components/gastro/ProductGrid';
 import SessionOrderList from '../components/gastro/SessionOrderList';
 import SettleDialog from '../components/gastro/SettleDialog';
 import { useToastStore } from '../store/toasts';
-import { useStore } from '../store';
 
 export default function GastronomyPage() {
   const { addToast } = useToastStore();
-  const { token, setToken: storeSetToken } = useStore();
+
+  // Tablet detection — responsive breakpoint at 768px
+  const [isTablet, setIsTablet] = useState(() => window.matchMedia('(min-width: 768px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const h = (e) => setIsTablet(e.matches);
+    mq.addEventListener('change', h);
+    return () => mq.removeEventListener('change', h);
+  }, []);
 
   // Station state — persisted in sessionStorage
   const [station, setStation] = useState(() => {
@@ -82,13 +89,12 @@ export default function GastronomyPage() {
     return () => clearTimeout(timerRef.current);
   }, []);
 
-  // Load products + all guests once token is available
+  // Load products + all guests on mount
   useEffect(() => {
-    if (!token) return;
     api.get('/products').then(setProducts).catch(() => {});
     api.get('/nfc/guests').then(setAllGuests).catch(() => {});
     api.get('/tournaments/active').then((t) => { if (t?.id) setActiveTournamentId(t.id); }).catch(() => {});
-  }, [token]);
+  }, []);
 
   // Fetch open orders for a guest
   const fetchGuestOpenOrders = useCallback(async (guestId) => {
@@ -102,10 +108,9 @@ export default function GastronomyPage() {
 
   // Load open orders for the currently selected guest
   useEffect(() => {
-    if (!token) return;
     if (!guest) { setGuestOpenOrders(null); return; }
     fetchGuestOpenOrders(guest.id);
-  }, [token, guest, fetchGuestOpenOrders]);
+  }, [guest, fetchGuestOpenOrders]);
 
   // NFC scan handler
   const handleNFCScan = async (uid) => {
@@ -220,35 +225,11 @@ export default function GastronomyPage() {
 
   // Auto-refresh register view every 10 seconds
   useEffect(() => {
-    if (!token) return;
     if (station !== 'register') return;
     loadRegister();
     const interval = setInterval(loadRegister, 10000);
     return () => clearInterval(interval);
-  }, [token, station, loadRegister]);
-
-  // Login gate
-  const handleLogin = (newToken) => {
-    storeSetToken(newToken);
-  };
-
-  if (!token) {
-    return (
-      <div
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 500,
-          background: 'var(--pe-bg)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'auto',
-        }}
-      >
-        <GastronomyLogin onLogin={handleLogin} />
-      </div>
-    );
-  }
+  }, [station, loadRegister]);
 
   // Station gate
   if (!station) {
@@ -287,10 +268,16 @@ export default function GastronomyPage() {
     bar:      { label: 'Bar',   icon: '🍺', accent: 'var(--pe-cyan-bright)', accentBg: 'rgba(0,184,255,0.12)', accentBorder: 'rgba(0,184,255,0.35)' },
     register: { label: 'Kasse', icon: '💳', accent: 'var(--pe-success)',     accentBg: 'rgba(0,229,160,0.12)',  accentBorder: 'rgba(0,229,160,0.35)' },
   };
-  const badge = badgeConfig[station];
+
+  // Category sidebar items for tablet bar layout
+  const sidebarCategories = [
+    { id: 'all',   label: 'Alle',       icon: '⊞' },
+    { id: 'drink', label: 'Getraenke',  icon: '🍺' },
+    { id: 'food',  label: 'Speisen',    icon: '🍕' },
+  ];
 
   return (
-    <div className="min-h-screen" style={{ fontFamily: 'var(--pe-font-body)' }}>
+    <div style={{ fontFamily: 'var(--pe-font-body)', minHeight: '100vh', background: 'var(--pe-bg)' }}>
       {/* Settle confirmation dialog — rendered at top level so it works from any station */}
       {settleTarget && (
         <SettleDialog
@@ -344,63 +331,212 @@ export default function GastronomyPage() {
 
       {/* ===== BAR STATION ===== */}
       {station === 'bar' && (
-        <div style={{ width: '100%', padding: 16 }}>
+        <>
+          {/* Guest selector — always shown above the layout panels when no guest */}
           {!guest && (
-            <GuestSelector
-              guests={allGuests}
-              onGuestSelect={selectGuest}
-              onCreateGuest={(name) => {
-                const payload = { name };
-                if (activeTournamentId) payload.tournament_id = activeTournamentId;
-                return api.post('/nfc/create-manual', payload)
-                  .then((g) => { selectGuest(g); setAllGuests((prev) => [...prev, g]); })
-                  .catch((err) => addToast({ type: 'error', message: err.message }));
-              }}
-              nfcAvailable={'NDEFReader' in window}
-              onRequestNfcScan={handleNFCScan}
-              scanning={scanning}
-            />
+            <div style={{ padding: '0 16px 16px' }}>
+              <GuestSelector
+                guests={allGuests}
+                onGuestSelect={selectGuest}
+                onCreateGuest={(name) => {
+                  const payload = { name };
+                  if (activeTournamentId) payload.tournament_id = activeTournamentId;
+                  return api.post('/nfc/create-manual', payload)
+                    .then((g) => { selectGuest(g); setAllGuests((prev) => [...prev, g]); })
+                    .catch((err) => addToast({ type: 'error', message: err.message }));
+                }}
+                nfcAvailable={'NDEFReader' in window}
+                onRequestNfcScan={handleNFCScan}
+                scanning={scanning}
+              />
+            </div>
           )}
 
           {guest && (
             <>
-              <GuestHeader
-                guest={guest}
-                isBlocked={isBlocked}
-                onClose={clearSession}
-                onToggleLock={toggleGuestLock}
-                lockLoading={lockLoading}
-                onSettle={() => initSettle(guest)}
-              />
+              {/* Guest header — always full-width above the layout */}
+              <div style={{ padding: '0 16px 8px' }}>
+                <GuestHeader
+                  guest={guest}
+                  isBlocked={isBlocked}
+                  onClose={clearSession}
+                  onToggleLock={toggleGuestLock}
+                  lockLoading={lockLoading}
+                  onSettle={() => initSettle(guest)}
+                />
+              </div>
 
-              {guestOpenOrders?.items?.length > 0 && (
-                <OpenOrdersPanel items={guestOpenOrders.items} total={guestOpenOrders.total} />
-              )}
+              {/* Tablet: three-panel layout. Mobile: single-column flow */}
+              <div
+                style={{
+                  display: isTablet ? 'grid' : 'flex',
+                  gridTemplateColumns: isTablet ? '200px 1fr 280px' : undefined,
+                  flexDirection: isTablet ? undefined : 'column',
+                  height: isTablet ? 'calc(100vh - 160px)' : undefined,
+                  gap: '0',
+                  overflow: 'hidden',
+                }}
+              >
+                {/* Left panel: category sidebar (tablet only) */}
+                {isTablet && (
+                  <div
+                    style={{
+                      background: 'var(--pe-bg-elevated)',
+                      borderRight: '1px solid var(--pe-border)',
+                      overflowY: 'auto',
+                      padding: '8px 0',
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    {sidebarCategories.map((cat) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => handleCategoryChange(cat.id)}
+                        style={{
+                          width: '100%',
+                          minHeight: '52px',
+                          padding: '12px 16px',
+                          textAlign: 'left',
+                          background: productFilter === cat.id ? 'var(--pe-bg-card)' : 'transparent',
+                          borderTop: 'none',
+                          borderRight: 'none',
+                          borderBottom: '1px solid var(--pe-border)',
+                          borderLeft: productFilter === cat.id
+                            ? '3px solid var(--pe-cyan-bright)'
+                            : '3px solid transparent',
+                          color: productFilter === cat.id ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)',
+                          cursor: 'pointer',
+                          fontFamily: 'var(--pe-font-body)',
+                          fontSize: '13px',
+                          fontWeight: productFilter === cat.id ? 'bold' : 'normal',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                        }}
+                      >
+                        <span style={{ fontSize: '18px' }}>{cat.icon}</span>
+                        <span>{cat.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
 
-              <ProductGrid
-                products={stationFilteredProducts}
-                onTap={tapProduct}
-                sessionCounts={sessionCounts}
-                isBlocked={isBlocked}
-                categoryFilter={productFilter}
-                onCategoryChange={handleCategoryChange}
-              />
+                {/* Center panel: open orders summary + product grid */}
+                <div
+                  style={{
+                    overflowY: 'auto',
+                    padding: isTablet ? '12px' : '0 16px',
+                    flex: isTablet ? undefined : 1,
+                  }}
+                >
+                  {/* Open orders accordion — only on mobile (tablet shows them in right panel) */}
+                  {!isTablet && guestOpenOrders?.items?.length > 0 && (
+                    <div style={{ marginBottom: '8px' }}>
+                      <OpenOrdersPanel items={guestOpenOrders.items} total={guestOpenOrders.total} />
+                    </div>
+                  )}
 
-              <SessionOrderList orders={sessionOrders} onUndo={tapUndo} />
+                  <ProductGrid
+                    products={stationFilteredProducts}
+                    onTap={tapProduct}
+                    sessionCounts={sessionCounts}
+                    isBlocked={isBlocked}
+                    categoryFilter={productFilter}
+                    onCategoryChange={handleCategoryChange}
+                    isTablet={isTablet}
+                  />
+
+                  {/* Session order list below grid on mobile */}
+                  {!isTablet && (
+                    <SessionOrderList orders={sessionOrders} onUndo={tapUndo} />
+                  )}
+                </div>
+
+                {/* Right panel: order summary (tablet only) */}
+                {isTablet && (
+                  <div
+                    style={{
+                      background: 'var(--pe-bg-card)',
+                      borderLeft: '1px solid var(--pe-border)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      overflowY: 'auto',
+                    }}
+                  >
+                    {/* Open orders section */}
+                    {guestOpenOrders?.items?.length > 0 && (
+                      <div style={{ padding: '12px', borderBottom: '1px solid var(--pe-border)' }}>
+                        <p style={{
+                          margin: '0 0 8px',
+                          fontSize: '11px',
+                          textTransform: 'uppercase',
+                          color: 'var(--pe-text-muted)',
+                          fontWeight: 'bold',
+                          letterSpacing: '0.05em',
+                          fontFamily: 'var(--pe-font-body)',
+                        }}>
+                          Offene Bestellungen
+                        </p>
+                        <OpenOrdersPanel items={guestOpenOrders.items} total={guestOpenOrders.total} />
+                      </div>
+                    )}
+
+                    {/* Session orders section — fills remaining space */}
+                    <div style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column' }}>
+                      <p style={{
+                        margin: '0 0 8px',
+                        fontSize: '11px',
+                        textTransform: 'uppercase',
+                        color: 'var(--pe-text-muted)',
+                        fontWeight: 'bold',
+                        letterSpacing: '0.05em',
+                        fontFamily: 'var(--pe-font-body)',
+                      }}>
+                        Diese Bestellung
+                      </p>
+
+                      {sessionOrders.length === 0 ? (
+                        <p style={{
+                          color: 'var(--pe-text-muted)',
+                          fontSize: '13px',
+                          textAlign: 'center',
+                          padding: '24px 0',
+                          fontFamily: 'var(--pe-font-body)',
+                        }}>
+                          Noch nichts bestellt
+                        </p>
+                      ) : (
+                        <div style={{ flex: 1, overflowY: 'auto' }}>
+                          <SessionOrderList orders={sessionOrders} onUndo={tapUndo} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </>
           )}
-        </div>
+        </>
       )}
 
       {/* ===== REGISTER (KASSE) STATION ===== */}
       {station === 'register' && (
-        <div style={{ width: '100%', padding: 16 }}>
+        <div
+          style={{
+            width: '100%',
+            padding: isTablet ? '16px 24px' : '16px',
+            maxWidth: isTablet ? '960px' : undefined,
+            margin: isTablet ? '0 auto' : undefined,
+          }}
+        >
           <RegisterView
             guestOrders={guestOrders}
             settledIds={settledIds}
             onSettle={initSettle}
             loading={registerLoading}
             submitting={submitting}
+            isTablet={isTablet}
           />
         </div>
       )}
