@@ -25,6 +25,16 @@ if (process.env.MAIL_HOST) {
   }
 }
 
+// Escape HTML entities to prevent XSS in template placeholder substitution
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // NEU: Helper — Mail senden oder dry-run
 async function sendMail(to, subject, html) {
   if (!transporter) {
@@ -74,11 +84,35 @@ router.post('/templates', requireAdmin, (req, res) => {
   }
 });
 
+// Delete a template
+router.delete('/templates/:id', requireAdmin, (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!id || isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid template id' });
+    }
+
+    const template = db.prepare('SELECT id FROM mail_templates WHERE id = ?').get(id);
+    if (!template) {
+      return res.status(404).json({ error: 'Template not found' });
+    }
+
+    db.prepare('DELETE FROM mail_templates WHERE id = ?').run(id);
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('[mail]', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // NEU: Test-Mail an Admin
 router.post('/send-test', requireAdmin, async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'email required' });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Invalid email address' });
+    }
 
     const result = await sendMail(
       email,
@@ -103,6 +137,9 @@ router.post('/send-event-summary', requireAdmin, async (req, res) => {
   try {
     const { tournament_id, email, template_id } = req.body;
     if (!email) return res.status(400).json({ error: 'email required' });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Invalid email address' });
+    }
 
     // Turnier-Daten sammeln
     let tournament = null;
@@ -111,7 +148,12 @@ router.post('/send-event-summary', requireAdmin, async (req, res) => {
 
     if (tournament_id) {
       tournament = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(tournament_id);
-      players = db.prepare('SELECT * FROM players WHERE tournament_id = ? ORDER BY seed, name').all(tournament_id);
+      players = db.prepare(`
+        SELECT p.* FROM players p
+        JOIN tournament_registrations tr ON tr.player_id = p.id
+        WHERE tr.tournament_id = ?
+        ORDER BY tr.seed, p.name
+      `).all(tournament_id);
       games = db.prepare(`
         SELECT g.*, p1.name as player1_name, p2.name as player2_name, w.name as winner_name
         FROM games g
@@ -132,12 +174,12 @@ router.post('/send-event-summary', requireAdmin, async (req, res) => {
       if (template) {
         subject = template.subject;
         html = template.body_html;
-        // Platzhalter ersetzen
+        // Platzhalter ersetzen — values are HTML-escaped to prevent injection
         if (tournament) {
-          html = html.replace(/\{\{tournament_name\}\}/g, tournament.name || '');
-          html = html.replace(/\{\{tournament_date\}\}/g, tournament.date || '');
-          html = html.replace(/\{\{player_count\}\}/g, String(players.length));
-          html = html.replace(/\{\{game_count\}\}/g, String(games.length));
+          html = html.replace(/\{\{tournament_name\}\}/g, escapeHtml(tournament.name || ''));
+          html = html.replace(/\{\{tournament_date\}\}/g, escapeHtml(tournament.date || ''));
+          html = html.replace(/\{\{player_count\}\}/g, escapeHtml(String(players.length)));
+          html = html.replace(/\{\{game_count\}\}/g, escapeHtml(String(games.length)));
         }
       }
     } else {
@@ -170,6 +212,21 @@ router.post('/send-event-summary', requireAdmin, async (req, res) => {
     ).run(template_id || null, email, result.mode === 'sent' ? 'sent' : 'dry-run', tournament_id || null);
 
     return res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('[mail]', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Mail configuration status — for frontend indicator
+// Returns configured status and host (no credentials) — admin only
+router.get('/status', requireAdmin, (req, res) => {
+  try {
+    return res.json({
+      configured: transporter !== null,
+      host: process.env.MAIL_HOST || null,
+      from: process.env.MAIL_FROM || process.env.MAIL_USER || null,
+    });
   } catch (err) {
     console.error('[mail]', err);
     res.status(500).json({ error: 'Internal server error' });
