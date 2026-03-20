@@ -26,9 +26,9 @@ const AdminReportsPage = lazy(() => import('./pages/AdminReportsPage'));
 // Protected Route mit Rollenprüfung und Expiry-Check
 function ProtectedRoute({ element, roles }) {
   const token = localStorage.getItem('token');
-  if (!isTokenValid(token)) return <Navigate to="/" replace />;
+  if (!isTokenValid(token)) return <Navigate to="/login" replace />;
   const payload = parseJwt(token);
-  if (!payload || (roles && !roles.includes(payload.role))) return <Navigate to="/" replace />;
+  if (!payload || (roles && !roles.includes(payload.role))) return <Navigate to="/login" replace />;
   return element;
 }
 
@@ -87,9 +87,9 @@ export default function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/tournament/:id" element={<TournamentPage />} />
             <Route path="/tournament/:id/register" element={<PlayerRegistrationPage />} />
-            <Route path="/gastronomy" element={<GastronomyPage />} />
+            <Route path="/gastronomy" element={<ProtectedRoute element={<GastronomyPage />} roles={['admin', 'gastronomy']} />} />
             <Route path="/login" element={<LoginSelectionPage />} />
-            {/* AdminPage has its own AdminLogin gate — no ProtectedRoute needed */}
+            {/* AdminPage redirects to /login internally if unauthenticated */}
             <Route path="/admin" element={<AdminPage />} />
             {/* /admin/users → redirect to /admin?tab=users */}
             <Route path="/admin/users" element={<Navigate to="/admin?tab=users" replace />} />
@@ -100,9 +100,9 @@ export default function App() {
           </Route>
 
           {/* ── Standalone routes: no shell ── */}
-          {/* /referee: login = no TopBar; board picker = TopBar only (RefereeEntryPage renders it) */}
-          <Route path="/referee" element={<RefereeEntryPage />} />
-          <Route path="/referee/:boardId" element={<RefereePage />} />
+          {/* /referee: protected — login is now handled at /login */}
+          <Route path="/referee" element={<ProtectedRoute element={<RefereeEntryPage />} roles={['admin', 'director', 'referee']} />} />
+          <Route path="/referee/:boardId" element={<ProtectedRoute element={<RefereePage />} roles={['admin', 'director', 'referee']} />} />
           <Route path="/board/:boardId" element={<CurrentGameView />} />
           <Route path="/nfc" element={<NFCScanPage />} />
           <Route path="/nfc-scan" element={<NFCScanPage />} />
