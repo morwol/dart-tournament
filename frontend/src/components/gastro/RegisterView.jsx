@@ -3,7 +3,7 @@ import { useState } from 'react';
 import GuestSearchInput from './GuestSearchInput';
 import RegisterGuestCard from './RegisterGuestCard';
 
-export default function RegisterView({ guestOrders, settledIds, onSettle, loading, submitting }) {
+export default function RegisterView({ guestOrders, settledIds, onSettle, loading, submitting, isTablet = false }) {
   const [search, setSearch] = useState('');
 
   const filtered = guestOrders.filter(
@@ -41,8 +41,14 @@ export default function RegisterView({ guestOrders, settledIds, onSettle, loadin
         </p>
       )}
 
-      {/* Guest cards */}
-      <div className="space-y-3">
+      {/* Guest cards — two columns on tablet, single column on mobile */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: isTablet ? 'repeat(2, 1fr)' : '1fr',
+          gap: '12px',
+        }}
+      >
         {filtered.map((g) => (
           <RegisterGuestCard
             key={g.guest_id}

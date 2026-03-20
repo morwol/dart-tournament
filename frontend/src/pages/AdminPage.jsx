@@ -1,16 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Navigate } from 'react-router-dom';
 import { useStore } from '../store';
 import { parseJwt, isTokenValid } from '../lib/parseJwt';
 import { api } from '../api/client';
 import { useToastStore } from '../store/toasts';
-import AdminLogin from '../components/admin/AdminLogin';
 import TournamentManager from '../components/admin/TournamentManager';
 import WalkonBadge from '../components/WalkonBadge';
 import {
   LayoutDashboard, Flag, Trophy, Users, Target,
   UserCog, UtensilsCrossed, Mail, Settings, ScrollText, HelpCircle,
-  Play, Square, Loader2,
+  Play, Square, Loader2, Search, X, Trash2,
 } from 'lucide-react';
 
 const ALL_TABS = [
@@ -327,6 +326,7 @@ function PlayersTab() {
   const [form, setForm] = useState({ vorname: '', nickname: '', nachname: '', walk_on_song: '', walkon_start: 0, walkon_duration: 30 });
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   useEffect(() => { setEditingPlayer(null); }, [isDesktop]);
 
   // Poll every 3s for players whose walk-on is still downloading
@@ -454,6 +454,16 @@ function PlayersTab() {
     }
   };
 
+  const filteredPlayers = players.filter(p => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase().trim();
+    return (
+      (p.vorname || '').toLowerCase().includes(q) ||
+      (p.nickname || '').toLowerCase().includes(q) ||
+      (p.nachname || '').toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px' }}>
@@ -466,6 +476,52 @@ function PlayersTab() {
           {addMode ? 'Abbrechen' : '+ Spieler'}
         </button>
       </div>
+
+      {/* Search bar */}
+      <div style={{ position: 'relative', marginBottom: '12px' }}>
+        <span style={{
+          position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)',
+          color: 'var(--pe-text-muted)', pointerEvents: 'none',
+          display: 'flex', alignItems: 'center',
+        }}>
+          <Search size={16} />
+        </span>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="Spieler suchen…"
+          style={{
+            ...inputStyle,
+            width: '100%',
+            paddingLeft: '44px',
+            paddingRight: searchQuery ? '40px' : '16px',
+            minHeight: '52px',
+            boxSizing: 'border-box',
+            borderRadius: 'var(--pe-radius-md, 12px)',
+          }}
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            style={{
+              position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--pe-text-muted)', padding: '4px',
+              display: 'flex', alignItems: 'center',
+            }}
+          >
+            <X size={14} />
+          </button>
+        )}
+      </div>
+
+      {/* Result count */}
+      {searchQuery && (
+        <p style={{ fontSize: '11px', color: 'var(--pe-text-muted)', marginBottom: '8px' }}>
+          {filteredPlayers.length} von {players.length} Spielern
+        </p>
+      )}
 
       {addMode === 'new' && (
         <div className="p-4 rounded-xl mb-6" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
@@ -547,7 +603,7 @@ function PlayersTab() {
 
       {isDesktop ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-          {players.map((p) => {
+          {filteredPlayers.map((p) => {
             const isExpanded = editingPlayer?.id === p.id;
             const effectiveWalkonStatus = walkonStatuses[p.id] ?? p.walkon_status ?? (p.has_walkon ? 'ready' : null);
             return (
@@ -657,13 +713,15 @@ function PlayersTab() {
               </div>
             );
           })}
-          {players.length === 0 && (
-            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--pe-text-muted)', fontSize: '13px', padding: '24px' }}>Keine Spieler</p>
+          {filteredPlayers.length === 0 && (
+            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--pe-text-muted)', fontSize: '13px', padding: '24px' }}>
+              {searchQuery ? `Kein Spieler gefunden für «${searchQuery}»` : 'Keine Spieler'}
+            </p>
           )}
         </div>
       ) : (
         <div className="space-y-2">
-          {players.map((p) => (
+          {filteredPlayers.map((p) => (
             <div key={p.id} className="p-3 rounded-lg flex justify-between items-center" style={{ background: 'var(--pe-bg-card)', border: `1px solid ${playingId === p.id ? 'var(--pe-cyan-bright)' : 'var(--pe-border)'}`, boxShadow: playingId === p.id ? '0 0 8px var(--pe-cyan-bright)' : 'none', transition: 'box-shadow 0.2s, border-color 0.2s' }}>
               <div style={{ minWidth: 0, overflow: 'hidden', flex: 1 }}>
                 <span className="font-bold" style={{ color: 'var(--pe-text)', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
@@ -746,7 +804,11 @@ function PlayersTab() {
               </div>
             </div>
           ))}
-          {players.length === 0 && <p className="text-sm" style={{ color: 'var(--pe-text-muted)' }}>Keine Spieler</p>}
+          {filteredPlayers.length === 0 && (
+            <p className="text-sm" style={{ color: 'var(--pe-text-muted)' }}>
+              {searchQuery ? `Kein Spieler gefunden für «${searchQuery}»` : 'Keine Spieler'}
+            </p>
+          )}
         </div>
       )}
     </div>
@@ -1241,9 +1303,14 @@ function MailingTab() {
   const [form, setForm] = useState({ name: '', subject: '', body_html: '' });
   const [testEmail, setTestEmail] = useState('');
   const [sending, setSending] = useState(false);
+  const [mailStatus, setMailStatus] = useState(null);
+  const [summaryForm, setSummaryForm] = useState({ email: '', tournament_id: '' });
+  const [tournaments, setTournaments] = useState([]);
 
   useEffect(() => {
     api.get('/mail/templates').then(setTemplates).catch(() => {});
+    api.get('/mail/status').then(setMailStatus).catch(() => setMailStatus({ configured: false }));
+    api.get('/tournaments').then(setTournaments).catch(() => {});
   }, []);
 
   const handleCreate = async (e) => {
@@ -1275,11 +1342,19 @@ function MailingTab() {
   };
 
   const handleSendEventSummary = async () => {
-    if (!confirm('Event-Zusammenfassung an alle senden?')) return;
+    if (!summaryForm.email.trim()) {
+      addToast({ type: 'error', message: 'Bitte E-Mail-Adresse eingeben' });
+      return;
+    }
+    if (!confirm(`Event-Zusammenfassung an ${summaryForm.email} senden?`)) return;
     setSending(true);
     try {
-      await api.post('/mail/send-event-summary');
+      await api.post('/mail/send-event-summary', {
+        email: summaryForm.email,
+        tournament_id: summaryForm.tournament_id ? Number(summaryForm.tournament_id) : undefined,
+      });
       addToast({ type: 'success', message: 'Event-Zusammenfassung gesendet!' });
+      setSummaryForm({ email: '', tournament_id: '' });
     } catch (err) {
       addToast({ type: 'error', message: err.message || 'Aktion fehlgeschlagen – bitte erneut versuchen' });
     } finally {
@@ -1290,7 +1365,20 @@ function MailingTab() {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', marginBottom: '16px' }}>
-        <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Mailing</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <h2 style={{ color: 'var(--pe-cyan-bright)', fontWeight: 'bold', fontSize: '18px', margin: 0 }}>Mailing</h2>
+          {mailStatus && (
+            <span style={{
+              fontSize: '11px', fontWeight: 'bold',
+              padding: '3px 10px', borderRadius: '20px',
+              color: mailStatus.configured ? 'var(--pe-success)' : 'var(--pe-warning)',
+              background: mailStatus.configured ? 'rgba(0,229,160,0.12)' : 'rgba(255,176,32,0.12)',
+              border: `1px solid ${mailStatus.configured ? 'rgba(0,229,160,0.3)' : 'rgba(255,176,32,0.3)'}`,
+            }}>
+              {mailStatus.configured ? `✓ SMTP: ${mailStatus.host}` : '⚠ Dry-Run'}
+            </span>
+          )}
+        </div>
         <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: 'var(--pe-blue-deep)', color: 'var(--pe-text)', fontFamily: 'var(--pe-font-body)' }}>
           {showForm ? 'Abbrechen' : '+ Template'}
         </button>
@@ -1301,6 +1389,35 @@ function MailingTab() {
           <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Template-Name" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
           <input type="text" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} placeholder="Betreff" className="w-full p-3 rounded-lg outline-none" style={inputStyle} />
           <textarea value={form.body_html} onChange={(e) => setForm({ ...form, body_html: e.target.value })} placeholder="HTML Body" rows={6} className="w-full p-3 rounded-lg outline-none resize-y" style={{ ...inputStyle, minHeight: '120px' }} />
+          {/* Placeholder chips */}
+          <div>
+            <p style={{ fontSize: '11px', color: 'var(--pe-text-muted)', margin: '0 0 6px' }}>
+              Verfügbare Platzhalter (klicken zum Einfügen):
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {[
+                { label: '{{tournament_name}}', desc: 'Turniername' },
+                { label: '{{tournament_date}}', desc: 'Datum' },
+                { label: '{{player_count}}', desc: 'Spieleranzahl' },
+                { label: '{{game_count}}', desc: 'Spielanzahl' },
+              ].map(ph => (
+                <button
+                  key={ph.label}
+                  type="button"
+                  onClick={() => setForm(prev => ({ ...prev, body_html: (prev.body_html || '') + ph.label }))}
+                  title={ph.desc}
+                  style={{
+                    background: 'var(--pe-bg-elevated)', border: '1px solid var(--pe-border)',
+                    color: 'var(--pe-cyan-light, #5DD5FF)', borderRadius: '6px',
+                    padding: '4px 10px', fontSize: '11px', cursor: 'pointer',
+                    fontFamily: 'monospace',
+                  }}
+                >
+                  {ph.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <button type="submit" disabled={!form.name.trim() || !form.subject.trim()} className="w-full py-3 rounded-lg font-bold disabled:opacity-50" style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '48px', fontFamily: 'var(--pe-font-body)' }}>
             Template speichern
           </button>
@@ -1309,9 +1426,38 @@ function MailingTab() {
 
       <div className="space-y-2 mb-6">
         {templates.map((t) => (
-          <div key={t.id} className="p-3 rounded-lg" style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)' }}>
-            <p className="font-bold" style={{ color: 'var(--pe-text)' }}>{t.name}</p>
-            <p className="text-sm" style={{ color: 'var(--pe-text-sub)' }}>Betreff: {t.subject}</p>
+          <div key={t.id} style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)',
+            borderRadius: 'var(--pe-radius-md, 12px)', padding: '12px 16px',
+          }}>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontWeight: 'bold', color: 'var(--pe-text)', margin: 0 }}>{t.name}</p>
+              <p style={{ fontSize: '12px', color: 'var(--pe-text-sub)', margin: '2px 0 0' }}>Betreff: {t.subject}</p>
+            </div>
+            <button
+              onClick={async () => {
+                if (!confirm(`Template «${t.name}» löschen?`)) return;
+                try {
+                  await api.del(`/mail/templates/${t.id}`);
+                  const updated = await api.get('/mail/templates');
+                  setTemplates(updated);
+                  addToast({ type: 'success', message: 'Template gelöscht' });
+                } catch (err) {
+                  addToast({ type: 'error', message: err.message || 'Löschen fehlgeschlagen' });
+                }
+              }}
+              style={{
+                background: 'rgba(255,69,96,0.12)', border: '1px solid rgba(255,69,96,0.3)',
+                color: 'var(--pe-danger)', borderRadius: '8px',
+                padding: '8px 12px', cursor: 'pointer',
+                fontFamily: 'var(--pe-font-body)', fontSize: '12px', fontWeight: 'bold',
+                flexShrink: 0, marginLeft: '12px',
+                display: 'flex', alignItems: 'center', gap: '4px',
+              }}
+            >
+              <Trash2 size={14} /> Löschen
+            </button>
           </div>
         ))}
         {templates.length === 0 && <p className="text-sm" style={{ color: 'var(--pe-text-muted)' }}>Keine Templates</p>}
@@ -1327,14 +1473,44 @@ function MailingTab() {
         </div>
       </div>
 
-      <button
-        onClick={handleSendEventSummary}
-        disabled={sending}
-        className="w-full py-3 rounded-lg font-bold disabled:opacity-50"
-        style={{ background: 'var(--pe-gradient)', color: 'var(--pe-text)', minHeight: '48px', fontFamily: 'var(--pe-font-body)' }}
-      >
-        {sending ? 'Wird gesendet...' : 'Event-Zusammenfassung senden'}
-      </button>
+      <div style={{ background: 'var(--pe-bg-card)', border: '1px solid var(--pe-border)', borderRadius: 'var(--pe-radius-md, 12px)', padding: '16px' }}>
+        <h3 style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--pe-text-sub)', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+          Event-Zusammenfassung
+        </h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <input
+            type="email"
+            value={summaryForm.email}
+            onChange={e => setSummaryForm(prev => ({ ...prev, email: e.target.value }))}
+            placeholder="Empfänger E-Mail *"
+            style={{ ...inputStyle, minHeight: '52px' }}
+          />
+          <select
+            value={summaryForm.tournament_id}
+            onChange={e => setSummaryForm(prev => ({ ...prev, tournament_id: e.target.value }))}
+            style={{ ...selectStyle, minHeight: '52px' }}
+          >
+            <option value="">Turnier wählen (optional)</option>
+            {tournaments.map(t => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+          <button
+            onClick={handleSendEventSummary}
+            disabled={sending || !summaryForm.email.trim()}
+            style={{
+              background: 'var(--pe-gradient)', color: 'var(--pe-text)',
+              border: 'none', borderRadius: 'var(--pe-radius-md, 12px)',
+              padding: '14px', fontFamily: 'var(--pe-font-body)',
+              fontWeight: 'bold', fontSize: '15px',
+              cursor: sending || !summaryForm.email.trim() ? 'not-allowed' : 'pointer',
+              minHeight: '52px', opacity: sending ? 0.6 : 1,
+            }}
+          >
+            {sending ? 'Wird gesendet...' : 'Zusammenfassung senden'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -2892,17 +3068,12 @@ export default function AdminPage() {
   const { token } = useStore();
 
   if (!token || !isTokenValid(token)) {
-    // Overlay covers entire viewport including AppShell TopBar — no double header
-    return (
-      <div style={{
-        position: 'fixed', inset: 0, zIndex: 500,
-        background: 'var(--pe-bg)',
-        display: 'flex', flexDirection: 'column',
-        overflow: 'auto',
-      }}>
-        <AdminLogin />
-      </div>
-    );
+    return <Navigate to="/login" replace />;
+  }
+
+  const payload = parseJwt(token);
+  if (!['admin', 'director'].includes(payload?.role)) {
+    return <Navigate to="/login" replace />;
   }
 
   return <AdminDashboard />;
