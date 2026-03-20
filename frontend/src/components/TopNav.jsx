@@ -1,5 +1,5 @@
 // frontend/src/components/TopNav.jsx
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../store';
 
@@ -32,7 +32,7 @@ const TABS = {
 
 // ── Admin grouped nav definition ─────────────────────────────────────────────
 const ADMIN_GROUPS = [
-  { icon: '🏠', label: 'Home',     path: '/',       exact: true },
+  { icon: '🏠', label: 'Home',      path: '/',      exact: true },
   { icon: '📊', label: 'Übersicht', path: '/admin', noQuery: true },
   {
     label: 'Turnier',
@@ -58,11 +58,11 @@ const ADMIN_GROUPS = [
   {
     label: 'System',
     items: [
-      { icon: '👤', label: 'User',           path: '/admin?tab=users' },
-      { icon: '⚙️', label: 'Einstellungen',  path: '/admin?tab=settings' },
-      { icon: '📋', label: 'System-Log',     path: '/admin?tab=log' },
-      { icon: '📈', label: 'Reports',        path: '/admin/reports' },
-      { icon: '❓', label: 'Hilfe',           path: '/admin?tab=help' },
+      { icon: '👤', label: 'User',          path: '/admin?tab=users' },
+      { icon: '⚙️', label: 'Einstellungen', path: '/admin?tab=settings' },
+      { icon: '📋', label: 'System-Log',    path: '/admin?tab=log' },
+      { icon: '📈', label: 'Reports',       path: '/admin/reports' },
+      { icon: '❓', label: 'Hilfe',          path: '/admin?tab=help' },
     ],
   },
   { icon: '📜', label: 'Archiv', path: '/history' },
@@ -77,11 +77,11 @@ function isActive(tab, pathname, search) {
   return pathname.startsWith(base);
 }
 
-// ── Shared nav button style ───────────────────────────────────────────────────
-function navButtonStyle(active) {
+// ── Nav button styles ─────────────────────────────────────────────────────────
+function navBtnStyle(active, height = '100%') {
   return {
     padding: '0 14px',
-    height: '100%',
+    height,
     background: 'none',
     border: 'none',
     borderBottom: active ? '2px solid var(--pe-cyan-bright)' : '2px solid transparent',
@@ -92,162 +92,192 @@ function navButtonStyle(active) {
     whiteSpace: 'nowrap',
     fontFamily: 'var(--pe-font-body)',
     transition: 'color 150ms ease, border-color 150ms ease',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    flexShrink: 0,
   };
 }
 
-// ── Dropdown group component ──────────────────────────────────────────────────
-function DropdownGroup({ group, pathname, search, navigate, openGroup, setOpenGroup }) {
-  const groupRef = useRef(null);
-  const isOpen = openGroup === group.label;
+// ── Admin nav with animated sub-nav bar ───────────────────────────────────────
+function AdminNav({ pathname, search }) {
+  const navigate = useNavigate();
+  // activeGroup: which group's sub-nav is visible (hover or pinned)
+  const [activeGroup, setActiveGroup] = useState(null);
+  // pinnedGroup: stays open after click until clicked again or route changes
+  const [pinnedGroup, setPinnedGroup] = useState(null);
+  const wrapperRef = useRef(null);
+  const closeTimer = useRef(null);
 
-  // Check if any sub-item is active
-  const anyActive = group.items.some(item => isActive(item, pathname, search));
+  // Close sub-nav on route change
+  useEffect(() => {
+    setActiveGroup(null);
+    setPinnedGroup(null);
+  }, [pathname, search]);
 
   // Close on outside click
   useEffect(() => {
-    if (!isOpen) return;
     const handler = (e) => {
-      if (groupRef.current && !groupRef.current.contains(e.target)) {
-        setOpenGroup(null);
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setActiveGroup(null);
+        setPinnedGroup(null);
       }
     };
     document.addEventListener('mousedown', handler);
-    document.addEventListener('touchstart', handler);
-    return () => {
-      document.removeEventListener('mousedown', handler);
-      document.removeEventListener('touchstart', handler);
-    };
-  }, [isOpen, setOpenGroup]);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Delayed close — allows mouse to travel from main nav to sub-nav without flicker
+  const scheduleClose = useCallback(() => {
+    clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => {
+      if (!pinnedGroup) setActiveGroup(null);
+    }, 120);
+  }, [pinnedGroup]);
+
+  const cancelClose = useCallback(() => {
+    clearTimeout(closeTimer.current);
+  }, []);
+
+  const handleGroupHover = useCallback((label) => {
+    cancelClose();
+    setActiveGroup(label);
+  }, [cancelClose]);
+
+  const handleGroupClick = useCallback((label) => {
+    if (pinnedGroup === label) {
+      setPinnedGroup(null);
+      setActiveGroup(null);
+    } else {
+      setPinnedGroup(label);
+      setActiveGroup(label);
+    }
+  }, [pinnedGroup]);
+
+  const handleItemClick = useCallback((path) => {
+    navigate(path);
+    setPinnedGroup(null);
+    setActiveGroup(null);
+  }, [navigate]);
+
+  const currentGroup = activeGroup
+    ? ADMIN_GROUPS.find(g => g.items && g.label === activeGroup)
+    : null;
+
+  const subNavOpen = !!currentGroup;
 
   return (
-    <div ref={groupRef} style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'stretch' }}>
-      <button
-        onClick={() => setOpenGroup(isOpen ? null : group.label)}
-        aria-expanded={isOpen}
+    <div ref={wrapperRef}>
+      {/* ── Main nav bar ── */}
+      <nav
+        aria-label="Hauptnavigation"
         style={{
-          ...navButtonStyle(anyActive),
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-        }}
-        onMouseEnter={e => { if (!anyActive) e.currentTarget.style.color = 'var(--pe-text-sub)'; }}
-        onMouseLeave={e => { if (!anyActive) e.currentTarget.style.color = 'var(--pe-text-muted)'; }}
-      >
-        {group.label}
-        <svg
-          width="10"
-          height="10"
-          viewBox="0 0 10 10"
-          fill="currentColor"
-          style={{ transition: 'transform 150ms', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', flexShrink: 0 }}
-        >
-          <path d="M2 3l3 4 3-4H2z" />
-        </svg>
-      </button>
-
-      {isOpen && (
-        <div style={{
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-          zIndex: 1000,
           background: 'var(--pe-bg-card)',
-          border: '1px solid var(--pe-border)',
-          borderRadius: '10px',
-          minWidth: '164px',
-          padding: '6px',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+          borderBottom: subNavOpen ? 'none' : '1px solid var(--pe-border)',
+          display: 'flex',
+          alignItems: 'stretch',
+          padding: '0 8px',
+          height: '64px',
+          flexShrink: 0,
+          overflowX: 'auto',
           fontFamily: 'var(--pe-font-body)',
-        }}>
-          {group.items.map((item) => {
-            const active = isActive(item, pathname, search);
+          scrollbarWidth: 'none',
+        }}
+      >
+        {ADMIN_GROUPS.map((entry) => {
+          if (entry.items) {
+            const isOpen = activeGroup === entry.label;
+            const anyActive = entry.items.some(item => isActive(item, pathname, search));
+            const highlight = isOpen || anyActive;
             return (
               <button
-                key={item.label}
-                onClick={() => { navigate(item.path); setOpenGroup(null); }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  width: '100%',
-                  minHeight: '40px',
-                  padding: '8px 12px',
-                  background: active ? 'rgba(0,184,255,0.1)' : 'none',
-                  border: 'none',
-                  borderRadius: '7px',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  fontWeight: active ? 'bold' : 'normal',
-                  color: active ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)',
-                  fontFamily: 'var(--pe-font-body)',
-                  textAlign: 'left',
-                  transition: 'background 120ms, color 120ms',
-                  whiteSpace: 'nowrap',
-                }}
-                onMouseEnter={e => {
-                  if (!active) {
-                    e.currentTarget.style.background = 'var(--pe-bg-elevated)';
-                    e.currentTarget.style.color = 'var(--pe-text)';
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (!active) {
-                    e.currentTarget.style.background = 'none';
-                    e.currentTarget.style.color = 'var(--pe-text-sub)';
-                  }
-                }}
+                key={entry.label}
+                style={navBtnStyle(highlight)}
+                onMouseEnter={() => handleGroupHover(entry.label)}
+                onMouseLeave={scheduleClose}
+                onClick={() => handleGroupClick(entry.label)}
+                aria-expanded={isOpen}
               >
-                {item.icon && <span style={{ fontSize: '13px', flexShrink: 0 }}>{item.icon}</span>}
-                {item.label}
+                {entry.label}
+                <svg
+                  width="10" height="10" viewBox="0 0 10 10" fill="currentColor"
+                  style={{
+                    transition: 'transform 200ms ease',
+                    transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                    flexShrink: 0,
+                    opacity: 0.7,
+                  }}
+                >
+                  <path d="M2 3l3 4 3-4H2z" />
+                </svg>
               </button>
             );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
+          }
 
-// ── Admin nav (grouped) ───────────────────────────────────────────────────────
-function AdminNav({ pathname, search }) {
-  const navigate = useNavigate();
-  const [openGroup, setOpenGroup] = useState(null);
-
-  return (
-    <>
-      {ADMIN_GROUPS.map((entry) => {
-        // Grouped dropdown
-        if (entry.items) {
+          // Standalone tab
+          const active = isActive(entry, pathname, search);
           return (
-            <DropdownGroup
+            <button
               key={entry.label}
-              group={entry}
-              pathname={pathname}
-              search={search}
-              navigate={navigate}
-              openGroup={openGroup}
-              setOpenGroup={setOpenGroup}
-            />
+              onClick={() => handleItemClick(entry.path)}
+              aria-current={active ? 'page' : undefined}
+              style={navBtnStyle(active)}
+              onMouseEnter={() => { cancelClose(); if (!pinnedGroup) setActiveGroup(null); }}
+              onMouseLeave={scheduleClose}
+            >
+              {entry.icon && <span style={{ fontSize: '13px' }}>{entry.icon}</span>}
+              {entry.label}
+            </button>
           );
-        }
+        })}
+      </nav>
 
-        // Standalone flat tab
-        const active = isActive(entry, pathname, search);
-        return (
-          <button
-            key={entry.label}
-            onClick={() => { navigate(entry.path); setOpenGroup(null); }}
-            aria-current={active ? 'page' : undefined}
-            style={navButtonStyle(active)}
-            onMouseEnter={e => { if (!active) e.currentTarget.style.color = 'var(--pe-text-sub)'; }}
-            onMouseLeave={e => { if (!active) e.currentTarget.style.color = 'var(--pe-text-muted)'; }}
-          >
-            {entry.icon && <span style={{ fontSize: '13px', marginRight: '4px' }}>{entry.icon}</span>}
-            {entry.label}
-          </button>
-        );
-      })}
-    </>
+      {/* ── Animated sub-nav bar ── */}
+      <div
+        style={{
+          height: subNavOpen ? '52px' : '0',
+          overflow: 'hidden',
+          transition: 'height 200ms ease',
+          background: 'var(--pe-bg-elevated)',
+          borderBottom: subNavOpen ? '1px solid var(--pe-border)' : 'none',
+          display: 'flex',
+          alignItems: 'stretch',
+          padding: subNavOpen ? '0 8px' : '0',
+          fontFamily: 'var(--pe-font-body)',
+          overflowX: 'auto',
+          scrollbarWidth: 'none',
+        }}
+        onMouseEnter={cancelClose}
+        onMouseLeave={scheduleClose}
+      >
+        {currentGroup?.items.map((item) => {
+          const active = isActive(item, pathname, search);
+          return (
+            <button
+              key={item.label}
+              onClick={() => handleItemClick(item.path)}
+              aria-current={active ? 'page' : undefined}
+              style={{
+                ...navBtnStyle(active, '52px'),
+                fontSize: '12px',
+                padding: '0 16px',
+                color: active ? 'var(--pe-cyan-bright)' : 'var(--pe-text-sub)',
+              }}
+              onMouseEnter={e => {
+                cancelClose();
+                if (!active) e.currentTarget.style.color = 'var(--pe-text)';
+              }}
+              onMouseLeave={e => {
+                if (!active) e.currentTarget.style.color = 'var(--pe-text-sub)';
+              }}
+            >
+              {item.icon && <span style={{ fontSize: '13px' }}>{item.icon}</span>}
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -256,6 +286,10 @@ export default function TopNav() {
   const role = useStore(s => s.role);
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
+
+  if (role === 'admin') {
+    return <AdminNav pathname={pathname} search={search} />;
+  }
 
   return (
     <nav
@@ -273,26 +307,22 @@ export default function TopNav() {
         scrollbarWidth: 'none',
       }}
     >
-      {role === 'admin' ? (
-        <AdminNav pathname={pathname} search={search} />
-      ) : (
-        (TABS[role] ?? TABS.public).map((tab) => {
-          const active = isActive(tab, pathname, search);
-          return (
-            <button
-              key={tab.label}
-              onClick={() => navigate(tab.path)}
-              aria-current={active ? 'page' : undefined}
-              style={navButtonStyle(active)}
-              onMouseEnter={e => { if (!active) e.currentTarget.style.color = 'var(--pe-text-sub)'; }}
-              onMouseLeave={e => { if (!active) e.currentTarget.style.color = 'var(--pe-text-muted)'; }}
-            >
-              {tab.icon && <span style={{ fontSize: '13px', marginRight: '4px' }}>{tab.icon}</span>}
-              {tab.label}
-            </button>
-          );
-        })
-      )}
+      {(TABS[role] ?? TABS.public).map((tab) => {
+        const active = isActive(tab, pathname, search);
+        return (
+          <button
+            key={tab.label}
+            onClick={() => navigate(tab.path)}
+            aria-current={active ? 'page' : undefined}
+            style={navBtnStyle(active)}
+            onMouseEnter={e => { if (!active) e.currentTarget.style.color = 'var(--pe-text-sub)'; }}
+            onMouseLeave={e => { if (!active) e.currentTarget.style.color = 'var(--pe-text-muted)'; }}
+          >
+            {tab.icon && <span style={{ fontSize: '13px' }}>{tab.icon}</span>}
+            {tab.label}
+          </button>
+        );
+      })}
     </nav>
   );
 }
