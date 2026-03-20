@@ -1,5 +1,6 @@
 // frontend/src/components/TopBar.jsx
 import { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useStore } from '../store';
 
 const ROLE_PILL = {
@@ -78,6 +79,28 @@ export default function TopBar() {
           }}>
             {pill.label}
           </span>
+        )}
+        {!role && (
+          <Link
+            to="/login"
+            style={{
+              padding: '0 16px',
+              height: '36px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              borderRadius: 'var(--pe-radius-md)',
+              border: '1px solid var(--pe-border)',
+              background: 'var(--pe-bg-card)',
+              color: 'var(--pe-text-sub)',
+              fontFamily: 'var(--pe-font-body)',
+              fontSize: '13px',
+              fontWeight: 'bold',
+              textDecoration: 'none',
+              flexShrink: 0,
+            }}
+          >
+            Anmelden
+          </Link>
         )}
         {role && (
           <div ref={menuRef} style={{ position: 'relative' }}>
