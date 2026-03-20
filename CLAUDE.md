@@ -120,7 +120,9 @@ docs/kurze-beschreibung      # Nur Dokumentation
 8. git fetch --prune && git branch -d fix/mein-bug  (lokalen Branch löschen)
 ```
 
-**Warum Schritt 8 wichtig ist:** GitHub löscht nach dem Merge nur den Remote-Branch — der lokale Branch bleibt liegen und sammelt sich über Zeit an. `--prune` bereinigt veraltete Remote-Tracking-Refs, `-d` löscht den lokalen Branch sauber (schlägt fehl wenn nicht gemergt = Sicherheitsnetz).
+**Warum Schritt 8 wichtig ist:** GitHub löscht Remote-Branches automatisch nach dem Merge (Setting: "Automatically delete head branches" ✓ aktiviert). Der lokale Branch bleibt aber liegen. `--prune` bereinigt veraltete Remote-Tracking-Refs, `-d` löscht den lokalen Branch sauber (schlägt fehl wenn nicht gemergt = Sicherheitsnetz).
+
+**Parallelarbeit mit Sub-Agents:** Agents MÜSSEN `isolation: "worktree"` nutzen oder auf separaten Verzeichnissen arbeiten. Niemals mehrere Agents gleichzeitig auf derselben Working Directory — sie überschreiben sich gegenseitig und pushen ungewollte Dateien in fremde Branches. Der Deploy-Webhook feuert für jeden `git push origin` — also Feature-Branches so spät wie möglich pushen, idealerweise erst kurz vor dem PR.
 
 ### Sprache — ENGLISCH PFLICHT
 Alles was auf GitHub landet wird auf **Englisch** verfasst — public repo, soll für alle nachvollziehbar sein:
