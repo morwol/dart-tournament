@@ -25,6 +25,16 @@ if (process.env.MAIL_HOST) {
   }
 }
 
+// Escape HTML entities to prevent XSS in template placeholder substitution
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // NEU: Helper — Mail senden oder dry-run
 async function sendMail(to, subject, html) {
   if (!transporter) {
@@ -100,6 +110,9 @@ router.post('/send-test', requireAdmin, async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'email required' });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Invalid email address' });
+    }
 
     const result = await sendMail(
       email,
@@ -124,6 +137,9 @@ router.post('/send-event-summary', requireAdmin, async (req, res) => {
   try {
     const { tournament_id, email, template_id } = req.body;
     if (!email) return res.status(400).json({ error: 'email required' });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Invalid email address' });
+    }
 
     // Turnier-Daten sammeln
     let tournament = null;
@@ -158,12 +174,12 @@ router.post('/send-event-summary', requireAdmin, async (req, res) => {
       if (template) {
         subject = template.subject;
         html = template.body_html;
-        // Platzhalter ersetzen
+        // Platzhalter ersetzen — values are HTML-escaped to prevent injection
         if (tournament) {
-          html = html.replace(/\{\{tournament_name\}\}/g, tournament.name || '');
-          html = html.replace(/\{\{tournament_date\}\}/g, tournament.date || '');
-          html = html.replace(/\{\{player_count\}\}/g, String(players.length));
-          html = html.replace(/\{\{game_count\}\}/g, String(games.length));
+          html = html.replace(/\{\{tournament_name\}\}/g, escapeHtml(tournament.name || ''));
+          html = html.replace(/\{\{tournament_date\}\}/g, escapeHtml(tournament.date || ''));
+          html = html.replace(/\{\{player_count\}\}/g, escapeHtml(String(players.length)));
+          html = html.replace(/\{\{game_count\}\}/g, escapeHtml(String(games.length)));
         }
       }
     } else {
@@ -203,8 +219,8 @@ router.post('/send-event-summary', requireAdmin, async (req, res) => {
 });
 
 // Mail configuration status — for frontend indicator
-// Returns configured status and host (no credentials)
-router.get('/status', requireAuth, (req, res) => {
+// Returns configured status and host (no credentials) — admin only
+router.get('/status', requireAdmin, (req, res) => {
   try {
     return res.json({
       configured: transporter !== null,
